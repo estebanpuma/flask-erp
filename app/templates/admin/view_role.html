@@ -1,0 +1,58 @@
+{% from "macros.html" import cardContainer %}
+
+{% extends 'base.html' %}
+
+
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    <section id="header">
+        {% include '__title.html' %}
+    </section>
+
+    <section id="role">
+       <div class="card">
+        <div class="card-header">
+            <p>
+                <i class="bi bi-info-circle"></i>
+                Informaci&oacute;n del rol
+            </p>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">{{ role.name }}</h2>
+            <h3 class="card-subtitle">{{ role.code }}</h3>
+            <p class="card-text">{{ role.description }}</p>
+            <p>Usuarios con este rol:</p>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <th>CI</th>
+                        <th>Nombre</th>
+                        <th>Cargo</th>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.ci }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.job.name }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% for user in users %}    
+
+
+                {{ cardContainer(id=user.ci, name=user.username, description=user.job.name, url=url_for('admin.view_user', user_id=user.id) ) }}
+            {% endfor %}
+            
+        </div>
+       </div>
+    </section>
+
+    <a href="{{ url_for('admin.edit_role', role_id=role.id) }}" class="btn btn-dark text-decoration-none">Editar</a>
+
+{% endblock %}

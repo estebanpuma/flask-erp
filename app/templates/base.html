@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='icons/bootstrap/font/bootstrap-icons.min.css')}}">
+    
+    
+    <script defer src="{{ url_for('static', filename='js/alpine/alpine.min.js') }}"></script>
+    <title>{% block title %}{% endblock %}</title>
+
+</head>
+<body>
+    
+    <header>
+        {% include '__navbar.html' %}
+    </header>
+
+    {% if login %}
+
+        {% block login %}{% endblock %}
+    
+    {% else %}
+
+    <main class="row mx-auto" style="width: 100%;">
+        <section id="nav-left" class="d-none d-md-block col-3">
+            {% include '__nav.html' %}
+        </section>
+        
+        <section id="content" class="col-md-6 mx-auto">
+
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="container">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible w-100" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>   
+                {% endif %}
+            {% endwith %}
+                
+           
+            {% block content %}
+            {% endblock %}  
+        </section>
+        <section id="nav-right" class="d-none d-md-block col-3">
+
+        </section>
+    </main>
+
+    <section id="space" style="height: 80px;"></section>
+    
+    <footer>
+        {% include '__footer.html' %}
+    </footer>
+
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/bootstrap/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

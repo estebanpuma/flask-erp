@@ -1,0 +1,44 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    {% include '/sales/new-order/__sale_order_nav.html' %}
+</section>
+
+    <div class="container mt-4">
+        <h1 class="mb-3">Datos Generales</h1>
+        <form>
+            <div class="mb-3">
+                <label for="orderNumber" class="form-label">Order Number</label>
+                <input type="text" class="form-control" id="orderNumber" value="{{order_number}}">
+            </div>
+            <div class="mb-3">
+                <label for="orderDate" class="form-label">Order Date</label>
+                <input type="date" class="form-control" id="orderDate" value="{{today}}">
+            </div>
+            <div class="mb-3">
+                <label for="salesPerson" class="form-label">Salesperson</label>
+                <select name="salesperson" id="salesperson" class="form-select">
+                    <option value="">Seleccione una opcion</option>
+                    {% for salesperson in salespersons %}
+                    <option value="{{ salesperson.id }}" 
+                    {% if salesperson.id == current_user.id %}selected{% endif %}>{{ salesperson.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a class="btn btn-dark" href="{{ next_url }}">Siguiente</a>
+        </form>
+    </div>
+
+
+
+
+{% endblock %}

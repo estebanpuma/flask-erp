@@ -1,0 +1,63 @@
+{% from 'macros.html' import render_input_float, render_input %}
+<section>
+    <form action="" method="post" novalidate enctype="multipart/form-data">
+
+        {{ form.hidden_tag() }}
+    
+        <div class="input-group">
+            <div class="form-floating">              
+                {{ render_input_float(form.line) }}
+            </div>
+            <div class="input-group-text rounded-bottom-0">
+                <div>
+                    <button class="btn btn-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#line" aria-controls="line">
+                        <i class="bi bi-plus"></i>
+                    </button>           
+                    
+                </div>
+                
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating">              
+                {{ render_input_float(form.subline) }}
+            </div>
+            <div class="input-group-text rounded-bottom-0">
+                <button class="btn btn-dark" type="button" data-bs-toggle="offcanvas" 
+                    for="subline"  data-bs-target="#subline" aria-controls="subline">
+                        <i class="bi bi-plus"></i>
+                </button>     
+            </div>
+        </div>
+        {{ render_input_float(form.code) }}
+        {{ render_input_float(form.name) }}
+        {{ render_input_float(form.description) }}
+        {{ render_input(form.images) }}
+        {{ form.submit(class='btn btn-dark mt-3') }}
+    
+        
+
+        <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark" data-bs-scroll="true"
+        data-bs-backdrop="false" tabindex="-1" id="line" aria-labelledby="lineLabel">
+           <div class="offcanvas-header">
+             <h5 class="offcanvas-title" id="lineLabel">Linea</h5>
+             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+           </div>
+           <div class="offcanvas-body">
+               {% include 'products/lines/__lineForm.html' %}
+           </div>
+       </div>
+       <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark" data-bs-scroll="true"
+        data-bs-backdrop="false" tabindex="-1" id="subline" aria-labelledby="sublineLabel">
+           <div class="offcanvas-header">
+             <h5 class="offcanvas-title" id="sublineLabel">Linea</h5>
+             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+           </div>
+           <div class="offcanvas-body">
+               {% include 'products/sublines/__sublineForm.html' %}
+           </div>
+       </div> 
+    </form>
+    
+        
+</section>

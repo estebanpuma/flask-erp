@@ -1,0 +1,20 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    {{ cardContainer(id='Productos', name='Lista de modelos', description='Visualizacion, creacion, edicion de modelos', url=url_for('products.index') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Ordenes de Produccion', name='Ordenes de produccion', description='Visualizacion, creacion, edicion de ordenes de produccion y estado', url='#' ) }}
+</section>
+
+{% endblock %}

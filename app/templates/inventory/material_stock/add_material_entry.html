@@ -1,0 +1,136 @@
+{% from 'macros.html' import cardContainer, tableHover, render_errors, render_input_float, render_input %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    <form id="materialEntryForm" action="" method="post" novalidate x-data="materialForm()" x-init='init({{form.items.data|tojson}},{{form.items.errors|tojson}})'>
+        {{ form.hidden_tag() }}
+        {{ render_input_float(form.date) }}
+        {{ render_input_float(form.document) }}
+        {{ render_input_float(form.warehouse, class='form-select') }}
+        {{ render_input_float(form.responsible, class='form-select') }}
+        
+        
+
+        <h3 class="mt-3">Lista de materiales</h3>
+        <div id="itemsContainer" class="mb-3">
+            <template x-for="(item, index) in items" :key="index">
+                <div class="item-entry mb-3 border rounded container mx-auto">
+                    
+                    <div class="d-flex align-items-end">
+                        <button type="button" class="btn btn-danger" @click="removeItem(index)">X</button>
+                    </div>
+                    <div class="container row py-3 px-0">
+                        <div class="col-md-1 p-1 text-center align-items-center" x-text="index+1"></div>
+                        <div class="col-md-2 p-1">
+                            <small>Codigo</small>
+                            <input type="text" x-bind:name="'items-' + index + '-code'"  x-model="item.code" @change="searchMaterial(item.code, index)" class="form-control" />
+                            <span x-text="item.errors.code" class="text-danger">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                            </span>
+                        </div>
+                        <div class="col-md-5 p-1">
+                            <small>Material</small>
+                            <input type="text" x-bind:name="'items-' + index + '-material'" x-model="item.material" class="form-control px-0" />
+                            <span x-text="item.errors.material" class="text-danger">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                            </span>
+                        </div>
+                       
+                        <div class="col-md-2 p-1">
+                            <small>Cant</small>
+                            <input type="number" x-bind:name="'items-' + index + '-qty'" x-model="item.qty" class="form-control px-0" />
+                            <span x-text="item.errors.qty" class="text-danger">
+                            </span>
+                        </div>
+                        <div class="col-md-2 p-1">
+                            <small>Unidad</small>
+                            <input type="text" x-bind:name="'items-' + index + '-unit'" x-model="item.unit" class="form-control px-0" />
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <button type="button" class="btn btn-secondary mt-3" @click="addItem">Agregar Material</button>
+        {{ form.submit(class='btn btn-dark mt-3') }}
+    </form>
+</section>
+
+<script>
+    function materialForm() {
+        return {
+            items: [], // Inicializa un material vacío
+            //{ code: '', material: '', unit: '', qty: 0, errors: '' }
+            init(itemsFromForm, errors) {
+                // Rellenar items desde el formulario si ya hay datos
+                
+               console.log('contador de init')
+                
+                if (itemsFromForm && itemsFromForm.length > 0) {
+                    
+                    for(let i=0; i<itemsFromForm.length; i++){
+                        item = itemsFromForm[i];
+                        error = errors[i]
+                        console.log('item errors:',error)
+                        this.items.push({
+                            code: item.code,
+                            material: item.material,
+                            unit: item.unit,
+                            qty: item.qty,
+                            errors: {
+                                'code': error['code'],
+                                'material': error['material'],
+                                'qty': error['qty']
+                            }
+                            
+                        });
+                        console.log('errors',errors)
+                    }
+
+                   
+                }
+            },
+
+            addItem() {
+                this.items.push({ code: '', material: '', unit: '', qty: 0, errors:'' }); // Agrega un nuevo material
+            },
+
+            removeItem(index) {
+                this.items.splice(index, 1); // Elimina el material por índice
+            },
+
+            searchMaterial(query, index) {
+                if (query.length > 0) {
+                    query = '<by_code>' + query
+                    console.log(query)
+                    fetch(`/api/v1/materials?q=${query}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data)
+                            console.log(data[0].name); // Maneja la respuesta aquí
+                            console.log(data[0].unit); 
+                            if (data[0].name==null){
+                                this.items[index]['material'] = 'COdigo no existe'
+                            }
+                            else{
+                                this.items[index]['material'] = data[0].name
+                                this.items[index]['unit'] = data[0].unit
+                            }
+                            
+                            //console.log(this.items[index]['material'])
+                        });
+                }
+            }
+        }
+    }
+</script>
+
+{% endblock %}

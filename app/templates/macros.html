@@ -1,0 +1,85 @@
+{% macro render_errors(field) %}
+    {% if field.errors %}
+        <ul class="error-list list-group mb-3 list">
+            {% for error in field.errors %}
+                <li class="text-decoration-none" >
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        {{ error}}
+                    </span>    
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endmacro %}
+
+
+{% macro render_input(field) %}
+  
+      
+    {{ field(class='form-control', placeholder="input",**kwargs)|safe }}      
+    
+    {% if field.errors %}
+        <ul class="error-list list-group mb-3">
+            {% for error in field.errors %}
+                <li >
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        {{ error}}
+                    </span>    
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+  
+{% endmacro %}
+
+
+{% macro render_input_float(field) %}
+  
+<div class="form-floating">        
+    {{ field(class='form-control', placeholder="input",**kwargs)|safe }}      
+    <label for='{{ kwargs.get('id', field.id) }}'>{{ field.label }}</label>
+    {% if field.errors %}
+        <ul class="error-list list-group mb-3">
+            {% for error in field.errors %}
+                <li >
+                    <span class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        {{ error}}
+                    </span>    
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+</div>
+  
+{% endmacro %}
+
+{% macro cardContainer(id, name, description, url, status=None) %}
+
+    <div class="row border rounded mb-3" onclick="window.location.href='{{ url }}'" style="cursor: pointer;">
+        <div class="col-10">
+            <div class="text-muted fs-5 fw-bold">
+                {{ id }}
+            </div>
+            <div class="fw-semibold">
+                {{ name }}
+            </div>
+            <div class="fs-6">
+                {{ description }}
+            </div>
+        </div>
+        
+        <div class="p-0 col-2 my-auto text-end" >
+            <div >
+                {% if status %}
+                <span>{{ status }}</span>
+                {% endif %}
+            </div>
+            <i class="bi bi-chevron-right m-auto"></i>
+        </div>
+    </div>
+{% endmacro %}

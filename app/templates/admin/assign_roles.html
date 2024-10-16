@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    <section id="header">
+        {% include '__title.html' %}
+    </section>
+
+    <section>
+        <form action="" method="post" id="update_roles">
+            {{ form.hidden_tag() }}
+            {% for role in roles %}
+            <div class="form-check form-switch">
+                <label for="{{ role.code }}" class="form-check-label">{{ role.name }}</label>
+                <input type="checkbox"
+                       class="form-check-input"
+                       role="switch"
+                       id="{{ role.code }}"
+                       name="roles"
+                       value="{{ role.code }}"
+                       {% if role.code in user_roles | map(attribute='code') %}checked{% endif %}>
+            </div>
+            {% endfor %}
+    
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+    </section>    
+
+   
+
+
+{% endblock %}

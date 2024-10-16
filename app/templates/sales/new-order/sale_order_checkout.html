@@ -1,0 +1,34 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    {% include '/sales/new-order/__sale_order_nav.html' %}
+</section>
+
+<div class="container mt-4">
+    <h1 class="mb-3">Confirmar Orden</h1>
+    <form>
+        <div class="mb-3">
+            <label for="orderReview" class="form-label">Revisar la orden:</label>
+            <textarea class="form-control" id="orderReview" rows="5" readonly>
+                Order #12345 - Date: 2024-10-08
+                Customer: John Doe
+                Products: 5 pairs of shoes
+                Payment: Credit Card - $500.00
+            </textarea>
+        </div>
+        <button type="submit" class="btn btn-dark">Confirm</button>
+        <button type="button" class="btn btn-secondary" onclick="window.history.back()">Go Back</button>
+    </form>
+</div>
+
+
+{% endblock %}

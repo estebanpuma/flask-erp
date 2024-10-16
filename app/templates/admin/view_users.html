@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <section id="header">
+        {% include '__title.html' %}
+    </section>
+
+    <a href="{{ url_for('admin.add_user') }}" class="btn bg-body-tertiary text-decoration-none text-white" data-bs-theme="dark"  >
+        <i class="bi bi-person-add me-2 fs-4"></i> Nuevo usuario
+    </a>
+
+    <section id="table-roles" class="d-none d-md-block">
+        <div class="table-responsive mt-3">
+            <table class="table table-hover">
+                <thead>
+                    <th>Cedula</th>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Email</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        {% if user.ci != '0000000000' %}
+                        <tr x-data="{ redirectTo(url) { window.location.href = url } }" 
+                        @click="redirectTo('{{ url_for('admin.view_user', user_id=user.id) }}')" 
+                        style="cursor: pointer;">
+                            <td>{{ user.ci }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>
+                                {{ user.job.name }}
+                            </td>
+                            <td>
+                                {{ user.email }}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="text-decoration-none text-muted">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                                
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section id="roles-list" class="d-block d-md-none mt-3">
+        {% for user in users %}
+        <a href="#" class="text-decoration-none">
+            <div class="card mb-3">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">{{ user.username }}</h5>
+                        <h6 class="card-subtitle text-body-secondary mb-2">
+                            {% for role in user.roles %}
+                                {{ role.name }}
+                            {% endfor %}
+                        </h6>
+                        <p class="card-text">
+                            {{ user.email }}
+                        </p>
+                    </div>
+                    <div class="d-flex flex-column align-items-end">
+                        {% if user.is_active %}
+                            <span class="badge bg-success mb-3">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary mb-3">Desvinculado</span>
+                        {% endif %}
+                        <i class="bi bi-chevron-right text-muted fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </section>
+
+{% endblock %}

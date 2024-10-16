@@ -1,0 +1,64 @@
+{% from 'macros.html' import cardContainer, tableHover %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    {{ cardContainer(id=material.code, name=material.name, description=material.description, url='#') }}
+</section>
+
+<section>
+    <h3>Movimientos de inventario</h3>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Documento</th>
+                <th>Ingreso</th>
+                <th>Egreso</th>
+                <th>Saldo</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for movement in movements %}
+                
+                <tr data-url="#" style="cursor: pointer;">
+                    <td>{{ movement.movement.date }}</td>
+                    <td>{{ movement.movement.movement_trigger }}</td>
+                    <td>{{ movement.movement.document_number }}</td>
+                    <td>{% if movement.movement.movement_type == 'ENTRY' %}
+                            {{ movement.qty }}
+                        {% endif %}
+                    </td>
+                    <td>{% if movement.movement.movement_type == 'EXIT' %}
+                            {{ movement.qty }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ movement.stock }}
+                    </td>
+                    <td><i class="bi bi-chevron-right"></i></td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    
+</section>
+<script>
+    function redirectTo() {
+        const url = event.target.closest('tr').getAttribute('data-url');
+        window.location.href = url;
+    }
+</script>
+
+{% endblock %}

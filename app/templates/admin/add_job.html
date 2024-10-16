@@ -1,0 +1,15 @@
+{% from "macros.html" import render_errors %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <section id="header">
+        {% include '__title.html' %}
+    </section>
+    <section id="addJob">
+        {% include 'admin/add_jobForm.html' %}
+    </section>
+
+{% endblock %}

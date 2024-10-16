@@ -1,0 +1,32 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    {% include '/sales/new-order/__sale_order_nav.html' %}
+</section>
+
+<div class="container mt-4">
+    <h1 class="mb-3">Seleccion de productos</h1>
+    <form>
+        <div class="mb-3">
+            <label for="productName" class="form-label">Product Name</label>
+            <input type="text" class="form-control" id="productName">
+        </div>
+        <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input type="number" class="form-control" id="quantity">
+        </div>
+        <a type="button" class="btn btn-dark" href="{{ next_url }}">Siguiente</a>
+    </form>
+</div>
+
+
+{% endblock %}

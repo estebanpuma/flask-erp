@@ -1,0 +1,18 @@
+# Archivos generados por Docker
+.env
+*.log
+*.pid
+*.pyc
+__pycache__/
+
+# Archivos de volúmenes de Docker
+docker-compose.override.yml
+.dockerignore
+
+# Archivos específicos de Flask
+instance/
+migrations/
+logs/
+
+bootstrap/
+static/bootstrap/

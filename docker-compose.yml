@@ -1,0 +1,49 @@
+
+
+services:
+  app:
+    build: .
+    container_name: 'flask_app'
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/erpdb
+      - ADMIN_USER_NAME=Administrator
+      - ADMIN_USER_EMAIL=admin@guifer.com
+      - ADMIN_USER_PASSWORD=adminguifer
+    depends_on:
+      - db
+    networks:
+      - erp-network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - erp-network 
+      
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: erpdb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - erp-network
+
+networks:
+  erp-network:
+
+volumes:
+  postgres-data:

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<section id="header" class="mb-4">
+    {% include '__title.html' %}
+</section>
+
+<section id="user" class="container">
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="bi bi-info-circle"></i> Información del Usuario
+            </h5>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title text-primary">{{ user.username }}</h2>
+            <h3 class="card-subtitle text-muted">{{ user.job.name }}</h3>
+            <p class="card-text">{{ user.job.description }}</p>
+            
+            <hr class="my-3">
+
+            <div class="mb-3">
+                <strong>Cédula:</strong> <span>{{ user.ci }}</span>
+            </div>
+            <div class="mb-3">
+                <strong>Teléfono:</strong> <span>{{ user.phone }}</span>
+            </div>
+            <div class="mb-3">
+                <strong>Roles:</strong>
+                <ul class="list-unstyled">
+                    {% for rol in user.roles %}
+                        <li class="badge bg-secondary">{{ rol.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('admin.assign_roles', user_id=user.id) }}" class="btn btn-outline-dark">Asignar Roles</a>
+                <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-dark">Editar Usuario</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

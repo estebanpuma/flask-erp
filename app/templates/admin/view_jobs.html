@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <section id="header">
+        {% include '__title.html' %}
+    </section>
+
+    <a href="{{ url_for('admin.add_job') }}" class="btn btn-dark text-decoration-none">Nuevo cargo
+        <i class="bi bi-plus-circle"></i>
+    </a>
+
+    <section id="jobs">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <th>Codigo</th>
+                    <th>Cargo</th>
+                    <th># usuarios</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                        {% if job.code != 'admin' %}
+                        <tr>
+                            <td>{{ job.code }}</td>
+                            <td>{{ job.name }}</td>
+                            <td>{{ job.count_users_job() }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.view_job', job_id=job.id) }}" class="text-decoration-none text-muted">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                                
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    <tr>
+                        <td colspan="2">Total</td>
+                        <td>
+                            {{ total_users_job }}
+
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+{% endblock %}

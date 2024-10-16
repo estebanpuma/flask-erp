@@ -1,0 +1,75 @@
+<nav class="navbar bg-body-tertiary " data-bs-theme="dark">
+    <div class="container-fluid col-lg-11">     
+        <a class="navbar-brand" href="{{ url_for('public.index') }}">
+            GUIFER
+        </a>    
+        <ul class="nav justify-content-end text-white">
+            <li class="nav-item">
+                <button class="btn" type="button" data-bs-toggle="offcanvas"  data-bs-target="#addMenu"
+                aria-controls="addMenu">
+                  <i class="bi bi-plus-circle-dotted fs-4"></i>
+                </button>         
+                {% include '__addMenu.html' %}
+            </li>
+            
+            <li class="nav-item">
+                <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#userNotificationsMenu" 
+                aria-controls="userNotificationsMenu">
+                    <i class="bi bi-bell fs-4"></i>
+                </button>  
+                <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="userNotificationsMenu" aria-labelledby="userNotificationsMenuLabel">
+                    <div class="offcanvas-header">
+                      <h5 class="offcanvas-title" id="userNotificationsMenuLabel">Notificaciones</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                      <div>
+                        No hay notificaciones 
+                      </div>
+                    </div>
+                </div>         
+            </li>
+            <li class="nav-item">               
+                <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#userMenu" aria-controls="userMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>              
+                <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="userMenu" aria-labelledby="userMenuLabel">
+                    <div class="offcanvas-header">
+                      <h5 class="offcanvas-title" id="userMenuLabel">Men&uacute;</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                      {% if current_user.is_authenticated %}
+                        <p>Bienvenido {{ current_user.username }}</p>
+                        {% if current_user.ci != '0000000000' %}
+                        <div>
+                          Perfil
+                        </div>
+                        {% endif %}
+                        {% if current_user.has_role('Administrator') %}
+                          <div>
+                            <a href="{{ url_for('admin.view_users') }}" class="btn text-decoration-none text-body">Usuarios</a>
+                          </div>
+                          <div>
+                            <a href="{{ url_for('admin.view_jobs') }}" class="btn text-decoration-none text-body">Cargos</a>
+                          </div>
+                          <div>
+                            <a href="{{ url_for('admin.view_roles') }}" class="btn text-decoration-none text-body">Roles</a>
+                          </div>
+                        {% endif %}
+                        <div>
+                          <a href="{{ url_for('auth.logout') }}" class="btn text-decoration-none text-body">Logout</a>
+                        </div>
+                        
+                      {% else %}
+                        <div>
+                          <a href="{{ url_for('auth.login') }}" class="btn text-decoration-none text-body">Login</a>
+                        </div>
+                      {% endif %}
+                    </div>
+
+                </div>
+            </li>
+        </ul>    
+    </div>
+</nav>

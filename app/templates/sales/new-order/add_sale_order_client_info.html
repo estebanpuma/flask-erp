@@ -1,0 +1,53 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section class="container mb-4">
+    {% include '/sales/new-order/__sale_order_nav.html' %}
+</section>
+
+<section id="search">
+    <div class="container mb-4">
+
+        <form role="search" class="d-flex justify-content-center">
+            <div class="d-flex flex-fill align-items-center">
+                <div class="input-group mb-4">
+                    <span class="input-group-text bg-white"><i class="bi bi-search fs-5  mx-auto"></i></span>
+                    <div class="form-floating">
+                        <input id="docsearch-input" name="docsearch-input" class="form-control" type="search" placeholder="Buscar" aria-label="Search" style="background: transparent;"
+                            aria-autocomplete="both" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="64">
+                        <label for="docsearch-input">Buscar</label>
+                      
+                    </div>
+                </div>
+              
+            </div>
+        </form>
+
+        <div>      
+            <ul id="docsearch-list" class="list-group">
+                <!-- Aqui se mostraran los resultados -->
+
+            </ul>                
+        </div>    
+
+    </div>
+</section>
+
+
+<div class="container mt-3">
+    
+    {% include 'crm/__clientForm.html' %}
+</div>
+
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
+{% endblock %}
+
