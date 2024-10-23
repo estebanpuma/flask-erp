@@ -1,0 +1,49 @@
+<div id="itemsContainer" class="mb-3">
+    <template x-for="(item, index) in items" :key="index">
+        <div class="item-entry mb-3 border rounded container mx-auto">
+            
+            <div class="container mt-3 d-flex justify-content-between">
+                <div class="h3" x-text="'Item.' + (index+1)"></div>
+                <button type="button" class="btn btn-danger-outline" @click="removeItem(index)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            <div class="container row mb-3 mx-auto">
+                
+                <div class="col-md-2 p-1 form-floating">
+                    
+                    <input type="text" x-bind:name="'items-' + index + '-code'" x-bind:id="'items-' + index + '-code'"  
+                    x-bind:placeholder="'code'" x-model="item.code" @change="searchMaterial(item.code, index)" class="form-control" />
+                    <label x-bind:for="'items-' + index + '-code'"><small>Codigo</small></label>
+                    <span x-text="item.errors.code" class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </span>
+                </div>
+                <div class="col-md-6 p-1 form-floating">
+            
+                    <input type="text" x-bind:name="'items-' + index + '-material'"  x-bind:id="'items-' + index + '-material'"
+                    x-bind:placeholder="'Material'" x-model="item.material" class="form-control px-0" />
+                    <label x-bind:for="'items-' + index + '-material'"><small>Material</small></label>
+                    <span x-text="item.errors.material" class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </span>
+                </div>
+               
+                <div class="col-md-2 col-6 p-1 form-floating">
+                    
+                    <input type="number" x-bind:name="'items-' + index + '-qty'" x-bind:id="'items-' + index + '-qty'"
+                    x-bind:placeholder="'Cantidad'" x-model="item.qty" class="form-control px-0" />
+                    <label x-bind:for="'items-' + index + '-qty'"><small>Cant</small></label>
+                    <span x-text="item.errors.qty" class="text-danger">
+                    </span>
+                </div>
+                <div class="col-md-2 col-6 p-1 form-floating">
+                    
+                    <input type="text" x-bind:name="'items-' + index + '-unit'" x-bind:id="'items-' + index + '-unit'"
+                    x-bind:placeholder="'Unidad'" x-model="item.unit" class="form-control px-0" />
+                    <label x-bind:for="'items-' + index + '-unit'"><small>Unidad</small></label>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>

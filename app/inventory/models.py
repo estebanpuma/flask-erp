@@ -53,7 +53,7 @@ class InventoryMovement(BaseModel):
     warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=False)
     responsible_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     warehouse = db.relationship('Warehouse', back_populates='inventory_movements')
-    items = db.relationship('InventoryMovementItem', back_populates='movement')
+    items = db.relationship('InventoryMovementItem', back_populates='movement', cascade='all, delete-orphan')
 
 
 class InventoryMovementItem(BaseModel):
@@ -61,7 +61,7 @@ class InventoryMovementItem(BaseModel):
     __tablename__ = 'inventory_movement_items'
 
     id = db.Column(db.Integer, primary_key=True)
-    inventory_movement_id = db.Column(db.Integer, db.ForeignKey('inventory_movements.id'), nullable=False)
+    inventory_movement_id = db.Column(db.Integer, db.ForeignKey('inventory_movements.id', ondelete='CASCADE'), nullable=False)
     item_id = db.Column(db.Integer, nullable=False)
     item_code = db.Column(db.String())
     qty = qty = db.Column(db.Integer, nullable=False)

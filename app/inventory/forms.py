@@ -66,6 +66,11 @@ class InventoryMovementForm(FlaskForm):
 
 #Materials
 class MaterialEntryForm(InventoryMovementForm):
+    movement_trigger = SelectField('Motivo', validators=[DataRequired(message='Campo requerido')],
+                            choices=[('','Seleccione'), 
+                                     ('PURCHASE', 'Compra'),
+                                     ('REENTRY', 'Ajuste'),
+                                     ('ROTATION', 'Rotacion')])
     items = FieldList(FormField(MaterialList), min_entries=0)#cargo el subformulario
 
 
@@ -95,6 +100,8 @@ class ProductExitForm(InventoryMovementForm):
                                      ('SALES', 'Ventas'),
                                      ('ROTATION', 'Rotacion'),
                                      ('REMOVE', 'Baja')])
+
+
 
 
 

@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, flash
 
 from sqlalchemy.exc import SQLAlchemyError
 from app import db
@@ -33,7 +33,6 @@ class MaterialServices:
     
     @staticmethod
     def get_material_by_code(material_code):
-        current_app.logger.warning(f'Este warning: {material_code}')
         code = material_code.upper()
         from ..products.models import Material
         result = Material.query.filter_by(code = code).first()
@@ -95,15 +94,38 @@ class WarehouseServices:
 class InventoryService:
 
     @staticmethod
-    def get_item_movements(item_type, code):
-
+    def get_item_movementsNew(item_type, item_code):
+        items = InventoryMovementItem.query.join(InventoryMovement).filter(InventoryMovementItem.item_code == item_code.upper()).order_by(InventoryMovement.date.asc()).all()
         movements = []
-        items = InventoryMovementItem.query.filter_by(item_code = code).all()
+        print(f'items ahimimso: {items}')
+        entries = 0
+        exits = 0
         for item in items:
             if item.movement.item_type == item_type:
-                movements.append(item)
+                type = None
+                if item.movement.movement_type.value == 'Ingreso':
+                    entries = entries + item.qty
+                    type = 'Ingreso'
+                if item.movement.movement_type.value == 'Egreso':
+                    exits = exits + item.qty
+                    type = 'Egreso'
+                nstock = entries - exits
+                nitem = {
+                    'id': item.id,
+                    'item_id': item.item_id,
+                    'item_code': item.item_code,
+                    'inventory_movement_id': item.inventory_movement_id,
+                    'date': item.movement.date,
+                    'movement_type': type,
+                    'document_number': item.movement.document_number,
+                    'movement_trigger': item.movement.movement_trigger.value,
+                    'qty': item.qty,
+                    'stock': nstock
+                }
+                movements.append(nitem)
         return movements
     
+
     
 
     @staticmethod
@@ -131,65 +153,78 @@ class InventoryService:
         else:
             raise ValueError('item_type incorrecto')
         
-        try:
-            # Crear la instancia de movimiento de inventario
-            new_entry = InventoryMovement(
-                date=date,
-                responsible_id=responsible,
-                warehouse_id=warehouse,
-                movement_type=movement_type,
-                movement_trigger = movement_trigger,
-                item_type=item_type,
-                document=document
-            )
-            
+        
+        # Crear la instancia de movimiento de inventario
+        new_movement = InventoryMovement(
+            date=date,
+            responsible_id=responsible,
+            warehouse_id=warehouse,
+            movement_type=movement_type,
+            movement_trigger = movement_trigger,
+            item_type=item_type,
+            document_number=document
+        )
+        try:  
             # Agregar movimiento de inventario a la sesión
-            db.session.add(new_entry)
+            db.session.add(new_movement)
             db.session.flush()  # Ejecuta el SQL para obtener el ID de `new_entry`
-            
-            #llamo a material para obtener el stock a la fecha del movimiento 
-            
-            item_obj = obj.query.filter_by(code = item.code).first()
-            item_stock = item_obj.stock
+            current_app.logger.info('Nuevo movimiento de inventario anadido a sesion')
             # Crear entradas de inventario
             for item in items:
+                item_code = str(item['code']).upper()
+                item_obj = obj.query.filter_by(code = item_code).first()
+
+                if item_obj is None:
+                    current_app.logger.warning(f'No se encontró el item: {item['code']}')
+                    raise ValueError(f'No se encontró el item: {item['code']}')
+                
+                item_stock = item_obj.stock or 0
+                qty = int(item['qty'])
+                if movement_type == 'EXIT':
+                    qty = int(item['qty'])*(-1)
+
                 new_item = InventoryMovementItem(
-                    inventory_movement_id=new_entry.id,
-                    item_id=item.id,
-                    code=item.code,
-                    qty=item.qty,
-                    stock = item_stock + item.qty if item_stock else item.qty
+                    inventory_movement_id=new_movement.id,
+                    item_id=item_obj.id,
+                    item_code=str(item['code']).upper(),
+                    qty=qty,
+                    stock = item_stock + qty
                 )
                 db.session.add(new_item)
-            
-            # Guardar los cambios en la base de datos
+                
+                item_obj.stock = item_stock + qty
+                # Guardar los cambios en la base de datos
             db.session.commit()
-            
-            return new_entry
+            current_app.logger.info(f'Nuevo movimiento de inventario guardado id={new_movement.id}')
+            return new_movement
 
         except SQLAlchemyError as e:
             db.session.rollback()
             # Loggeo del error
-            current_app.logger.warning(f'Error al crear el movimiento de inventario: {str(e)}') 
+            current_app.logger.warning(f'Error SQL al crear el movimiento de inventario: {str(e)}') 
             return None
-        
+        except Exception as e:
+            db.session.rollback()
+            # Loggeo del error
+            current_app.logger.warning(f'Error al crear el movimiento de inventario: {str(e)}')
+            return None
             
     @staticmethod
     def create_material_entry(movement_trigger, date, responsible, warehouse, items, document=None):
         item_type = 'RAWMATERIAL'
         movement_type = 'ENTRY'
-        movement_trigger = 'PURCHASE'
+        movement_trigger = movement_trigger
         try:
             valid_items = []
             for item in items:
-                target_item = MaterialServices.get_material_by_code(item.code)
+                target_item = MaterialServices.get_material_by_code(item['code'])
                 if target_item:
-                    valid_items.append(target_item)
+                    valid_items.append(item)
                     
                 
                 else:
-                    raise Exception('No item match')
-                
+                    raise ValueError('No item match')
+  
             new_entry = InventoryService.create_inventory_movement(item_type=item_type,
                                                                     movement_trigger = movement_trigger,
                                                                     movement_type=movement_type,
@@ -199,8 +234,47 @@ class InventoryService:
                                                                     items=valid_items,
                                                                     document=document
                                                                     )
+            
             return new_entry
                 
         except Exception as e:
-            current_app.logger.warning(f'Error:{e}')
+            current_app.logger.warning(f'Error al crear entrada de material:{e}')
             return None
+
+    @staticmethod
+    def create_material_exit(movement_trigger,
+                             date,
+                             responsible,
+                             warehouse,
+                             items,
+                             document=None):
+        
+        item_type = "RAWMATERIAL"
+
+        movement_type = 'EXIT'
+
+        movement_trigger = movement_trigger
+
+        try:
+            valid_items = []
+            for item in items:
+                target_item = MaterialServices.get_material_by_code(item['code'])
+                if target_item:
+                    valid_items.append(item)
+                else:
+                    raise ValueError(f'Codigo: {item['code']}, no perteneca ningun item')
+            
+            new_exit = InventoryService.create_inventory_movement(movement_trigger=movement_trigger,
+                                                                  item_type=item_type,
+                                                                  movement_type=movement_type,
+                                                                  date=date,
+                                                                  responsible=responsible,
+                                                                  warehouse=warehouse,
+                                                                  items=valid_items,
+                                                                  document=document)
+
+            return new_exit
+
+        except Exception as e:
+            current_app.logger.warning(f'Error al crear egreso de material:{e}')
+            

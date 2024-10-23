@@ -30,14 +30,14 @@
                 {% for movement in movements %}
                 
                 <tr data-url="#" style="cursor: pointer;">
-                    <td>{{ movement.movement.date }}</td>
-                    <td>{{ movement.movement.movement_trigger }}</td>
-                    <td>{{ movement.movement.document_number }}</td>
-                    <td>{% if movement.movement.movement_type == 'ENTRY' %}
+                    <td>{{ movement.date }}</td>
+                    <td>{{ movement.movement_trigger }}</td>
+                    <td>{{ movement.document_number }}</td>
+                    <td>{% if movement.movement_type == 'Ingreso' %}
                             {{ movement.qty }}
                         {% endif %}
                     </td>
-                    <td>{% if movement.movement.movement_type == 'EXIT' %}
+                    <td>{% if movement.movement_type == 'Egreso' %}
                             {{ movement.qty }}
                         {% endif %}
                     </td>

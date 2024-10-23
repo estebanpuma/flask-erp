@@ -28,8 +28,9 @@ def update_user_form_choices(field, obj):
     field.choices = choices
 
 
-def process_file_data(df, expected_columns, objModel):
-    expected_columns = expected_columns
+def process_file_data(df,  objModel, expected_columns):
+    print(expected_columns)
+
     
     df.columns = df.columns.str.strip()  # Elimina espacios en blanco
     df.columns = df.columns.str.lower() 

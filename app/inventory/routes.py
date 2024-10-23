@@ -48,10 +48,11 @@ def view_materials():
 @inventory_bp.route('/materials/<int:material_id>')
 def view_material(material_id):
     title = 'Materiales'
-    prev_url = url_for('inventory.index')
+    prev_url = url_for('inventory.view_materials_stock')
     
     material = MaterialServices.get_material(material_id)
-    movements = InventoryService.get_item_movements('material', material.code)
+    movements = InventoryService.get_item_movementsNew('RAWMATERIAL', material.code)
+    print(movements)
     return render_template('inventory/materials/view_material.html',
                            title = title,
                            prev_url = prev_url,
@@ -108,7 +109,8 @@ def massive_upload():
             file_contents = file.read()  # Lee el archivo en memoria
             df = pd.read_excel(io.BytesIO(file_contents), engine='openpyxl')
         flash(df.columns)
-        data = process_file_data(df, Material)
+        columns = ['code', 'name', 'description', 'unit']
+        data = process_file_data(df, Material, columns)
         
         if data['errors']:
            flash(data['message'], 'warning')
@@ -214,7 +216,7 @@ def view_materials_stock():
 
 
 
-@inventory_bp.route('/materials/<int:material_id>')
+@inventory_bp.route('/materials/inventory/<int:material_id>')
 def view_material_stock_movements(material_id):
     title = 'Movimientos de inventario'
     prev_url = url_for('inventory.index')
@@ -233,25 +235,31 @@ def add_material_entry():
     prev_url = url_for('inventory.view_materials_stock')
 
     form = MaterialEntryForm()
+    from ..common.utils import get_today
+    today = get_today()
 
     if form.validate_on_submit():
+
         
-        new_entry = InventoryService.create_material_entry(movement_trigger='PURCHASE',
+        new_entry = InventoryService.create_material_entry(movement_trigger=form.movement_trigger.data,
                                                           date= form.date.data,
                                                           responsible=form.responsible.data,
                                                           warehouse=form.warehouse.data,
                                                           document=form.document.data,
                                                           items=form.items.data
                                                           )
-
+        
         if new_entry:
-           flash('Guardado con exito', 'success')
-           return redirect(url_for('inventory.index'))
+           flash(f'Registro guardado', 'success')
+           return redirect(url_for('inventory.view_materials_stock'))
+        else:
+            flash('Ocurrio un error', 'danger')
 
     return render_template('inventory/material_stock/add_material_entry.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = form,
+                           today = today)
 
 
 @inventory_bp.route('/materials/exit', methods=['GET', 'POST'])
@@ -261,14 +269,29 @@ def add_material_exit():
 
     form = MaterialExitForm()
 
+    from ..common.utils import get_today
+    today = get_today()
+
     if form.validate_on_submit():
         
-       flash(form.data)
+       new_exit = InventoryService.create_material_exit(movement_trigger=form.movement_trigger.data,
+                                                        date=form.date.data,
+                                                        responsible=form.responsible.data,
+                                                        warehouse=form.warehouse.data,
+                                                        items=form.items.data,
+                                                        document=form.document.data)
+       if new_exit:
+           flash(f'Registro guardado', 'success')
+           return redirect(url_for('inventory.view_materials_stock'))
+       else:
+          
+        flash('Ocurrio un error', 'danger')
          
     return render_template('inventory/material_stock/add_material_exit.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = form,
+                           today = today)
 
 
 @inventory_bp.route('/massive-stock-upload', methods=['GET', 'POST'])
@@ -292,7 +315,8 @@ def massive_stock_upload():
             file_contents = file.read()  # Lee el archivo en memoria
             df = pd.read_excel(io.BytesIO(file_contents), engine='openpyxl')
         flash(df.columns)
-        data = process_file_data(df, Material)
+        columns = ['code','name', 'description', 'unit']
+        data = process_file_data(df=df, objModel=Material, expected_columns= columns)
         
         if data['errors']:
            flash(data['message'], 'warning')
