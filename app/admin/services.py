@@ -43,18 +43,12 @@ class AdminServices:
         return Role.query.all()
     
     @staticmethod
-    def get_users_with_role(role_codes):
+    def get_users_with_role(role_id):
         from .models import Role, User, user_roles
 
         # Consulta para obtener usuarios que tengan alguno de los roles especificados
-        users_with_role = (
-            User.query
-            .join(user_roles)  # Une la tabla de asociación
-            .join(Role)  # Une la tabla de roles
-            .filter(Role.code.in_(role_codes))  # Filtra según los códigos de rol
-            .all()  # Obtiene todos los resultados
-        )
-        
+        users_with_role = User.query.join(Role).filter(Role.id==role_id).all()
+       
         return users_with_role
 
     

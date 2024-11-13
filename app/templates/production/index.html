@@ -9,12 +9,20 @@
     {% include '__title.html' %}
 </section>
 
-<section>
-    {{ cardContainer(id='Productos', name='Lista de modelos', description='Visualizacion, creacion, edicion de modelos', url=url_for('products.index') ) }}
-</section>
+
 
 <section>
     {{ cardContainer(id='Ordenes de Produccion', name='Ordenes de produccion', description='Visualizacion, creacion, edicion de ordenes de produccion y estado', url='#' ) }}
 </section>
+
+<section>
+    {{ cardContainer(id='Pedidos para Stock', name='Pedidos para Stock', description='Visualizacion, creacion, edicion de pedidos para stock y estado', url=url_for('production.view_stock_orders') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Productos', name='Lista de modelos', description='Visualizacion, creacion, edicion de modelos', url=url_for('products.index') ) }}
+</section>
+
+
 
 {% endblock %}

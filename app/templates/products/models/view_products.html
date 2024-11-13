@@ -25,10 +25,10 @@
             </thead>
             <tbody>
                 {% for product in products %}
-                {% set url = url_for('product.view_product',product_id=product.id ) %}
-                <tr data-url="{{ url }}" style="cursor: pointer;" onclick="redirectTo()">
+               
+                <tr data-url="" style="cursor: pointer;" onclick="redirectTo()">
                     <td>{{ product.code }}</td>
-                    <td>{{ product.line }}</td>
+                    <td>{{ product.line.name }}</td>
                     <td>{{ product.subline }}</td>
                     <td>{{ product.name }}</td>
                     <td><i class="bi bi-chevron-right"></i></td>

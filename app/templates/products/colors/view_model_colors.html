@@ -1,0 +1,51 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    <a href="{{ url_for('products.add_model_color') }}" class="btn btn-dark">Nuevo color</a>
+</section>
+
+<section>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <th>Codigo</th>
+                <th>Nombre</th>
+                <th>Hex</th>
+                <th>Descripcion</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for color in colors %}
+                <tr data-url="{{ url_for('products.view_model_color', model_color_id=color.id) }}" style="cursor: pointer;" onclick="redirectTo(this)">
+
+                    <td>{{ color.code }}</td>
+                    <td>{{ color.name }}</td>
+                    <td>{{ color.hex }}</td>
+                    <td>{{ color.description }}</td>
+                    <td> 100 </td>
+                    <td><i class="bi bi-chevron-right"></i></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    
+</section>
+<script>
+    function redirectTo() {
+        const url = event.target.closest('tr').getAttribute('data-url');
+        window.location.href = url;
+    }
+</script>
+
+{% endblock %}

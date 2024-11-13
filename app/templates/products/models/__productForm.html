@@ -1,63 +1,178 @@
 {% from 'macros.html' import render_input_float, render_input %}
 <section>
-    <form action="" method="post" novalidate enctype="multipart/form-data">
+    <form id="modelForm" method="post" novalidate enctype="multipart/form-data" x-data="newModelForm()" x-init='init({{form_data|tojson}}, {{boom_materials|tojson}});'>
 
         {{ form.hidden_tag() }}
-    
-        <div class="input-group">
-            <div class="form-floating">              
-                {{ render_input_float(form.line) }}
-            </div>
-            <div class="input-group-text rounded-bottom-0">
-                <div>
-                    <button class="btn btn-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#line" aria-controls="line">
-                        <i class="bi bi-plus"></i>
-                    </button>           
+        
+        
+        <div class="form-floating">
                     
-                </div>
-                
-            </div>
+            <select x-bind:name="'line'" x-bind:id="'line'" 
+            x-bind:placeholder="'line'" x-model="item.line" 
+            @change="updateCode()"
+            class="form-select" required>
+                <option value="">Seleccione una linea</option>
+                <template x-for="line in lines" :key="line.id">
+                    <option :value="line.id" x-text="line.code+ '-'+ line.name" ></option>
+                </template>
+            </select>
+            <label for="line">Linea</label>
+            <span x-text="item.errors.line" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
         </div>
-        <div class="input-group">
-            <div class="form-floating">              
-                {{ render_input_float(form.subline) }}
-            </div>
-            <div class="input-group-text rounded-bottom-0">
-                <button class="btn btn-dark" type="button" data-bs-toggle="offcanvas" 
-                    for="subline"  data-bs-target="#subline" aria-controls="subline">
-                        <i class="bi bi-plus"></i>
-                </button>     
-            </div>
-        </div>
-        {{ render_input_float(form.code) }}
-        {{ render_input_float(form.name) }}
-        {{ render_input_float(form.description) }}
-        {{ render_input(form.images) }}
-        {{ form.submit(class='btn btn-dark mt-3') }}
-    
-        
 
-        <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark" data-bs-scroll="true"
-        data-bs-backdrop="false" tabindex="-1" id="line" aria-labelledby="lineLabel">
-           <div class="offcanvas-header">
-             <h5 class="offcanvas-title" id="lineLabel">Linea</h5>
-             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-           </div>
-           <div class="offcanvas-body">
-               {% include 'products/lines/__lineForm.html' %}
-           </div>
-       </div>
-       <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark" data-bs-scroll="true"
-        data-bs-backdrop="false" tabindex="-1" id="subline" aria-labelledby="sublineLabel">
-           <div class="offcanvas-header">
-             <h5 class="offcanvas-title" id="sublineLabel">Linea</h5>
-             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-           </div>
-           <div class="offcanvas-body">
-               {% include 'products/sublines/__sublineForm.html' %}
-           </div>
-       </div> 
-    </form>
-    
+        <div class="form-floating">
+                    
+            <select x-bind:name="'subline'" x-bind:id="'subline'" 
+            x-bind:placeholder="'subline'" x-model="item.subline" 
+            @change="updateCode()"
+            class="form-select" required>
+                <option value="">Seleccione una sublinea</option>
+                <template x-for="subline in sublines" :key="subline.id">
+                    <option :value="subline.id" x-text="subline.code+ '-'+ subline.name" ></option>
+                </template>
+            </select>
+            <label for="subline">subLinea</label>
+            <span x-text="item.errors.subline" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+
         
+    
+        <div class="form-floating">
+                    
+            <select x-bind:name="'color'" x-bind:id="'color'" 
+            x-bind:placeholder="'color'" x-model="item.color" 
+            @change="updateCode()"
+            class="form-select" required>
+                <option value="">Seleccione un color</option>
+                <template x-for="color in colors" :key="color.id">
+                    <option :value="color.id" x-text="color.code+ '-'+ color.name" ></option>
+                </template>
+            </select>
+            <label for="color">Color</label>
+            <span x-text="item.errors.color" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+
+
+
+        <div class="form-floating">
+                    
+            <input type="text" x-bind:name="'code'" x-bind:id="'code'"  
+            x-bind:placeholder="'code'" x-model="item.code"
+            @input="item.code=item.code.toUpperCase()" class="form-control" />
+            <label x-bind:for="'code'">Codigo</label>
+            <span x-text="item.errors.code" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+
+        {{ render_input_float(form.description) }}
+
+        {{ render_input(form.images) }}     
+       
+
+        <div class="input-group">
+            <input x-ref="fileInput" type="file" class="form-control" id="file" aria-describedby="upload_file" aria-label="Cargar">
+            <button class="btn btn-dark" type="button" id="upload_file" @click="uploadFile()">Cargar</button>
+          </div>
+
+        {{ form.submit(class='btn btn-dark mt-3') }}
+        
+      
+        <section id="fileData">
+            <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <th>Serie</th>
+                    <th>Tallas</th>
+                    <th>Material</th>
+                    <th>Detalle</th>
+                    <th>Cant</th>
+                    <th>Unidad</th>
+                    <th>Errores</th>
+                    <th></th>
+                </thead>
+                <tbody>
+                    <template x-for="(item, index) in items" :key="index">
+                        <tr>
+                            <td>
+                                <input type="text" x-bind:name="'items-' + index + '-serie'" class="form-control"
+                                x-model="item.serie" x-bind:id="'items-' + index + '-serie'" @input="item.serie=item.serie.toUpperCase()"
+                                @change="searchSerie(item.serie, index)"> 
+                            </td>
+                            <td>
+                                <p x-model="item.serie_sizes" x-text="item.serie_sizes"> </p>
+                            </td>
+                            <td>
+                                <input type="text" x-bind:name="'items-' + index + '-code'" class="form-control"
+                                x-model="item.code" x-bind:id="'items-' + index + '-code'" @change="searchMaterial(item.code, index)"
+                                @input="item.code=item.code.toUpperCase()"> 
+                            </td>
+                            <td>
+                                <input type="text" readonly x-bind:name="'items-' + index + '-detail'"  class="form-control-plaintext"
+                                x-model="item.detail" x-bind:id="'items-' + index + '-detail'" x-text="item.detail"></input>
+                            </td>
+                            <td>
+                                <input type="number" x-bind:name="'items-' + index + '-qty'"  class="form-control"
+                                x-model="item.qty" x-bind:id="'items-' + index + '-qty'">
+                            </td>
+                            <td>
+                                <input type="text" readonly  x-bind:name="'items-' + index + '-unit'" class="form-control-plaintext" 
+                                x-model="item.unit" x-bind:id="'items-' + index + '-unit'" x-text="item.unit"></input>
+                            </td>
+                            <td>
+                                <template x-for="error in item.errors">
+                                    <p x-bind:name="'items-' + index + '-errors'" 
+                                    x-model="error.errors" x-bind:id="'items-' + index + '-errors'" x-text="error"></p>
+                                </template>
+                                
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-close" @click="removeItem(index)"></button>
+                            </td>
+                        </tr>
+                    </template>
+                  
+                </tbody>
+                <button type="button" @click="addItem()" class="btn btn-secondary">Add Item</button>
+            </table>
+        </div>
+        </section>
+
+    </form>
+
+
+
+      
+  
+
+    <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="linep" aria-labelledby="lineLabel">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title" id="lineLabel">Linea</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <div>
+            {% include 'products/lines/__lineForm.html' %}
+          </div>
+        </div>
+    </div>   
+    <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark"  data-bs-scroll="true" data-bs-backdrop="false"  id="sublinef" aria-labelledby="sublineLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sublineLabel">SubLinea</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% include 'products/sublines/__sublineForm.html' %}
+        </div>
+    </div> 
 </section>
+
+<script src="{{ url_for('static', filename='js/components/addModelForm.js') }}">
+
+</script>

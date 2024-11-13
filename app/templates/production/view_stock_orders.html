@@ -1,0 +1,35 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    <h3>Pedidos para stock</h3>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <th>Codigo</th>
+                <th>Fecha</th>
+                <th>Status</th>
+            </thead>
+            <tbody>
+                {% for stock_order in stock_orders %}
+                <tr>
+                    <th>{{ stock_order.code }}</th>
+                    <th>{{ stock_order.request_date }}</th>
+                    <th>{{ stock_order.status }}</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</section>
+
+{% endblock %}

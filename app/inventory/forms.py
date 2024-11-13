@@ -74,7 +74,7 @@ class MaterialEntryForm(InventoryMovementForm):
     items = FieldList(FormField(MaterialList), min_entries=0)#cargo el subformulario
 
 
-class MaterialExitForm(MaterialEntryForm):
+class MaterialExitForm(InventoryMovementForm):
     movement_trigger = SelectField('Motivo', validators=[DataRequired(message='Campo requerido')],
                             choices=[('','Seleccione'), 
                                      ('PRODUCTION', 'Produccion'),
@@ -106,13 +106,30 @@ class ProductExitForm(InventoryMovementForm):
 
 
 #***********************
-class MaterialForm(FlaskForm):
-
+class MaterialGroupForm(FlaskForm):
     code = StringField('Codigo', validators=[DataRequired()])
     name = StringField('Nombre', validators=[DataRequired()])
     description = StringField('Descripcion', validators=[Optional()])
+    submit = SubmitField('Guardar')
+    
+
+class MaterialForm(FlaskForm):
+
+    code = StringField('Codigo', validators=[DataRequired()])
+    group = SelectField('Grupo', validators=[DataRequired()], choices=[('', 'Seleccione')])
+    name = StringField('Nombre', validators=[DataRequired()])
+    detail = StringField('Detalle', validators=[Optional()])
     unit = StringField('Unidad', validators=[DataRequired()])
     submit = SubmitField('Guardar')
+
+    def __init__(self, *args, **kwargs):
+        super(MaterialForm, self).__init__(*args, **kwargs)
+
+        from .services import MaterialGroupServices
+        groups = MaterialGroupServices.get_all_material_groups()
+
+        for group in groups:
+            self.group.choices.append((group.id, f'{group.code}-{group.name}' ))
 
 
 class WarehouseForm(FlaskForm):

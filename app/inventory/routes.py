@@ -1,8 +1,8 @@
 from flask import render_template, redirect, url_for, flash, request
 
 from . import inventory_bp
-from .forms import MaterialForm, WarehouseForm, MaterialEntryForm, MaterialExitForm
-from .services import MaterialServices, WarehouseServices, InventoryService
+from .forms import MaterialForm, WarehouseForm, MaterialEntryForm, MaterialExitForm, MaterialGroupForm
+from .services import MaterialServices, WarehouseServices, InventoryService, MaterialGroupServices
  
 import pandas as pd
 
@@ -27,6 +27,78 @@ def warehouse():
     return 'Bodegass'
 
 
+#****************************Materiales/*************************
+
+@inventory_bp.route('/material-groups', methods=["GET", "POST"]) 
+def view_material_groups():
+    title = 'Grupos de materiales'
+    prev_url = url_for('inventory.index')
+
+    groups = MaterialGroupServices.get_all_material_groups()
+    
+    return render_template('inventory/materials/view_material_groups.html',
+                           title = title,
+                           prev_url = prev_url,
+                           groups = groups)
+
+
+@inventory_bp.route('/material-groups/<int:group_id>', methods=["GET", "POST"]) 
+def view_material_group(group_id):
+    title = 'Grupo'
+    prev_url = url_for('inventory.view_material_groups')
+
+    group = MaterialGroupServices.get_material_group(group_id)
+    
+    return render_template('inventory/materials/view_material_group.html',
+                           title = title,
+                           prev_url = prev_url,
+                           group = group)
+
+
+@inventory_bp.route('/material-groups/create', methods=["GET", "POST"]) 
+def add_material_group():
+    title = 'Nuevo grupo de materiales'
+    prev_url = url_for('inventory.view_material_groups')
+    form = MaterialGroupForm()
+    if form.validate_on_submit():
+        try:
+            new_group = MaterialGroupServices.create_material_group(code=form.code.data,
+                                                                    name=form.name.data,
+                                                                    description=form.description.data)
+            flash('Registro guardado', 'success')
+            return redirect(url_for('inventory.view_material_groups'))
+        except Exception as e:
+            flash(e)
+        
+    
+    return render_template('inventory/materials/add_material_group.html',
+                           title = title,
+                           prev_url = prev_url,
+                           form = form)
+
+
+@inventory_bp.route('/material-groups/<int:group_id>/update', methods=["GET", "POST"]) 
+def update_material_group(group_id):
+    title = 'Editar grupo'
+    group = MaterialGroupServices.get_material_group(group_id)
+    prev_url = url_for('inventory.view_material_groups')
+    form = MaterialGroupForm(obj=group)
+    if form.validate_on_submit():
+        try:
+            new_group = MaterialGroupServices.update_material_group(group_id=group_id,
+                                                                    code=form.code.data,
+                                                                    name=form.name.data,
+                                                                    description=form.description.data)
+            flash('Registro guardado', 'success')
+            return redirect(url_for('inventory.view_material_groups'))
+        except Exception as e:
+            flash(e)
+
+    return render_template('inventory/materials/add_material_group.html',
+                           title = title,
+                           prev_url = prev_url,
+                           form = form)
+
 
 @inventory_bp.route('/materials', methods=["GET", "POST"]) 
 def view_materials():
@@ -36,13 +108,10 @@ def view_materials():
     
     materials = MaterialServices.get_all_materials()
     
-    
-
     return render_template('inventory/materials/view_materials.html',
                            title = title,
                            prev_url = prev_url,
                            materials = materials)
-
 
 
 @inventory_bp.route('/materials/<int:material_id>')
@@ -70,8 +139,9 @@ def add_material():
     if form.validate_on_submit():
         try: 
             new_material = MaterialServices.create_material(code = form.code.data,
+                                                            group = form.group.data,
                                                         name = form.name.data,
-                                                        description = form.description.data,
+                                                        detail = form.detail.data,
                                                         unit = form.unit.data)
             flash('Registro guardado!', 'success')
             return redirect(url_for('inventory.view_materials'))
@@ -88,8 +158,40 @@ def add_material():
                            form = form)
 
 
-@inventory_bp.route('/massive-upload', methods=['GET', 'POST'])
-def massive_upload():
+@inventory_bp.route('/materials/<int:material_id>/update', methods=['GET', 'POST'])
+def update_material(material_id):
+    title = 'Nuevo Material'
+    material = MaterialServices.get_material(material_id)
+    prev_url = url_for('inventory.view_materials')
+
+    form = MaterialForm(obj=material)
+
+    if form.validate_on_submit():
+        try: 
+            update_material = MaterialServices.update_material(material_id=material_id,
+                                                               code = form.code.data,
+                                                                group = form.group.data,
+                                                                name = form.name.data,
+                                                                detail = form.detail.data,
+                                                                unit = form.unit.data)
+            flash('Registro guardado!', 'success')
+            return redirect(url_for('inventory.view_materials'))
+        
+        except Exception as e:
+            flash(f'Ocurrio un error: {e}')
+            return redirect(url_for('inventory.view_materials'))
+
+        
+
+    return render_template('inventory/materials/add_material.html',
+                           title = title,
+                           prev_url = prev_url,
+                           form = form)
+
+
+
+@inventory_bp.route('/materials/bulk/create', methods=['GET', 'POST'])
+def add_bulk_materials():
     title = 'Carga masiva'
     prev_url = url_for('inventory.view_materials')
     from ..common.forms import MasiveUploadFileForm
@@ -108,12 +210,10 @@ def massive_upload():
         else:
             file_contents = file.read()  # Lee el archivo en memoria
             df = pd.read_excel(io.BytesIO(file_contents), engine='openpyxl')
-        flash(df.columns)
-        columns = ['code', 'name', 'description', 'unit']
+        columns = ['code', 'name', 'detail', 'group','unit']
         data = process_file_data(df, Material, columns)
         
         if data['errors']:
-           flash(data['message'], 'warning')
            errors = data['errors']
            return render_template('inventory/materials/massive_upload.html',
                            title = title,
@@ -341,26 +441,3 @@ def massive_stock_upload():
 #**************************Products*********************************************
 #*******************************************************************************
 
-@inventory_bp.route('/products/stock')
-def view_products_stock():
-    title = 'Stock Productos'
-    prev_url = url_for('inventory.index')
-
-    from ..products import Product
-    from ..products.services import ProductServices
-
-    products = ProductServices.get_all_products()
-
-    return 'products'
-
-
-@inventory_bp.route('/products/entry')
-def add_products_entry():
-    title = 'Ingreso Productos'
-    prev_url = url_for('inventory.view_products_stock')
-
-
-
-    
-
-    return 'products'

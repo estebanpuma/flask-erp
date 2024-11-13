@@ -1,0 +1,47 @@
+{% from 'macros.html' import cardContainer, tableHover %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    <a href="{{ url_for('products.add_serie') }}" class="btn btn-dark">Nueva serie</a>
+</section>
+
+<section>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <th>Codigo</th>
+                <th>T inico</th>
+                <th>T fin</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for serie in series %}
+                <tr data-url="{{ url_for('products.view_serie',serie_id=serie.id ) }}" style="cursor: pointer;" onclick="redirectTo()">
+                    <td>{{ serie.name }}</td>
+                    <td>{{ serie.start_size }}</td>
+                    <td>{{ serie.end_size }}</td>
+                    <td><i class="bi bi-chevron-right"></i></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    
+</section>
+<script>
+    function redirectTo() {
+        const url = event.target.closest('tr').getAttribute('data-url');
+        window.location.href = url;
+    }
+</script>
+
+{% endblock %}

@@ -10,7 +10,7 @@
 </section>
 
 <section>
-    {{ cardContainer(id=material.code, name=material.name, description=material.description, url='#') }}
+    {{ cardContainer(id=material.code, name=material.name, description=material.detail, url=url_for('inventory.update_material', material_id=material.id)) }}
 </section>
 
 <section>

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+    <section id="header">
+        {% include '__title.html' %}
+    </section>
+
+    <section id="series">
+       <div class="card">
+        <div class="card-header">
+            <p>
+                <i class="bi bi-info-circle"></i>
+                Informaci&oacute;n de serie
+            </p>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title">{{ serie.name }}</h2>
+            <p class="card-subtitle">Talla inicial:{{ serie.start_size }}</p>
+            <p class="card-subtitle">Talla final:{{ serie.end_size }}</p>
+            <p class="card-text">{{ serie.description }}</p>
+        </div>
+       </div>
+    </section>
+
+    <a href="{{ url_for('products.update_serie', serie_id=serie.id) }}" class="btn btn-dark text-decoration-none">Editar</a>
+    <a href="{{ url_for('products.delete_serie', serie_id=serie.id) }}" class="btn btn-secondary">Eliminar</a>
+
+{% endblock %}

@@ -13,7 +13,8 @@
                 <div class="col-md-2 p-1 form-floating">
                     
                     <input type="text" x-bind:name="'items-' + index + '-code'" x-bind:id="'items-' + index + '-code'"  
-                    x-bind:placeholder="'code'" x-model="item.code" @change="searchMaterial(item.code, index)" class="form-control" />
+                    x-bind:placeholder="'code'" x-model="item.code" @change="searchMaterial(item.code, index)"
+                    @input="item.code=item.code.toUpperCase()" class="form-control" />
                     <label x-bind:for="'items-' + index + '-code'"><small>Codigo</small></label>
                     <span x-text="item.errors.code" class="text-danger">
                         <i class="bi bi-exclamation-circle-fill"></i>

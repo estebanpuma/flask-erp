@@ -3,10 +3,10 @@
 <form action="" method="post" novalidate>
 
     {{ form.hidden_tag() }}
-
-    {{ render_input_float(form.code) }}
+    {{ render_input_float(form.group, class='form-select') }}
+    {{ render_input_float(form.code, oninput="event.target.value = event.target.value.toUpperCase()") }}
     {{ render_input_float(form.name) }}
-    {{ render_input_float(form.description) }}
+    {{ render_input_float(form.detail) }}
     {{ render_input_float(form.unit) }}
     {{ form.submit(class='btn btn-dark mt-3') }}
 

@@ -24,9 +24,9 @@
         <table class="table table-hover">
             <thead>
                 <th>Codigo</th>
+                <th>Grupo</th>
+                <th>Detalle</th>
                 <th>Nombre</th>
-                <th>Descripcion</th>
-                <th>Unidad</th>
                 <th>Error</th>
                 <th>Accion</th>
             </thead>
@@ -37,14 +37,16 @@
                     <td>
                         <input type="text" class="form-control" value="{{ error.code }}">
                     </td>
+                    <td>   
+                        <input type="text" class="form-control" value="{{ error.group }}">
+                    </td>
                     <td>
-                        
-                        <input type="text" class="form-control" value="{{ error.name }}"></td>
+                        <input type="text" class="form-control" value="{{ error.detail }}">
+                    </td>
                     <td>
-                        
-                        <input type="text" class="form-control" value="{{ error.description }}"></td>
+                        <input type="text" class="form-control" value="{{ error.name }}">
+                    </td>
                     <td>
-                        
                         <input type="" class="form-control" value="{{ error.unit }}">
                     </td>
                     <td class="bg-body-tertiary">

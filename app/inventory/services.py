@@ -7,6 +7,55 @@ from .models import Warehouse, InventoryMovement, InventoryMovementType, Invento
 
 from datetime import datetime
 
+
+class MaterialGroupServices:
+
+    @staticmethod
+    def get_all_material_groups():
+        from ..products.models import MaterialGroup
+        material_groups = MaterialGroup.query.all()
+        return material_groups
+    
+    @staticmethod
+    def get_material_group(group_id):
+        from ..products.models import MaterialGroup
+        material_group = MaterialGroup.query.get_or_404(group_id)
+        return material_group
+    
+    @staticmethod
+    def create_material_group(code:str, name:str, description:str=None):
+        from ..products.models import MaterialGroup
+        new_material_group = MaterialGroup(code=code,
+                                           name=name,
+                                           description=description)
+        try:
+            db.session.add(new_material_group)
+            db.session.commit()
+            current_app.logger.info('MaterialGroup creado con exito')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.warning(f'MaterialGroup no se pudo guardar. Error: {e}')
+            raise ValueError('Ocurrio un error al guardar MaterialGroup')
+
+    @staticmethod
+    def update_material_group(group_id:int, code:str, name:str, description:str=None):
+        from ..products.models import MaterialGroup
+        group = MaterialGroup.query.get_or_404(group_id)
+        
+        group.code = code
+        group.name = name
+        group.description = description
+
+        try:
+            db.session.add(group)
+            db.session.commit()
+            current_app.logger.info('MaterialGroup actualizado con exito')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.warning(f'MaterialGroup no se pudo guardar. Error: {e}')
+            raise ValueError('Ocurrio un error al actualizar MaterialGroup')
+
+
 class MaterialServices:
 
     @staticmethod
@@ -45,11 +94,12 @@ class MaterialServices:
         return materials
 
     @staticmethod
-    def create_material(code, name, unit, description=None):
+    def create_material(code:str, group:int, name:str, unit:str, detail:str):
         from ..products import Material
         new_material = Material(code = code,
+                                material_group_id = group,
                                 name = name,
-                                description = description,
+                                detail = detail,
                                 unit = unit)
         
         try:
@@ -58,6 +108,25 @@ class MaterialServices:
             return new_material
         except Exception as e:
             db.session.rollback()
+
+    @staticmethod
+    def update_material(material_id:int, code:str, group:int, name:str, unit:str, detail:str):
+        from ..products import Material
+        material = Material.query.get_or_404(material_id)
+        material.code = code,
+        material.material_group_id = group,
+        material.name = name,
+        material.detail = detail,
+        material.unit = unit
+        
+        try:
+            db.session.add(material)
+            db.session.commit()
+            current_app.logger.info('Material guardado')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.warning('Error al actualizar material')
+            raise ValueError(e)
 
 
 

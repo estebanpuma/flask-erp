@@ -60,6 +60,7 @@ class StockOrder(BaseModel):
     stock_order_code = db.Column(db.String(50), nullable=False, unique=True)
     request_date = db.Column(db.Date, nullable=False)
     responsible_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.String(50), default='pending')
     notes = db.Column(db.String(), nullable=True)
     
     stock_order_product_list = db.relationship('StockOrderProductList', back_populates='stock_order')

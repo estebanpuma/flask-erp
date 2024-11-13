@@ -78,3 +78,44 @@ def validate_material_code(form, field):
     material = MaterialServices.get_material_by_code(code)
     if material is None:
         raise ValidationError('El codigo no existe')
+
+
+def validate_existing_line_code(form, field):
+    code = field.data
+    
+    from ..products.services import LineServices
+    line=None
+    if line  is None:
+        raise ValidationError('El codigo ya existe')
+    
+    
+def validate_existing_color_code(form, field):
+    code = field.data
+
+    from ..products.services import ColorServices
+    color = ColorServices.get_color_by_code(code)
+    if color is not None:
+        raise ValidationError('El codigo ya existe')
+    
+
+def validate_size_value(form, field):
+    value = field.data
+    
+    from ..products.services import SeriesServices
+    all_sizes = SeriesServices.get_all_sizes()
+
+    for size in all_sizes:
+        if value == int(size.value):
+            # Obtenemos la serie para informar al usuario en cuál serie existe la talla
+            serie = SeriesServices.get_serie(size.series_id)
+            raise ValidationError(f'La talla ya existe en la serie {serie.name}')
+            
+
+def validate_serie_name(form, field):
+    name = field.data
+    from ..products.models import SizeSeries
+    serie = SizeSeries.query.filter_by(name=name).first()
+   
+    if serie:
+        # Obtenemos la serie para informar al usuario en cuál serie existe la talla
+        raise ValidationError(f'Nombre de serie ya existe')

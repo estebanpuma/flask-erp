@@ -1,0 +1,16 @@
+{% from 'macros.html' import render_input_float %}
+
+<form id="materialGroupForm" action="" method="post" novalidate x-data="groupForm">
+
+    {{ form.hidden_tag() }}
+
+    {{ render_input_float(form.code, oninput="event.target.value = event.target.value.toUpperCase()") }}
+    {{ render_input_float(form.name) }}
+    {{ render_input_float(form.description) }}
+    {{ form.submit(class='btn btn-dark mt-3') }}
+
+</form>
+
+<script>
+  
+</script>

@@ -14,11 +14,23 @@
 </section>
 
 <section>
+    {{ cardContainer(id='Explosion de materiales', name='Explosion de materiales', description='Visualizacion, creacion, edicion de modelos', url='' ) }}
+</section>
+
+<section>
     {{ cardContainer(id='Lineas', name='Lineas de productos', description='Visualizacion, creacion, edicion de lineas', url=url_for('products.view_lines') ) }}
 </section>
 
 <section>
     {{ cardContainer(id='Sublineas', name='SubLineas de productos', description='Visualizacion, creacion, edicion de lineas', url=url_for('products.view_sublines') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Colores', name='Colores de productos', description='Visualizacion, creacion, edicion de colores', url=url_for('products.view_model_colors') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Series', name='Tallas agrupadas por series', description='Visualizacion, creacion, edicion de colores', url=url_for('products.view_series') ) }}
 </section>
 
 {% endblock %}

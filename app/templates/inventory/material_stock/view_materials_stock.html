@@ -12,13 +12,28 @@
 <section>
     <div class="row">
         <div class="col">
-            <a href="{{ url_for('inventory.add_material_entry') }}" class="btn btn-dark">Nuevo ingreso</a>
+            <a href="{{ url_for('inventory.add_material') }}" class="btn btn-dark">
+                Nuevo Material
+                <i class="bi bi-plus"></i>
+            </a>
         </div>
         <div class="col">
-            <a href="{{ url_for('inventory.add_material_exit') }}" class="btn btn-dark">Nuevo Egreso</a>
+            <a href="{{ url_for('inventory.add_material_entry') }}" class="btn btn-dark">
+                Ingreso
+                <i class="bi bi-box-arrow-in-down-left"></i>
+            </a>
         </div>
         <div class="col">
-            <a href="{{ url_for('inventory.massive_upload') }}" class="btn btn-dark text-end">Carga masiva</a>
+            <a href="{{ url_for('inventory.add_material_exit') }}" class="btn btn-dark">
+                Egreso
+                <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+        </div>
+        <div class="col">
+            <a href="{{ url_for('inventory.add_bulk_materials') }}" class="btn btn-dark text-end">
+                Carga masiva
+                <i class="bi bi-boxes"></i>
+            </a>
         </div>
     </div>
     
