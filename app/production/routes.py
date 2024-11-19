@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash
+from flask import render_template, redirect, url_for, flash, request
 
 from .forms import StockOrderForm
 
@@ -72,13 +72,26 @@ def view_stock_order(stock_order_id):
                            prev_url = prev_url)
 
 
-@production_bp.route('/stock_order/create')
+@production_bp.route('/stock_order/create', methods=['GET','POST'])
 def add_stock_order():
     title = 'Nuevo Pedido para Stock'
     prev_url = url_for('production.view_stock_orders')
     form = StockOrderForm()
+    
+    ncode = ProductionSevices.get_next_so_code()
+    if form.validate_on_submit():
+        flash(form.data)
+    else:
+        flash(form.errors)
+
+    form_data = {
+        'fields': form.data,
+        'errors': form.errors
+    }
 
     return render_template('production/add_stock_order.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = form,
+                           form_data = form_data,
+                           ncode = ncode)

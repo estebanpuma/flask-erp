@@ -21,6 +21,11 @@ class ProductServices:
         return product
     
     @staticmethod
+    def get_product_by_code(code):
+        product = Product.query.filter_by(code=code).first()
+        return product
+    
+    @staticmethod
     def create_product(line_id:int, code:str, color, subline_id=None, description=None, items=None):
         line = ProductLine.query.get_or_404(line_id)
         colorin = ColorServices.get_color(color)

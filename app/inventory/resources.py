@@ -23,7 +23,7 @@ class MaterialResource(Resource):
 
         if material_id:
             material = MaterialServices.get_material(material_id)
-            return material, 200
+            return material, 200 if material else 404
         
         materials = MaterialServices.get_all_materials()
         return materials, 200

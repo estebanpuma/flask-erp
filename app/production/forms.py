@@ -1,14 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms import DateField, StringField, IntegerField, SelectField, FormField, FieldList
+from wtforms import DateField, StringField, IntegerField, SelectField, FormField, FieldList, SubmitField
 from wtforms.validators import DataRequired, Optional
+
+from .validators import validate_model_code, validate_int_qty
 
 
 class StockOrderProducts(FlaskForm):
     class Meta:
         csrf = False
-    code = StringField('Codigo', validators=[DataRequired()])
+    code = StringField('Codigo', validators=[DataRequired(), validate_model_code])
     size = IntegerField('Talla', validators=[DataRequired()])
-    qty = IntegerField('Cantidad', validators=[DataRequired()])
+    qty = IntegerField('Cantidad', validators=[DataRequired(), validate_int_qty])
     notes = StringField('Notas', validators=[Optional()])
 
 
@@ -17,7 +19,8 @@ class StockOrderForm(FlaskForm):
     request_date = DateField('Fecha de pedido', validators=[DataRequired()] )
     responsible = SelectField('Responsable', choices=[('','Seleccione un opcion')], validators=[DataRequired()])
     notes = StringField('Notas', validators=[Optional()])
-    products = FieldList(FormField(StockOrderProducts), min_entries=0)
+    items = FieldList(FormField(StockOrderProducts), min_entries=1)
+    submit = SubmitField('Guardar')
 
     def __init__(self, *args, **kwargs):
         super(StockOrderForm, self).__init__(*args, **kwargs)

@@ -13,9 +13,16 @@ class ProductResource(Resource):
     @marshal_with(product_fields)
     def get(self, product_id=None):
         try:
+            qcode = request.args.get('code')
+
+            if qcode:
+                code = qcode.upper()
+                product = ProductServices.get_product_by_code(code)
+                return product, 200 if product else 404
+            
             if product_id:
                 product = ProductServices.get_product(product_id)
-                return product, 200
+                return product, 200 if product else 404
             
             products = ProductServices.get_all_products()
             return products, 200
