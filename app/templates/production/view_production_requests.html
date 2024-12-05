@@ -16,22 +16,28 @@
 </section>
 
 <section>
-    <h3>Pedidos para stock</h3>
+    <h3>Pedidos de produccion</h3>
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
-                <th>Codigo</th>
                 <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Codigo</th>
+                <th>Responsable</th>
                 <th>Status</th>
             </thead>
             <tbody>
-                {% for stock_order in stock_orders %}
-                <tr data-url="{{ url_for('production.view_stock_order', stock_order_id=stock_order.id) }}" style="cursor: pointer;" onclick="redirectTo()">
-                    <td>{{ stock_order.stock_order_code }}</td>
-                    <td>{{ stock_order.request_date }}</td>
-                    <td>{{ stock_order.status }}</td>
+                {% if production_requests %}
+                {% for pr in production_requests %}
+                <tr data-url="{{ url_for('production.view_production_request', production_request_id=pr.id) }}" style="cursor: pointer;" onclick="redirectTo()">
+                    <td>{{ pr.request_date }}</td>
+                    <td>{{ pr.order_type }}</td>
+                    <td>{{ pr.order_number }}</td>
+                    <td>{{ pr.responsible }}</td>
+                    <td>{{ pr.status }}</td>
                 </tr>
                 {% endfor %}
+                {% endif %}
             </tbody>
         </table>
 

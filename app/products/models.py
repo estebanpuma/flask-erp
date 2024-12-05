@@ -148,7 +148,7 @@ class Size(BaseModel):
     __tablename__ = 'sizes'
 
     id = db.Column(db.Integer, primary_key=True)
-    value = db.Column(db.String(10), nullable=False, unique=True)  # Ejemplo: '40', 'M', '10'
+    value = db.Column(db.String(10), nullable=False)  # Ejemplo: '40', 'M', '10'
     
     series_id = db.Column(db.Integer, db.ForeignKey('size_series.id'), nullable=False )
     series = db.relationship('SizeSeries', back_populates='sizes')

@@ -71,6 +71,6 @@ class SerieForm(FlaskForm):
 
     name = StringField('Nombre', validators=[DataRequired(), validate_serie_name])
     description = TextAreaField('Descripcion', validators=[Optional()])
-    start_size = IntegerField('T. Inical', validators=[DataRequired(), validate_size_value])
-    end_size = IntegerField('T. FInal', validators=[DataRequired(), validate_size_value])
+    start_size = IntegerField('T. Inical', validators=[DataRequired()])
+    end_size = IntegerField('T. FInal', validators=[DataRequired()])
     submit = SubmitField('Guardar')

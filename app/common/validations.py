@@ -78,6 +78,10 @@ def validate_material_code(form, field):
     material = MaterialServices.get_material_by_code(code)
     if material is None:
         raise ValidationError('El codigo no existe')
+    
+def validate_scheduled_end_date(form, field):
+    if field.data <= form.scheduled_start_date.data:
+        raise ValidationError('La fecha de fin debe ser posterior a la de inicio.')
 
 
 def validate_existing_line_code(form, field):

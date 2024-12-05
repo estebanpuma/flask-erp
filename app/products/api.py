@@ -1,7 +1,7 @@
 from flask_restful import Api\
 
 from .resources import ProductResource, LineResource, SubLineResource, ColorResource, NextCodeModelResource, SizeSeriesResource
-from .resources import ProcessBoomFileResource
+from .resources import ProcessBoomFileResource, SizeResource
 
 from . import products_bp
 
@@ -18,6 +18,8 @@ products_api.add_resource(SubLineResource, '/api/v1/sublines', '/api/v1/sublines
 products_api.add_resource(ColorResource, '/api/v1/colors', '/api/v1/colors/<int:color_id>')
 
 products_api.add_resource(SizeSeriesResource, '/api/v1/sizeSeries', '/api/v1/sizeSeries/<int:serie_id>')
+
+products_api.add_resource(SizeResource, '/api/v1/sizes', '/api/v1/sizes/<int:size_id>')
 
 products_api.add_resource(ProcessBoomFileResource, '/api/v1/bomfile/upload')
 

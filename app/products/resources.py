@@ -4,8 +4,8 @@ from flask_restful import Resource, marshal, marshal_with, abort
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from .services import ProductServices, SublineServices, LineServices,ColorServices, SeriesServices, BoomServices
-from .schemas import product_fields, line_fields, subline_fields, color_fields, size_series_fields
+from .services import ProductServices, SublineServices, LineServices,ColorServices, SeriesServices, BoomServices, SizeServices
+from .schemas import product_fields, line_fields, subline_fields, color_fields, size_series_fields, size_fields
 
 
 class ProductResource(Resource):
@@ -114,6 +114,36 @@ class SizeSeriesResource(Resource):
                 return serie, 200
             series = SeriesServices.get_all_series()
             return series, 200
+        except SQLAlchemyError as e:
+            current_app.logger.error(f'Error fetching color(s): {e}')
+            abort(500, message=f"Internal server error: {e}")
+        except Exception as e:
+            current_app.logger.error(f'Unexpected error: {e}')
+            abort(500, message=f"Unexpected error occurred {e}")
+
+
+class SizeResource(Resource):
+
+    @marshal_with(size_fields)
+    def get(self, size_id=None):
+        try:
+            value = request.args.get('value')
+            
+            if value:
+                size = SizeServices.get_size_by_value(value)
+                if size is None:
+                    abort(404, message='No encontrado')
+                return size, 200
+
+            if size_id:
+                size = SizeServices.get_size(size_id)
+                if size is None:
+                    abort(404, message='No encontrado')
+                return size, 200
+            
+            sizes = SizeServices.get_all_sizes()
+            return sizes, 200
+        
         except SQLAlchemyError as e:
             current_app.logger.error(f'Error fetching color(s): {e}')
             abort(500, message=f"Internal server error: {e}")

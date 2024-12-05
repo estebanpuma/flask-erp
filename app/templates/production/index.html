@@ -12,7 +12,11 @@
 
 
 <section>
-    {{ cardContainer(id='Ordenes de Produccion', name='Ordenes de produccion', description='Visualizacion, creacion, edicion de ordenes de produccion y estado', url='#' ) }}
+    {{ cardContainer(id='Ordenes de Produccion', name='Ordenes de produccion', description='Visualizacion, creacion, edicion de ordenes de produccion y estado', url=url_for('production.view_production_orders') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Requerimientos de produccion', name='Requerimientos', description='Visualizacion, creacion, edicion de requerimientos de produccion', url=url_for('production.view_production_requests') ) }}
 </section>
 
 <section>

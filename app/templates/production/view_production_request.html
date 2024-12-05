@@ -8,30 +8,35 @@
 <section id="header">
     {% include '__title.html' %}
 </section>
-
+<p>{{ production_request_id }}</p>
 <section>
-    <div class="row border rounded mb-3" x-data="viewStockOrder({{ stock_order_id }})">
+    <div class="row border rounded mb-3" x-data="viewProductionRequest({{ production_request_id }})">
         <div class="col-10">
+            
             <div class="text-muted fs-5 fw-bold d-flex flex-row" >
-               <p > Orden de stock N. </p>
-               <p  x-text="stock_order.code"></p>
+               <p > Orden Numero: </p>
+               <p  x-text="request.order_number"></p>
             </div>
+            <div class="fs-6 row" >
+                <p class="col-6 text-muted fw-semibold"> Tipo: </p>
+                <p class="col-6" x-text="request.type"></p>
+             </div>
             <div class="fs-6 row">
                 <p class="col-6">Fecha de requisicion:</p>
-                <p class="col-6" x-text="stock_order.request_date"></p>
+                <p class="col-6" x-text="request.request_date"></p>
             </div>
             <div class="fs-6 row">
                 <p class="col-6">Estado:</p>
                 <div class="col-6" >
                     <span 
-                        :class="badgeClasses[stock_order.status] || 'badge rounded-pill text-bg-secondary'" 
-                        x-text="stock_order.status">
+                        :class="badgeClasses[request.status] || 'badge rounded-pill text-bg-secondary'" 
+                        x-text="request.status">
                     </span>
                 </div>
             </div>
             <div class="fs-6 row">
                 <p class="col-6">Solicitante:</p>
-                <p class="col-6" x-text="stock_order.responsible"></p>
+                <p class="col-6" x-text="request.responsible"></p>
             </div>
             <div class="mt-3">
                 Lista de modelos solicitados
@@ -45,11 +50,10 @@
                         <tbody>
                             <template x-for="(model, index) in models" :key="index">
                                 <tr>
-                                    <td x-text="model.code">
-
-                                    </td>
-                                    <td x-text="model.size"></td>
-                                    <td x-text="model.qty"></td>
+                                    <td x-text="model.product_code"></td>
+                                    <td x-text="model.product_size"></td>
+                                    <td x-text="model.product_qty"></td>
+                                    <td x-text="model.product_notes"></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -61,15 +65,11 @@
     </div>
 </section>
 <section>
-    <div class="d-flex flex-row justify-content-between">
-        <a href="{{ url_for('production.delete_stock_order', stock_order_id=stock_order_id) }}" class="btn btn-dark">Eliminar</a>
-        <a href="" class="btn btn-secondary">Cancelar</a>
-        <a href="" class="btn btn-primary">Editar</a>
-    </div>
+    
    
 </section>
 
-<script src="{{ url_for('static', filename='js/components/viewStockOrder.js') }}">
+<script src="{{ url_for('static', filename='js/components/viewProductionRequest.js') }}">
 
 </script>
 

@@ -13,4 +13,4 @@ class BaseModel(db.Model):
 class SoftDeleteMixin:
     __abstract__ = True
 
-    is_active = db.Column(db.Boolean, default=False)
+    is_active = db.Column(db.Boolean, default=True)

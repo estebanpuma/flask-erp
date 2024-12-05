@@ -165,6 +165,26 @@ class ColorServices:
             current_app.logger.warning(f'Error al cuargar color e:{e}')
 
 
+class SizeServices:
+
+    @staticmethod
+    def get_all_sizes():
+        sizes = Size.query.all()
+        return sizes
+    
+    @staticmethod
+    def get_size(size_id):
+        size = Size.query.get_or_404(size_id)
+        return size
+    
+    @staticmethod
+    def get_size_by_value(value):
+        size = Size.query.filter_by(value=value).first()
+        if size is None:
+            return None
+        return size
+
+
 class SeriesServices:
 
     @staticmethod
@@ -177,6 +197,17 @@ class SeriesServices:
         serie = SizeSeries.query.get_or_404(serie_id)
         return serie
     
+    @staticmethod
+    def get_serie_by_size(size_value):
+        try:
+            size_obj = SizeServices.get_size_by_value(str(size_value))
+            serie = size_obj.series.name
+            return serie
+        except Exception as e:
+            current_app.logger.warning('No se puede obtener la serie')
+            raise e
+
+
     @staticmethod
     def get_serie_by_code(query):
         print(query)

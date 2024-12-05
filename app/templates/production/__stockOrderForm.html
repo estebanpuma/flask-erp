@@ -7,7 +7,7 @@
         <div class="form-floating">
             <input type="text" x-bind:name="'code'" x-bind:id="'code'"  
             x-bind:placeholder="'code'" x-model="item.code"
-            @input="item.code=item.code.toUpperCase()" class="form-control" />
+            class="form-control" />
             <label x-bind:for="'code'">Codigo</label>
             <div>
                 <template x-for="(error, index) in itemErrors.code" :key="index"> 
@@ -19,8 +19,17 @@
         <div class="form-floating">           
             <input type="date" x-bind:name="'request_date'" x-bind:id="'request_date'"  
             x-bind:placeholder="'date'" x-model="item.request_date" class="form-control"  />
-            <label x-bind:for="'date'">Fecha</label>
+            <label x-bind:for="'date'">Fecha de pedido</label>
             <span x-text="itemErrors.request_date" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+
+        <div class="form-floating">           
+            <input type="date" x-bind:name="'delivery_date'" x-bind:id="'delivery_date'"  
+            x-bind:placeholder="'date'" x-model="item.delivery_date" class="form-control"  />
+            <label x-bind:for="'date'">Fecha de entrega</label>
+            <span x-text="itemErrors.delivery_date" class="text-danger">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
         </div>
@@ -84,7 +93,12 @@
                                 </template>
                             </td>
                             <td>
-                                <p x-model="item.code_check" x-text="item.code_check"> </p>
+                                <div x-show="item.code_check==true">
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                </div>
+                                <div x-show="item.code_check==false">
+                                    <i class="bi bi-exclamation-circle-fill text-danger"></i>
+                                </div>
                             </td>
                             <td>
                                 <input type="number" x-bind:name="'items-' + index + '-size'" class="form-control"

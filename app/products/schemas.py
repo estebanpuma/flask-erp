@@ -38,3 +38,9 @@ size_series_fields = {
     'start_size': fields.Integer,
     'end_size': fields.Integer,
 }
+
+size_fields = {
+    'id': fields.Integer,
+    'value': fields.String,
+    'series_id': fields.Integer,
+}
