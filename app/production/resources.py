@@ -131,10 +131,23 @@ class ConsolidatedOrdersItemsResource(Resource):
         try:
             items = ProductionServices.get_consolidated_items(order_id)
             return items, 200 if items else abort(404, message=f'No encontrado')
-            return 'jola'
         except SQLAlchemyError as e:
             current_app.logger.warning(f'Error next so code(s): {e}')
             abort(500, message="Internal server error")
         except Exception as e:
             current_app.logger.warning(f'Unexpected error: {e}')
             abort(500, message=f"Unexpected error occurred {e}")
+
+
+class OrderMaterialsResource(Resource):
+    def get(self, order_id):
+        try:
+            materials = ProductionServices.get_consolidated_order_materials(order_id)
+            return materials if materials else abort(404, message='nones')
+        except SQLAlchemyError as e:
+            current_app.logger.warning(f'Error (s): {e}')
+            abort(500, message="Internal server error")
+        except Exception as e:
+            current_app.logger.warning(f'Unexpected error: {e}')
+            abort(500, message=f"Unexpected error occurred {e}")
+        

@@ -7,7 +7,7 @@
         
         <div class="form-floating">
                     
-            <select x-bind:name="'line_id'" x-bind:id="'line_id'" 
+            <select x-bind:name="'line'" x-bind:id="'line'" 
             x-bind:placeholder="'line'" x-model="item.line" 
             @change="updateCode()"
             class="form-select" required>
@@ -16,7 +16,7 @@
                     <option :value="line.id" x-text="line.code+ '-'+ line.name" ></option>
                 </template>
             </select>
-            <label for="line_id">Linea</label>
+            <label for="line">Linea</label>
             <span x-text="item.errors.line" class="text-danger">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
@@ -24,7 +24,7 @@
 
         <div class="form-floating">
                     
-            <select x-bind:name="'subline_id'" x-bind:id="'subline_id'" 
+            <select x-bind:name="'subline'" x-bind:id="'subline'" 
             x-bind:placeholder="'subline'" x-model="item.subline" 
             @change="updateCode()"
             class="form-select" required>
@@ -85,78 +85,88 @@
       
         <section id="fileData">
             <h2 class="my-3">Explosi&oacute;n de materiales</h2>
-            <div class="table-responsive">
-                <table class="table table-hover">
-
-                    <thead>
-                        <th>Serie</th>
-                        <th>C&oacute;digo</th>
-                        <th >Descripción</th>
-                        <th></th>
-                        <th></th>
-                        <th>Cantidad</th>
-                        <th>Unidad</th>
-                        <th></th>
-                    </thead>
-                    <tbody>
-                        <template x-for="(item, index) in items" :key="index">
-                            <tr >
-                                
-                                <td class="px-1">
-                                              
-                                    <input type="text" x-bind:name="'items-' + index + '-serie'" class="form-control px-1"
+            <div class="container">
+                <template x-for="(item, index) in items" :key="index">
+                    <div>
+                        <div class="row">
+                            <div x-text="'Item '+(toInt(index)+1)" class="col fs-5"></div>
+                            <div class="col-2">
+                                <button type="button" class="btn btn-close" @click="removeItem(index)"></button>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2 px-0">
+                                <div class="form-floating mb-3">           
+                                    <input type="text" x-bind:name="'items-' + index + '-serie'" class="form-control"
                                     x-model="item.serie" x-bind:id="'items-' + index + '-serie'" @input="item.serie=item.serie.toUpperCase()"
                                     @change="searchSerie(item.serie, index)"> 
+        
+                                    <label :for="'items-' + index + '-serie'">Serie</label>
                                     <span x-text="itemErrors.serie" class="text-danger">
                                         <i class="bi bi-exclamation-circle-fill"></i>
                                     </span>
-                                       
-                                </td>
-        
-                                <td class="px-1">                           
-                                    <input type="text" x-bind:name="'items-' + index + '-code'" class="form-control px-1"
+                                </div>  
+                            </div>
+
+                            <div class="col-md-2 px-0">
+                                <div class="form-floating mb-3">           
+                                    <input type="text" x-bind:name="'items-' + index + '-code'" class="form-control"
                                     x-model="item.code" x-bind:id="'items-' + index + '-code'" @change="searchMaterial(item.code, index)"
                                     @input="item.code=item.code.toUpperCase()">  
+        
+                                    <label :for="'items-' + index + '-code'">C&oacute;digo</label>
                                     <span x-text="itemErrors.code" class="text-danger">
                                         <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span>         
-                                </td>
-                                    
-                                <td class="px-1" colspan="3">
-                                    <p type="text"  x-bind:name="'items-' + index + '-detail'"  class="px-1"
-                                    x-model="item.detail" x-bind:id="'items-' + index + '-detail'" x-text="item.detail"></p>
+                                    </span>
+                                </div>  
+                            </div>
+                            
+                            <div class="col-md-4 px-0">
+                                <div class="form-floating mb-3">           
+                                    <input type="text" readonly x-bind:name="'items-' + index + '-detail'"  class="form-control"
+                                    x-model="item.detail" x-bind:id="'items-' + index + '-detail'" x-text="item.detail"></input>
+        
+                                    <label :for="'items-' + index + '-detail'">Detalle</label>
                                     <span x-text="itemErrors.detail" class="text-danger">
                                         <i class="bi bi-exclamation-circle-fill"></i>
                                     </span>
-                                    
-                                </td>
-                                <td class="px-1">                        
-                                    <input type="number" x-bind:name="'items-' + index + '-qty'"  class="form-control px-1"
+                                </div>  
+                            </div>
+                            <div class="col-md-2 px-0">
+                                <div class="form-floating mb-3">           
+                                    <input type="number" x-bind:name="'items-' + index + '-qty'"  class="form-control"
                                     x-model="item.qty" x-bind:id="'items-' + index + '-qty'">
-                                    
+                                    <label :for="'items-' + index + '-qty'">Cantidad</label>
                                     <span x-text="itemErrors.qty" class="text-danger">
                                         <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span> 
-                                </td>
-                                <td class="px-1">                           
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-1 px-0">
+                                <div class="form-floating mb-3">           
                                     <input type="text" readonly  x-bind:name="'items-' + index + '-unit'" class="form-control-plaintext" 
                                     x-model="item.unit" x-bind:id="'items-' + index + '-unit'" x-text="item.unit"></input>
-                                    
+                                    <label :for="'items-' + index + '-unit'">Unidad</label>
                                     <span x-text="itemErrors.unit" class="text-danger">
                                         <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span>    
-                                </td>                    
-                            
-                                <td >
-                                    <button type="button" class="btn btn-close" @click="removeItem(index)"></button>
-                                </td>
+                                    </span>
+                                </div>
                                 
-                            </tr>
+                            </div>
                             
-                        </template>
-                    </tbody>
-                
-                </table>
+                        </div>
+                        
+                        <div>
+                            <template x-for="error in item.errors">
+                                <p x-bind:name="'items-' + index + '-errors'" 
+                                x-model="error.errors" x-bind:id="'items-' + index + '-errors'" x-text="error"></p>
+                            </template>
+                        </div>
+                        
+                    </div>
+                    
+                </template>
+
             
                 <button type="button" @click="addItem()" class="btn btn-secondary">Add Item</button>
             </div>
@@ -383,8 +393,7 @@
                 this.item.subline = form_data.subline
                 this.item.color = form_data.color
                 this.item.errors = form_data.errors
-                console.log('item', this.item)
-                
+                console.log('errore sinside isi', this.item.errors)
             }
             if (boomMaterials!=undefined && boomMaterials.length > 0) {
                 console.log(boomMaterials)

@@ -1,4 +1,4 @@
-from flask_restful import Resource, abort, marshal, marshal_with
+from flask_restful import Resource, abort, marshal, marshal_with, request
 from sqlalchemy.exc import SQLAlchemyError
 
 from flask import jsonify, make_response, current_app
@@ -11,7 +11,18 @@ class UserResource(Resource):
 
     @marshal_with(user_fields)
     def get(self, user_id=None):
+        
+        
         try:
+            q=request.args.get('role')
+            print(q)
+            if q:
+                users = AdminServices.get_users_by_type(q)
+                print(q, users)
+                return users, 200 if users else abort(404)
+
+
+            users = AdminServices.get_users_with_role_codes
             if user_id:
                 user = AdminServices.get_user(user_id)
                 if not user:

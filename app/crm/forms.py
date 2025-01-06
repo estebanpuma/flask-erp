@@ -13,7 +13,8 @@ class ClientForm(FlaskForm):
         validators=[DataRequired()]
     )
     ruc_or_ci = StringField('RUC/CI', validators=[DataRequired(message="Este campo es obligatorio."), validate_ruc_or_ci])
-    is_ci = BooleanField('CI', validators=[Optional()])
+    is_special_taxpayer = BooleanField('Especial', validators=[Optional()])
+    #is_ci = BooleanField('CI', validators=[Optional()])
     name = StringField('Nombre', validators=[DataRequired(message="Este campo es obligatorio.")])
     city = StringField('Ciudad', validators=[DataRequired()])
     address = StringField('Direccion', validators=[Optional()])

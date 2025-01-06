@@ -52,15 +52,15 @@
                             <th>Viajera</th>
                         </thead>
                         <tbody>
-                            <template x-for="(model, index) in models" :key="index">
+                            <template x-for="(item, index) in items" :key="index">
                                 <tr>
-                                    <td x-text="model.code"></td>
-                                    <td x-text="model.line"></td>
-                                    <td x-text="model.subline"></td>
-                                    <td x-text="model.serie"></td>
-                                    <td x-text="model.size"></td>
-                                    <td x-text="model.qty"></td>
-                                    <td x-text="model.batch"></td>
+                                    <td x-text="item.code"></td>
+                                    <td x-text="item.line"></td>
+                                    <td x-text="item.subline"></td>
+                                    <td x-text="item.series"></td>
+                                    <td x-text="item.size"></td>
+                                    <td x-text="item.qty"></td>
+                                    <td x-text="item.batch"></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -70,6 +70,10 @@
         </div>
         
     </div>
+</section>
+<section>
+    <h2>Total</h2>
+    <p x-text="totals.qty"></p>
 </section>
 <section>
     <div class="d-flex flex-row justify-content-between">

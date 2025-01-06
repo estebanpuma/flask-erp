@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+
+<section>
+    {% include 'payments/__payment_methodForm.html' %}
+</section>
+
+{% endblock %}

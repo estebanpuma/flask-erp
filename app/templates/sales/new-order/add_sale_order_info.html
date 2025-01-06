@@ -15,30 +15,66 @@
 
     <div class="container mt-4">
         <h1 class="mb-3">Datos Generales</h1>
-        <form>
-            <div class="mb-3">
-                <label for="orderNumber" class="form-label">Order Number</label>
-                <input type="text" class="form-control" id="orderNumber" value="{{order_number}}">
+        <form id="OrderInfoForm" method="post" x-data="sale_orderInfoForm()" x-init='loadFormData({{form.data|tojson}}), loadFormErrors({{form.errors|tojson}})' novalidate>
+            {{form.hidden_tag()  }}
+            <div class="form-floating">           
+                <input type="number" x-bind:name="'order_number'" x-bind:id="'order_number'"  
+                x-bind:placeholder="'orden'" x-model="order.order_number" class="form-control"  />
+                <label x-bind:for="'order_number'">Numero de orden</label>
+                <span x-text="orderErrors.order_number" class="text-danger">
+                    <i class="bi bi-exclamation-circle-fill" ></i>
+                </span>
             </div>
-            <div class="mb-3">
-                <label for="orderDate" class="form-label">Order Date</label>
-                <input type="date" class="form-control" id="orderDate" value="{{today}}">
+            
+            <div class="form-floating">           
+                <input type="date" x-bind:name="'request_date'" x-bind:id="'request_date'"  
+                x-bind:placeholder="'orden'" x-model="order.request_date" class="form-control"  />
+                <label x-bind:for="'request_date'">Fecha de pedido</label>
+                <span x-text="orderErrors.request_date" class="text-danger">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </span>
             </div>
-            <div class="mb-3">
-                <label for="salesPerson" class="form-label">Salesperson</label>
-                <select name="salesperson" id="salesperson" class="form-select">
-                    <option value="">Seleccione una opcion</option>
-                    {% for salesperson in salespersons %}
-                    <option value="{{ salesperson.id }}" 
-                    {% if salesperson.id == current_user.id %}selected{% endif %}>{{ salesperson.username }}</option>
-                    {% endfor %}
+
+            <div class="form-floating">           
+                <input type="date" x-bind:name="'delivery_date'" x-bind:id="'delivery_date'"  
+                x-bind:placeholder="'orden'" x-model="order.delivery_date" class="form-control"  />
+                <label x-bind:for="'delivery_date'">Fecha de entrega</label>
+                <span x-text="orderErrors.delivery_date" class="text-danger">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </span>
+            </div>
+
+            <div class="form-floating">       
+                <select x-bind:name="'salesperson'" x-bind:id="'salesperson'" 
+                x-bind:placeholder="'salesperson'" x-model="order.salesperson" 
+                class="form-select">
+                    <option value="">Seleccione un responsable</option>
+                    <template x-for="user in users" :key="user.id">
+                        <option :value="user.id" x-text="user.username" 
+                        x-bind:selected="user.id == order.salesperson" ></option>
+                    </template>
                 </select>
+                <label for="salesperson">Responsable</label>
+                <div>
+                    <template x-for="(error, index) in orderErrors.salesperson" :key="index">
+                        <span class="text-danger" x-text="error">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                        </span>
+                    </template>
+                </div>
+    
             </div>
-            <a class="btn btn-dark" href="{{ next_url }}">Siguiente</a>
+
+            <input class="btn btn-dark" type="submit" name="submit" id="submit" value="Siguiente">
+
+
+            
         </form>
     </div>
 
 
+    <script src="{{ url_for('static', filename='js/components/sales/sale_orderInfoForm.js') }}">
 
+    </script>
 
 {% endblock %}

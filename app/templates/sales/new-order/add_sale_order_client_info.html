@@ -13,41 +13,188 @@
     {% include '/sales/new-order/__sale_order_nav.html' %}
 </section>
 
-<section id="search">
-    <div class="container mb-4">
-
-        <form role="search" class="d-flex justify-content-center">
-            <div class="d-flex flex-fill align-items-center">
-                <div class="input-group mb-4">
-                    <span class="input-group-text bg-white"><i class="bi bi-search fs-5  mx-auto"></i></span>
-                    <div class="form-floating">
-                        <input id="docsearch-input" name="docsearch-input" class="form-control" type="search" placeholder="Buscar" aria-label="Search" style="background: transparent;"
-                            aria-autocomplete="both" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="64">
-                        <label for="docsearch-input">Buscar</label>
-                      
-                    </div>
-                </div>
-              
-            </div>
-        </form>
-
-        <div>      
-            <ul id="docsearch-list" class="list-group">
-                <!-- Aqui se mostraran los resultados -->
-
-            </ul>                
-        </div>    
-
-    </div>
-</section>
-
-
-<div class="container mt-3">
+<div x-data="sale_orderClientForm()" class="mb-3">
+    <div x-model="modal">
+        <!-- Botón para abrir el modal 
+        <button @click="modal = true" class="btn btn-primary">Abrir Modal</button>-->
     
-    {% include 'crm/__clientForm.html' %}
+        <!-- Modal -->
+        <div x-show="modal" 
+            class="fixed z-50 bg-white p-6 rounded-lg shadow-lg w-1/3"
+            style="display: none; top: 50%; left: 50%; transform: translate(-50%, -50%);"
+                @click.away="modal = false" 
+             @keydown.escape.window="open = false">
+            
+            <div class="bg-white rounded-lg p-6 w-1/3">
+                <!-- Título del Modal -->
+                <h2 class="text-xl font-bold mb-4">Título del Modal</h2>
+    
+                <!-- Contenido del Modal -->
+                <p class="mb-4">Este es el contenido del modal. Aquí puedes incluir formularios, texto o cualquier elemento.</p>
+    
+                <!-- Botones de acción -->
+                <div class="flex justify-end">
+                    <button @click="modal = false" class="btn btn-secondary mr-2">Cancelar</button>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Input de búsqueda -->
+    <form role="search" class="d-flex justify-content-center">
+        <div class="d-flex flex-fill align-items-center">
+            <div class="input-group mb-4">
+                <span class="input-group-text bg-white"><i class="bi bi-search fs-5  mx-auto"></i></span>
+                <div class="form-floating">
+                    <input x-model="query" id="docsearch-input" name="docsearch-input" class="form-control" type="search" placeholder="Buscar" aria-label="Search" style="background: transparent;"
+                        aria-autocomplete="both" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="64" @input="search()">
+                    <label for="docsearch-input">Buscar</label>
+                  
+                </div>
+            </div>
+          
+        </div>
+    </form>
+    
+    <!-- Resultados -->
+    <ul id="docsearch-list" x-show="results.length > 0" class="border rounded container p-3 list-group">
+        <template x-for="(item, index) in results" :key="index">
+            <li @click="selectClient(item)"
+                class="list-group-item d-flex justify-content-between align-items-start btn border list-group-item-action">
+                <div class="ms-2 me-auto">
+                    <div class="fw-medium fs-6" x-text="item.ruc_or_ci"></div>
+                    <div class="fw-bold" x-text="item.name"></div>
+                    <div>Ciudad</div>
+                </div>
+                <i class="bi bi-chevron-right"></i>
+            </li>
+        </template>
+    </ul>
+    <!-- Formulario -->
+    <form id="clientForm" novalidate method="post">
+        {{ form.hidden_tag() }}
+        <div class="input-group">
+            <div class="form-floating">           
+                <input x-bind:name="'ruc_or_ci'" x-bind:id="'ruc_or_ci'"  
+                x-bind:placeholder="'ruc/ci'" x-model="client.ruc_or_ci" class="form-control" >
+                </input>
+                <label x-bind:for="'ruc_or_ci'">RUC o CI</label>
+                <span x-text="clientErrors.ruc_or_ci" class="text-danger">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </span>
+            </div>
+            <div class="input-group-text rounded-bottom-0">
+                <div>
+                    <label class="" for="is_special_taxpayer">
+                        <small>
+                            <div>Cont</div>
+                            <div>Especial</div>
+                        </small>
+                    </label>
+                    <input type="checkbox" name="is_special_taxpayer" id="is_special_taxpayer" class="form-check-input">
+                </div>
+                
+            </div>
+        </div>
+        <div class="form-floating">           
+            <select x-bind:name="'client_type'" x-bind:id="'client_type'"  
+            x-bind:placeholder="'client'" x-model="client.client_type" class="form-select" >
+                <option value="">Seleccione tipo cliente</option>
+                <option value="natural" x-bind:selected="client.client_type=='natural'">Natural</option>
+                <option value="juridica" x-bind:selected="client.client_type=='juridica'">Juridica</option>
+            </select>
+            <label x-bind:for="'client_type'">Tipo de personería</label>
+            <span x-text="clientErrors.client_type" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+        
+        <div class="form-floating">           
+            <input x-bind:name="'name'" x-bind:id="'name'"  
+            x-bind:placeholder="'ruc/ci'" x-model="client.name" class="form-control" >
+            </input>
+            <label x-bind:for="'name'">Nombre o razon social</label>
+            <span x-text="clientErrors.name" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+        <div class="form-floating">           
+            <input x-bind:name="'email'" x-bind:id="'email'"  
+            x-bind:placeholder="'email'" x-model="client.email" class="form-control" >
+            </input>
+            <label x-bind:for="'email'">Email</label>
+            <span x-text="clientErrors.email" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+        <div class="form-floating">           
+            <input x-bind:name="'city'" x-bind:id="'city'"  
+            x-bind:placeholder="'city'" x-model="client.city" class="form-control" >
+            </input>
+            <label x-bind:for="'city'">Ciudad</label>
+            <span x-text="clientErrors.city" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+        <div class="form-floating">           
+            <input x-bind:name="'address'" x-bind:id="'address'"  
+            x-bind:placeholder="'address'" x-model="client.address" class="form-control" >
+            </input>
+            <label x-bind:for="'address'">Direccion</label>
+            <span x-text="clientErrors.address" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+        <div class="form-floating">           
+            <input x-bind:name="'phone'" x-bind:id="'phone'"  
+            x-bind:placeholder="'phone'" x-model="client.phone" class="form-control" >
+            </input>
+            <label x-bind:for="'phone'">Telefono</label>
+            <span x-text="clientErrors.phone" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
+        </div>
+        <input type="submit" name="submit" id="submit" class="btn btn-dark" value="Guardar">
+        <button class="btn btn-secondary" type="reset" x-model="cleanAll()" >Limpiar</button>
+    </form>
 </div>
 
-<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
+
+<script >
+
+function sale_orderClientForm() {
+    return {
+        query: '',
+        results: [],
+        client: {},
+        clientErrors:{},
+        modal: false,
+
+        // Función para buscar clientes
+        search() {
+            if (this.query.length > 0) {
+                fetch(`/api/v1/search/client?q=${this.query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        this.results = data;
+                    })
+                    .catch(error => console.error('Error al buscar clientes:', error));
+            } else {
+                this.results = [];
+            }
+        },
+
+        // Función para seleccionar un cliente
+        selectClient(item) {
+            this.client = item;
+            console.log(this.client)
+            this.results = []; // Ocultar resultados después de seleccionar
+        }
+    };
+}
+
+</script>
+
 
 {% endblock %}
-

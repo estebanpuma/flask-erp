@@ -2,8 +2,13 @@ from .models import StockOrder, ProductionOrder, ProductionRequirement, StockOrd
 from app import db
 from flask import current_app
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 from datetime import datetime
+from collections import defaultdict
 import pytz
+from sqlalchemy.sql.expression import tuple_
+
+
 
 
 class ProductionServices:
@@ -112,11 +117,9 @@ class ProductionServices:
             # Obtener datos consolidados
             sales_items = ProductionServices.get_consolidated_items_from_sales(production_order)
             stock_items = ProductionServices.get_consolidated_items_from_stock(production_order)
-            print('estos son los stock items consolidades')
-            print(stock_items)
             # Consolidar los datos
             consolidated_data = ProductionServices.merge_consolidated_data(sales_items, stock_items)
-            print(consolidated_data)
+ 
             # Guardar datos consolidados
             ProductionServices.save_consolidated_data(order_id, consolidated_data)
 
@@ -150,7 +153,7 @@ class ProductionServices:
 
     def get_consolidated_items_from_stock(production_order):
         """Obtiene los datos consolidados de los requerimientos de stock."""
-        from sqlalchemy import func
+
         from ..products.models import Product
         # Paso 1: Seleccionar campos necesarios, incluyendo el code
         filtered_query = db.session.query(
@@ -180,8 +183,6 @@ class ProductionServices:
         # Paso 3: Ejecutar el query y obtener los resultados
         items = grouped_query.all()
 
-        # Imprimir los resultados para depuración
-        print('Consolidated items from stock with model_code:', items)
         return items
         
 
@@ -191,18 +192,15 @@ class ProductionServices:
         for item in sales_items + stock_items:
             key = (item.product_id, item.code, item.product_serie, item.product_size)
             consolidated_data[key] = consolidated_data.get(key, 0) + item.total_qty
-        
-        print(consolidated_data)
+
         return consolidated_data
 
     def get_consolidated_items(order_id):
         """
         Obtener ítems consolidados para una orden de producción.
         """
-        print(f'ingresa a def get con orderId={order_id}')
         consolidated_items = ConsolidatedProductionItem.query.filter_by(production_order_id=order_id).all()
-        print('consigue consolidated tems')
-        print(consolidated_items)
+
         return consolidated_items
 
     def save_consolidated_data(order_id, consolidated_data):
@@ -210,6 +208,7 @@ class ProductionServices:
         try:
             for (id, code, series, size), total_quantity in consolidated_data.items():
                 consolidated_item = ConsolidatedProductionItem(
+                    model_id = id,
                     production_order_id=order_id,
                     model_code=code,
                     series=series,
@@ -228,6 +227,77 @@ class ProductionServices:
         current_app.logger.warning(f'Error al consolidar datos: {exception}')
         db.session.rollback()
 
+
+    def get_consolidated_order_materials(order_id):
+        # Obtener los ítems consolidados
+        items = ProductionServices.get_consolidated_items(order_id)
+
+        # Crear una lista con los datos relevantes (model_id, series, qty)
+        consolidated_items = [(item.model_id, item.series, item.total_quantity) for item in items]
+        print(consolidated_items)
+        # Crear un diccionario para almacenar las sumas
+        sums = {}
+
+        # Iterar sobre la lista y sumar los valores
+        for item in consolidated_items:
+            key = (item[0], item[1])  # Clave basada en los dos primeros valores
+            if key in sums:
+                sums[key] += item[2]  # Sumar el tercer valor
+            else:
+                sums[key] = item[2]  # Iniciar la suma si no existe la clave
+
+        # Convertir el resultado de nuevo a una lista de tuplas
+        result = [(key[0], key[1], total) for key, total in sums.items()]
+                # Llamar a la función optimizada para obtener los materiales
+        print('ahora result: ', result)
+        order_materials = ProductionServices.get_product_materials(result)
+        
+        return order_materials
+
+        
+    from sqlalchemy.sql.expression import tuple_
+
+    def get_product_materials(items: list):
+        from ..products.models import ProductMaterialDetail, Material
+
+        bom = []
+        for item in items:
+
+        # Construir la consulta para obtener los materiales necesarios
+            query = (
+                db.session.query(
+                    ProductMaterialDetail.material_id,
+                    Material.code,
+                    Material.name,
+                    Material.unit,
+                    ProductMaterialDetail.serie_id,
+                    ProductMaterialDetail.quantity * item[2]
+                    )
+                .join(Material, Material.id == ProductMaterialDetail.material_id)
+                .filter(
+                    ProductMaterialDetail.product_id == item[0],
+                    ProductMaterialDetail.serie_id == 13,
+                )
+                .all()
+            )
+            print('query: ', query, 'type: ', type(query))
+            material = {
+                query
+            }
+            bom.append(material)
+
+        print('Resultado del boom:', bom)
+
+        
+
+
+        materials = []
+        # Devuelvo los resultados para que los puedas procesar
+        return materials
+
+
+
+    
 
     def delete_production_order(order_id:int):
         '''Elimina las ordenes de produccion'''

@@ -2,7 +2,7 @@ from app import db
 
 from flask import current_app
 
-from .models import Product, ProductLine, ProductSubLine, Color, SizeSeries, Size
+from .models import Product, ProductLine, ProductSubLine, Color, SizeSeries, Size, ProductMaterialDetail
 
 import re
 
@@ -74,6 +74,13 @@ class ProductServices:
 
         return next_code
     
+
+class ProductMaterialDetailServices:
+
+    @staticmethod
+    def get_product_material_detail(product_id):
+        product_material_detail = ProductMaterialDetail.query.filter_by(product_id=product_id).all()
+        return product_material_detail
 
 class LineServices:
 
@@ -196,6 +203,11 @@ class SeriesServices:
     def get_serie(serie_id):
         serie = SizeSeries.query.get_or_404(serie_id)
         return serie
+
+    @staticmethod
+    def get_active_series():
+        series = SizeSeries.query.filter(SizeSeries.is_active==True).all()
+        return series
     
     @staticmethod
     def get_serie_by_size(size_value):
@@ -335,3 +347,12 @@ class BoomServices:
             db.session.rollback()
             current_app.logger.warning(f'Error al guardar boom:{e}')
             raise ValueError(f'Ocurrio un error e:{e}')
+        
+
+class ImageServices:
+    @staticmethod
+    def get_images_from_db(product_id=None):
+        print(product_id)
+        url = 'static/media/products/E001NE/z1.webp'
+        print(url)
+        return url

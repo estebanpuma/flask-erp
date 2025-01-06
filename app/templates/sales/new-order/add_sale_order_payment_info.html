@@ -15,27 +15,128 @@
 
 <div class="container mt-3">
     <h1 class="mb-3">Informacion de Pago</h1>
-    <form>
-        <div class="mb-3">
-            <label for="paymentMethod" class="form-label">Payment Method</label>
-            <select class="form-select" id="paymentMethod">
-                <option value="credit_card">Credit Card</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="paypal">PayPal</option>
+    <form method="post" novalidate id="paymentInfoForm" x-data="paymentInfo()">
+
+        {{ form.hidden_tag() }}
+        
+        <div class="form-floating">           
+            <select x-bind:name="'payment_method'" x-bind:id="'payment_method'"  
+            x-bind:placeholder="'payment_method'" x-model="payment.method" class="form-select" >
+                <option value="">Seleccione tipo de pago</option>
+                <template x-for="method in payment_methods">
+                    <option :value="method.id" x-text="method.name"></option>
+                </template>
             </select>
+            <label x-bind:for="'payment_method'">Pago</label>
+            <span x-text="paymentErrors.method" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
         </div>
-        <div class="mb-3">
-            <label for="amount" class="form-label">Amount</label>
-            <input type="number" class="form-control" id="amount" placeholder="Enter amount">
+        <div class="form-floating">           
+            <input type="number" x-bind:name="'total_amount'" x-bind:id="'total_amount'"  
+            x-bind:placeholder="'total_amount'" x-model="payment.amount" class="form-control"  />
+            <label x-bind:for="'total_amount'">Total a pagar</label>
+            <span x-text="paymentErrors.amount" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
         </div>
-        <div class="mb-3">
-            <label for="paymentDate" class="form-label">Payment Date</label>
-            <input type="date" class="form-control" id="paymentDate">
+        <div class="form-floating">           
+            <input type="number" x-bind:name="'n_installements'" x-bind:id="'n_installements'" @change="setInstallements()" 
+            x-bind:placeholder="'n_installements'" x-model="payment.total_installements" class="form-control"  />
+            <label x-bind:for="'n_installements'">N&uacute;mero de cuotas</label>
+            <span x-text="paymentErrors.total_installements" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </span>
         </div>
-        <a type="button" class="btn btn-dark" href="{{ next_url }}">Siguiente</a>
+        <div x-show="payment.total_installements>0" class="my-3 fs-3 fw-normal">
+            Detalle de cuotas
+        </div>
+        <template x-for="(installement, index) in installements" :key="index">
+            <div class="row my-3">
+                <div class="form-floating col-2 text-center">
+                    <input type="number" readonly class="form-control-plaintext" x-bind:name="'installements-'+index+'-n_installement'" x-bind:id="'installements-'+index+'-n_installement'" 
+                    x-bind:placeholder="'installements-'+index+'-n_installement'" x-model="installement.n_installement" >
+                    <label for="floatingPlaintextInput" readonly>Cuota</label>
+                  </div>
+               
+                <div class="form-floating col-6">           
+                    <input type="date" x-bind:name="'installements-'+index+'-payment_date'" x-bind:id="'installements-'+index+'-payment_date'"  
+                    x-bind:placeholder="'payment_date'" x-model="installement.payment_date" class="form-control" @input="showOrder()" />
+                    <label x-bind:for="'installements-'+index+'-payment_date'">Fecha de pago</label>
+                    <span x-text="paymentErrors.payment_date" class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </span>
+                </div>
+                <div class="form-floating col-4">           
+                    <input type="number" x-bind:name="'installements-'+index+'-amount'" x-bind:id="'installements-'+index+'-amount'"  
+                    x-bind:placeholder="'installement_amount'" x-model="installement.installement_amount" class="form-control"  />
+                    <label x-bind:for="'installements-'+index+'-amount'">$Monto</label>
+                    <span x-text="paymentErrors.installement_amount" class="text-danger">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </span>
+                </div>
+            </div>
+        </template>
+        
+        <input class="btn btn-primary my-5" type="submit" id="submit" name="submit" value="Siguiente"></input>
+
     </form>
 </div>
 
+<script>
+
+function paymentInfo(){
+    return {
+        payment:{
+            method:'',
+            amount:'',
+            total_installements: 0
+        },
+        installements: [],
+        paymentErrors:[],
+
+        payment_methods:[],
+
+        init(){
+            this.fetchPaymentMethods()
+        },
+
+        setInstallements(){
+            this.installements = [];
+            for(let i=0; i<this.payment.total_installements; i++){
+                let installement = {
+                    n_installement: i+1,
+                    payment_date: '',
+                    installement_amount: (this.payment.amount/this.payment.total_installements).toFixed([2])
+                }
+                this.installements.push(installement)
+            }
+            console.log(this.installements)
+        },
+
+        actionWiew(){
+            console.log(this.payment)
+        },
+
+        showOrder(){
+            console.log(this.installements)
+        },
+
+        async fetchPaymentMethods(){
+            try{
+                const response = await fetch('/api/v1/payment_methods');
+                if(!response.ok) throw new Error('No se puede cargar los metodos de pago');
+                const methods = await response.json();
+                this.payment_methods = methods;
+
+            }catch(error){
+                console.error(error)
+            }
+        }
+    }
+}
+
+</script>
 
 
 {% endblock %}

@@ -130,7 +130,7 @@ class Color(BaseModel):
 
 
 
-class SizeSeries(BaseModel):
+class SizeSeries(BaseModel, SoftDeleteMixin):
     __tablename__ = 'size_series'
 
     id = db.Column(db.Integer, primary_key=True)

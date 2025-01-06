@@ -1,0 +1,26 @@
+{% from 'macros.html' import cardContainer %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+
+
+<section>
+    {{ cardContainer(id='Metodos de Pago', name='Metodos de pago', description='Visualizacion de metodos de pago', url=url_for('payments.view_payment_methods') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Pagos', name='Seguimiento de pagos', description='Visualizacion del estado de pagos', url='') }}
+</section>
+
+
+
+
+
+{% endblock %}

@@ -51,7 +51,9 @@ class ConsolidatedProductionItem(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     production_order_id = db.Column(db.Integer, db.ForeignKey('production_orders.id', ondelete='CASCADE'), nullable=False)
+    model_id = db.Column(db.Integer)
     model_code = db.Column(db.String(50), nullable=False)
+    series_id = db.Column(db.Integer)
     series = db.Column(db.String(20), nullable=True)
     size = db.Column(db.Integer, nullable=True)
     total_quantity = db.Column(db.Integer, nullable=False, default=0)

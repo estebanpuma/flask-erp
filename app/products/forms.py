@@ -21,8 +21,8 @@ class MaterialList(FlaskForm):
 
 class ProductModelForm(FlaskForm):
 
-    line = SelectField('Linea', validators=[DataRequired(message='Campo requerido')], choices=[('', 'Seleccione una linea')])
-    subline = SelectField('Sublinea', validators=[Optional()], choices=[('', 'Seleccione una sublinea')])
+    line_id = SelectField('Linea', validators=[DataRequired(message='Campo requerido')], choices=[('', 'Seleccione una linea')])
+    subline_id = SelectField('Sublinea', validators=[Optional()], choices=[('', 'Seleccione una sublinea')])
     color = SelectField('Color', validators=[DataRequired(message='Campo requerido')], choices=[('', 'Seleccione un color')])
     code = StringField('Codigo', validators=[DataRequired(message='Campo requerido')])
     description = TextAreaField('Descripcion', validators=[Optional()])
@@ -34,9 +34,9 @@ class ProductModelForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(ProductModelForm, self).__init__(*args, **kwargs)
         for line in ProductLine.query.all():
-            self.line.choices.append((line.id, f'{line.code}-{line.name}'))
+            self.line_id.choices.append((line.id, f'{line.code}-{line.name}'))
         for subline in ProductSubLine.query.all():
-            self.subline.choices.append((subline.id, f'{subline.code}-{subline.name}'))
+            self.subline_id.choices.append((subline.id, f'{subline.code}-{subline.name}'))
         for color in ColorServices.get_all_colors():
             self.color.choices.append((color.id, f'{color.code}-{color.name}'))
             

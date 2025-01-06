@@ -13,8 +13,12 @@
     {{ cardContainer(id='CRM', name='Gestion de clientes', description='Visualizacion, creacion, seguimiento de clientes', url=url_for('crm.index') ) }}
 </section>
 
-<section></section>
+<section>
     {{ cardContainer(id='Ventas', name='Gestion de ventas', description='Visualizacion, creacion, seguimiento de ordenes de ventas', url=url_for('sales.view_sale_orders') ) }}
+</section>
+
+<section>
+    {{ cardContainer(id='Pagos', name='Gestion de pagos', description='Visualizacion, creacion, seguimiento de pagos', url=url_for('payments.index') ) }}
 </section>
 
 {% endblock %}

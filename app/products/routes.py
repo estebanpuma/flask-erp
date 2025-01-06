@@ -35,9 +35,11 @@ def view_product(product_id):
     title = 'Producto'
     prev_url = url_for('products.view_products')
     
+    
     return render_template('products/models/view_product.html',
                            title = title,
-                           prev_url = prev_url)
+                           prev_url = prev_url,
+                           product_id = product_id)
 
 
 @products_bp.route('/products/create', methods=['GET', 'POST'])
@@ -72,14 +74,14 @@ def add_product():
 
     form_data = {
         'code': form.code.data,
-        'line': form.line.data,
-        'subline': form.subline.data,
+        'line': form.line_id.data,
+        'subline': form.subline_id.data,
         'color': form.color.data,
         'description': form.description.data,
         'errors': {
             'code': form.code.errors,
-            'line': form.line.errors,
-            'subline': form.subline.errors,
+            'line': form.line_id.errors,
+            'subline': form.subline_id.errors,
             'color': form.color.errors,
             'description': form.description.errors,
             'items': form.items.errors
@@ -113,10 +115,38 @@ def add_product_massive_upload():
 def edit_product(product_id):
     title = 'Producto'
     prev_url = url_for('products.view_products')
+
+    product = ProductServices.get_product(product_id)
+
+    form = ProductModelForm(obj=product)
+    line_form = ProductLineForm(prefix='line')
+    subline_form = ProductSubLineForm(prefix='subline')
+    boom_materials=[item for item in form.items.data]
+
+    form_data = {
+        'code': form.code.data,
+        'line': form.line_id.data,
+        'subline': form.subline_id.data,
+        'color': form.color.data,
+        'description': form.description.data,
+        'errors': {
+            'code': form.code.errors,
+            'line': form.line_id.errors,
+            'subline': form.subline_id.errors,
+            'color': form.color.errors,
+            'description': form.description.errors,
+            'items': form.items.errors
+        }
+    }    
     
     return render_template('products/models/add_product.html',
                            title = title,
-                           prev_url = prev_url)
+                           line_form = line_form,
+                           subline_form = subline_form,
+                           prev_url = prev_url,
+                           form = form,
+                           form_data = form_data,
+                           boom_materials = boom_materials)
 
 
 #*******************************************************************

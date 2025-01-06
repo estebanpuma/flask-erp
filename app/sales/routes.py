@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, request, flash
+from flask import render_template, redirect, url_for, request, flash, session
 
 from flask_login import current_user
 
@@ -50,41 +50,62 @@ def view_sale_order(sale_id):
 @sales_bp.route('/sale-orders/create')
 def add_sale_order():
     
+    session["sale_order"] = {
+        "general": {},   # Datos Generales
+        "client": {},   # Datos del Cliente
+        "products": [], # Lista de productos
+        "payment": {}       # Datos del pago
+    }
+    
+    return redirect(url_for('sales.add_sale_order_products_info'))
 
-    return redirect(url_for('sales.add_sale_order_info'))
 
-
-@sales_bp.route('/sale-order/info')
+@sales_bp.route('/sale-order/info', methods=['GET', 'POST'])
 def add_sale_order_info():
     title = 'Orden de venta'
-    prev_url = url_for('sales.view_sale_orders')
+    
     next_url = url_for('sales.add_sale_order_client_info')
-    from app.common.utils import utc_now, get_today
-    today = get_today()
-    order_number = SaleServices.get_new_sale_order_number()
-    salesperson = current_user
-    from ..admin.services import AdminServices
-    role_codes = ['VEN-GEN', 'VEN-SUP']
-    salespersons = AdminServices.get_users_with_role(role_codes)
+    from .forms import GeneralOrderInfoForm
+    form = GeneralOrderInfoForm()
+    prev_url = None
+    if form.validate_on_submit():
+        
+        session["sale_order"]["general"] = {
+            "order_number": request.form.get("order_number"),
+            "request_date": request.form.get("request_date"),
+            "delivery_date": request.form.get("delivery_date"),
+            "salesperson": request.form.get("salesperson")
+        }
+        session.modified = True
+        flash(session)
+        #return redirect(url_for("sales.sale_order_checkout"))
+    
+    
 
     return render_template('sales/new-order/add_sale_order_info.html',
                            title = title,
                            prev_url = prev_url,
                            next_url = next_url,
-                           today = today,
-                           order_number = order_number,
-                           salespersons = salespersons)
+                           form = form
+                           )
 
 
 @sales_bp.route('/sale-order/client-info', methods=['GET', 'POST'])
 def add_sale_order_client_info():
     title = 'Orden de Venta/Cliente'
-    prev_url = url_for('sales.add_sale_order_info')
-    next_url = url_for('sales.add_sale_order_products_info')
+    prev_url = url_for('sales.add_sale_order_products_info')
+    next_url = url_for('sales.add_sale_order_payment_info')
     form = ClientForm()
 
     if form.validate_on_submit():
-        flash(form.data, 'warning')
+
+        session["sale_order"]["client"] = form.data
+        session.modified = True
+        
+        return redirect(url_for('sales.add_sale_order_payment_info'))
+    else:
+        flash('error', 'danger')
+        flash(form.errors)
     
     return render_template('sales/new-order/add_sale_order_client_info.html',
                            title = title,
@@ -93,35 +114,61 @@ def add_sale_order_client_info():
                            form = form)
 
 
-@sales_bp.route('/sale-order/products-info')
+@sales_bp.route('/sale-order/products-info', methods=['GET', 'POST'])
 def add_sale_order_products_info():
     title = 'Orden de Venta/Productos'
-    prev_url = url_for('sales.add_sale_order_client_info')
-    next_url = url_for('sales.add_sale_order_payment_info')
+    prev_url = url_for('sales.view_sale_orders')
+    next_url = url_for('sales.add_sale_order_client_info')
+    
+    from .forms import ProductOrderForm
+
+    form = ProductOrderForm()
+
+
+    if form.validate_on_submit():
+        session["sale_order"]["products"] =''
+        for order in form.order.data: 
+            new_product = order
+            session["sale_order"]["products"].append(new_product)
+            session.modified = True
+        return redirect(url_for('sales.add_sale_order_client_info'))
+    else:
+        flash(form.errors)
 
     return render_template('sales/new-order/add_sale_order_products_info.html',
                            title = title,
                            prev_url = prev_url,
-                           next_url = next_url)
+                           next_url = next_url,
+                           form = form)
 
 
-@sales_bp.route('/sale-order/payment-info')
+@sales_bp.route('/sale-order/payment-info', methods=['GET', 'POST'])
 def add_sale_order_payment_info():
     title = 'Orden de Venta/Pago'
     prev_url = url_for('sales.add_sale_order_products_info')
     next_url = url_for('sales.sale_order_checkout')
+    from .forms import PaymentForm
+    form = PaymentForm()
+    if form.validate_on_submit():
+        session['sale_order']['payment']=form.data
+        
+        flash(session)
+    else:
+        flash(form.errors)
 
     return render_template('sales/new-order/add_sale_order_payment_info.html',
                            title = title,
+                           form = form,
                            prev_url = prev_url,
                            next_url = next_url
                            )
 
 
-@sales_bp.route('/sale-order/checkout')
+@sales_bp.route('/sale-order/checkout', methods=['GET', 'POST'])
 def sale_order_checkout():
     title = 'Orden de Venta/Checkout'
     prev_url = url_for('sales.add_sale_order_payment_info')
+    
 
 
     return render_template('sales/new-order/sale_order_checkout.html',

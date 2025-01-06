@@ -31,6 +31,7 @@ class Client(BaseModel):
     email = db.Column(db.String(120), nullable=True, unique=False)
     phone = db.Column(db.String(20), nullable=False)
     ruc_or_ci = db.Column(db.String(13), nullable=False, unique=True)
+    is_special_taxpayer = db.Column(db.Boolean, default=False)
     client_type = db.Column(db.String(20), nullable=False)
     client_category_id = db.Column(db.Integer, db.ForeignKey('client_categories.id', ondelete='RESTRICT'), nullable=True)
     client_category = db.relationship('ClientCategory', backref='clients')

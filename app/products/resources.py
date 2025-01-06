@@ -4,8 +4,11 @@ from flask_restful import Resource, marshal, marshal_with, abort
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from .services import ProductServices, SublineServices, LineServices,ColorServices, SeriesServices, BoomServices, SizeServices
+from .services import ProductServices, SublineServices, LineServices,ColorServices, ProductMaterialDetailServices
+from .services import ProductServices, SeriesServices, BoomServices, SizeServices, ImageServices
+
 from .schemas import product_fields, line_fields, subline_fields, color_fields, size_series_fields, size_fields
+from .schemas import product_material_detail_fields
 
 
 class ProductResource(Resource):
@@ -98,6 +101,16 @@ class SizeSeriesResource(Resource):
     def get(self, serie_id=None):
 
         query = request.args.get('q', '').upper()
+        is_active = request.args.get('is_active')
+        if is_active:
+            print('entra a is activr')
+            print(is_active)
+            try:
+                results = SeriesServices.get_active_series()
+                return results, 200
+            except Exception as e:
+                current_app.logger.warning('Error al buscar Series activas')
+                abort(500, message='Error')
 
         if query:
             try:
@@ -186,4 +199,26 @@ class ProcessBoomFileResource(Resource):
         
         except Exception as e:
             print(f'error procesando archivo: {e}')
+            return {"error": f"Error processing file: {str(e)}"}, 500
+        
+
+class ProductImagesResource(Resource):
+    
+    def get(self, id=None):
+        try:
+            url = ImageServices.get_images_from_db()
+            return url, 200 if url else abort(404)
+        except Exception as e:
+            return {"error": f"Error processing file: {str(e)}"}, 500
+
+
+class ProductMaterialDetailResource(Resource):
+
+    @marshal_with(product_material_detail_fields)
+    def get(self, product_id):
+        try:
+            product_material_detail = ProductMaterialDetailServices.get_product_material_detail(product_id)
+            return product_material_detail, 200 if product_material_detail else 404
+            
+        except Exception as e:
             return {"error": f"Error processing file: {str(e)}"}, 500

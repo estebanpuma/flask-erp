@@ -26,7 +26,7 @@
             <tbody>
                 {% for product in products %}
                
-                <tr data-url="" style="cursor: pointer;" onclick="redirectTo()">
+                <tr data-url="{{url_for('products.view_product', product_id=product.id)}}" style="cursor: pointer;" onclick="redirectTo()">
                     <td>{{ product.code }}</td>
                     <td>{{ product.line.name }}</td>
                     <td>{{ product.subline }}</td>
