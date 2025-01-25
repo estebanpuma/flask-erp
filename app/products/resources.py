@@ -166,9 +166,12 @@ class SizeResource(Resource):
 
 
 class NextCodeModelResource(Resource):
+    def get(self):
+        line_code = request.args.get('line')
+        subline_code = request.args.get('subline')
+        color_codes = request.args.getlist('colors')
 
-    def get(self, line_code, subline_code=None):
-        next_code = ProductServices.get_next_code_model(line_code, subline_code)
+        next_code = ProductServices.get_next_code_model(line_code, subline_code, color_codes)
 
         return jsonify({'next_code': next_code})
     
@@ -206,9 +209,13 @@ class ProductImagesResource(Resource):
     
     def get(self, id=None):
         try:
-            url = ImageServices.get_images_from_db()
-            return url, 200 if url else abort(404)
+            print(f'inside resource. pID:{id}')
+            paths = ImageServices.get_images_from_db(id)
+            
+            return paths, 200 if paths else 404
+           
         except Exception as e:
+            print(str(e))
             return {"error": f"Error processing file: {str(e)}"}, 500
 
 

@@ -8,3 +8,14 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://postgres:password123@db:5432/erpdb')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), 'app', 'static', 'media')
+    UPLOAD_FOLDERS = {
+        'products': os.path.join(BASE_UPLOAD_FOLDER, 'products'),
+        'clients': os.path.join(BASE_UPLOAD_FOLDER, 'clients'),
+        'users': os.path.join(BASE_UPLOAD_FOLDER, 'users')
+    }
+
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+   

@@ -36,7 +36,7 @@ class ProductSubLine(BaseModel, SoftDeleteMixin):
     products = db.relationship('Product', back_populates='sub_line', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<ProductLine(name={self.name})>'
+        return f'<ProductSubLine(name={self.name})>'
 
 
 class Product(BaseModel, SoftDeleteMixin):
@@ -49,11 +49,12 @@ class Product(BaseModel, SoftDeleteMixin):
     description = db.Column(db.Text, nullable=True)
     line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'), nullable=False)
     sub_line_id = db.Column(db.Integer, db.ForeignKey('product_sub_lines.id'), nullable=True)
-    color_id = db.Column(db.Integer, db.ForeignKey('colors.id'), nullable=False)
+    
+    images = db.relationship('ProductImages', back_populates='product', cascade='all, delete-orphan')
 
     line = db.relationship('ProductLine', back_populates='products')
     sub_line = db.relationship('ProductSubLine', back_populates='products')
-    colors = db.relationship('Color', back_populates='products') 
+    colors = db.relationship('ProductColor', back_populates='product') 
     
     sizes = db.relationship('Size', secondary=product_size_association, back_populates='products')
 
@@ -65,6 +66,16 @@ class Product(BaseModel, SoftDeleteMixin):
     def __repr__(self):
         return f'<Product(code={self.code}, name={self.name})>'
     
+
+class ProductImages(BaseModel):
+    __tablename__ = 'product_images'
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    image_path = db.Column(db.String(), nullable=False)
+
+    product = db.relationship('Product', back_populates='images')
+
 
 class MaterialGroup(BaseModel):
     __tablename__ = 'material_groups'
@@ -121,14 +132,20 @@ class Color(BaseModel):
     name = db.Column(db.String(50), nullable=False, unique=True)  # Ejemplo: 'Rojo', 'Azul', 'Negro'
     description = db.Column(db.String(), nullable=True)
     hex_value = db.Column(db.String(7), nullable=True)  # Ejemplo: '#FF5733'
-    products = db.relationship('Product', back_populates='colors')
+    product_colors = db.relationship('ProductColor', back_populates='product_colors')
 
     def __repr__(self):
         return f'<Color: {self.code}-{self.name}>'
     
+class ProductColor(BaseModel):
+    __tablename__ = 'product_colors'
 
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    color_id = db.Column(db.Integer, db.ForeignKey('colors.id'), nullable=False)
 
-
+    product = db.relationship('Product', back_populates='colors')
+    product_colors = db.relationship('Color', back_populates='product_colors')
 
 class SizeSeries(BaseModel, SoftDeleteMixin):
     __tablename__ = 'size_series'

@@ -37,26 +37,46 @@
             <span x-text="item.errors.subline" class="text-danger">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
-        </div>
+    </div>
 
+    <div>
+        <template x-for="(color, index) in selectedColors" :key="index">
+            <div class="input-group mb-2">
+                <!-- Select dinámico para elegir un color -->
+                <div class="form-floating flex-grow-1">
+                    <select 
+                        x-bind:name="'colors-'+index+'-color'" 
+                        x-bind:id="'colors-'+index+'-color'"
+                        x-model="color.id" 
+                        class="form-select" 
+                        required
+                        @change="updateCode()"
+                        >
+                    >
+                        <option value="">Seleccione un color</option>
+                        <template x-for="option in colors" :key="option.id">
+                            <option :value="option.id" x-text="option.name" :disabled="isColorSelected(option.id)"></option>
+                        </template>
+                    </select>
+                    <label :for="'color-'+index">Color</label>
+                </div>
+                
+                <!-- Botón para eliminar el color -->
+                <button class="btn btn-outline-dark" type="button" @click="removeColor(index)">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </template>
         
+    </div>  
     
-        <div class="form-floating">
-                    
-            <select x-bind:name="'color'" x-bind:id="'color'" 
-            x-bind:placeholder="'color'" x-model="item.color" 
-            @change="updateCode()"
-            class="form-select" required>
-                <option value="">Seleccione un color</option>
-                <template x-for="color in colors" :key="color.id">
-                    <option :value="color.id" x-text="color.code+ '-'+ color.name" ></option>
-                </template>
-            </select>
-            <label for="color">Color</label>
-            <span x-text="item.errors.color" class="text-danger">
-                <i class="bi bi-exclamation-circle-fill"></i>
-            </span>
+        
+        <div class="my-2 text-end">
+            <button class="btn btn-dark" @click="addColor()" type="button">Agregar color
+                <i class="bi bi-palette-fill"></i>
+            </button>
         </div>
+        
 
 
 
@@ -71,9 +91,18 @@
             </span>
         </div>
 
+        <div class="form-floating">
+            <input type="text" name="name" id="name" class="form-control" placeholder="Nombre">
+            <label for="name">Nombre</label>
+        </div>
+
         {{ render_input_float(form.description) }}
 
-        {{ render_input(form.images, value='Elegir im&aacute;genes') }}     
+        <div>
+            <label for="images">Im&aacute;genes</label>
+            {{ render_input(form.images, value='Elegir im&aacute;genes') }} 
+        </div>
+            
        
 
         <div class="input-group">
@@ -169,26 +198,7 @@
       
   
 
-    <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="linep" aria-labelledby="lineLabel">
-        <div class="offcanvas-header">
-          <h5 class="offcanvas-title" id="lineLabel">Linea</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-          <div>
-            {% include 'products/lines/__lineForm.html' %}
-          </div>
-        </div>
-    </div>   
-    <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-theme="dark"  data-bs-scroll="true" data-bs-backdrop="false"  id="sublinef" aria-labelledby="sublineLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="sublineLabel">SubLinea</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            {% include 'products/sublines/__sublineForm.html' %}
-        </div>
-    </div> 
+    
 </section>
 
 <script>
@@ -196,13 +206,20 @@
     return{
 
         //
-        item: { code: '', color: '', line: '', subline: '', errors: ''},
+        item: { code: '',  line: '', subline: '', errors: ''},
+
+        selectedColors:[],
 
         items: [],
         //compnentes para select inputs
         lines: [],
         sublines: [],
         colors: [],
+
+        addColor() {
+                // Añadir un nuevo color vacío (sin valor seleccionado)
+                this.selectedColors.push({ id: '' });
+            },
 
         addItem() {
             this.items.push({
@@ -218,6 +235,18 @@
 
         removeItem(index) {
             this.items.splice(index, 1); // Elimina el material por índice
+        },
+
+        removeColor(index) {
+            // Eliminar un color del formulario
+            this.selectedColors.splice(index, 1);
+            this.updateCode();
+        },
+
+        isColorSelected(colorId) {
+            // Validar si un color ya está seleccionado
+            is_selected = this.selectedColors.some(color => parseInt(color.id) === colorId);
+            return is_selected
         },
 
 
@@ -335,7 +364,7 @@
                 const response = await fetch('/api/v1/lines');
                 if (response.ok) {
                     this.lines = await response.json();
-                    console.log('carga lineas')
+                    
                 } else {
                     console.error("Error al cargar las lineas");
                 }
@@ -399,9 +428,7 @@
                         qty: item.qty,
                         
                     }
-                    this.items.push(new_item);
-                    console.log(';itempuhcado')
-                    
+                    this.items.push(new_item);                    
                         
                 }
                     
@@ -409,56 +436,17 @@
             
         },
 
-        async fetchLineCode() {
-            try {
-                const response = await fetch(`/api/v1/lines/${this.item.line}`);
-                if (response.ok) {
-                    const line = await response.json();
-                    return line.code;
-                } else {
-                    console.error("Error al cargar la línea");
-                }
-            } catch (error) {
-                console.error("Hubo un problema con la solicitud:", error);
-            }
-            return '';
-        },
-
-        async fetchSubLineCode() {
-            try {
-                const response = await fetch(`/api/v1/sublines/${this.item.subline}`);
-                if (response.ok) {
-                    const subline = await response.json();
-                    return subline.code;
-                } else {
-                    console.error("Error al cargar la sublínea");
-                }
-            } catch (error) {
-                console.error("Hubo un problema con la solicitud:", error);
-            }
-            return '';
-        },
-
-        async fetchColorCode() {
-            try {
-                const response = await fetch(`/api/v1/colors/${this.item.color}`);
-                if (response.ok) {
-                    const color = await response.json();
-                    return color.code;
-                } else {
-                    console.error("Error al cargar codigo de color");
-                }
-            } catch (error) {
-                console.error("Hubo un problema con la solicitud:", error);
-            }
-            return '';
-        },
-
         async fetchNextModelCode(subCode) {
+            const queryParams = new URLSearchParams({
+                    line: subCode.line,
+                    subline: subCode.subline,
+                    colors: subCode.colors.join('') // Join color codes without any separator
+                }).toString();        
             try {
-                const response = await fetch(`/api/v1/next_code_model/${subCode}`);
+                const response = await fetch(`/api/v1/next_code_model?${queryParams}`);
                 if (response.ok) {
                     const nextCode = await response.json();
+                    console.log('nextCode', nextCode)
                     return nextCode;
                 } else {
                     console.error("Error al cargar el codigo");
@@ -470,25 +458,36 @@
         },
 
         async updateCode() {
-            let lineCode = '';
-            let sublineCode = '';
-            let colorCode = '';
-            if (this.item.line){
-                lineCode = await this.fetchLineCode();
-            }
-            if(this.item.subline){
-                sublineCode = await this.fetchSubLineCode();
-            }
-            if (this.item.color ){
-                colorCode = await this.fetchColorCode()
-            }
-            
-            let subCode = lineCode + sublineCode;
-            if(lineCode){
-                next_code = await this.fetchNextModelCode(subCode)
-                this.item.code = next_code.next_code + colorCode;
-            }else{
-                this.item.code = '';
+            try{
+                
+                const lineCode = this.lines.find(line => line.id == this.item.line).code || '';
+
+                const sublineCode = this.item.subline ? this.sublines.find(subline => subline.id == this.item.subline).code : '';
+                // IDs que quieres buscar
+                const idsToFind = this.selectedColors.map(item => parseInt(item.id));
+
+                console.log('selected_colors: ', this.selectedColors)
+                // Filtra los items cuyos IDs están en `idsToFind` 
+                const filteredCodes = idsToFind
+                    .map(id => this.colors.find(item => item.id === id)) // Find the color object by id
+                    .filter(item => item !== undefined) // Filter out undefined values (if any)
+                    .map(item => item.code); // Map to the color codes
+                console.log('filteredClors: ', filteredCodes)
+
+                let subCode = {
+                    line: lineCode,
+                    subline: sublineCode,
+                    colors: filteredCodes
+                }
+
+                if (lineCode) {
+                        const nextCode = await this.fetchNextModelCode(subCode);
+                        this.item.code = nextCode.next_code
+                } else {
+                        this.item.code = '';
+                }    
+            }catch(error){
+                console.error('errore:', error)
             }
         }
 

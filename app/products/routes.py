@@ -52,19 +52,19 @@ def add_product():
 
     np = None
 
-    np = jsonify(np)
 
     if form.validate_on_submit():
         
-        flash(form.data)
         from .services import ProductServices
         #interfce validadora pendiente
-        new_product = ProductServices.create_product(line_id=form.line.data,
-                                                     subline_id=form.subline.data,
+        flash(form.data)
+        new_product = ProductServices.create_product(line_id=form.line_id.data,
+                                                     subline_id=form.subline_id.data,
                                                       code= form.code.data,
-                                                       color=form.color.data,
+                                                       colors=form.colors.data,
                                                         description= form.description.data,
-                                                         items = form.items.data )
+                                                         items = form.items.data,
+                                                         images = form.images.data)
 
     else:
         flash('no valid el form priipal', 'danger')
@@ -76,13 +76,13 @@ def add_product():
         'code': form.code.data,
         'line': form.line_id.data,
         'subline': form.subline_id.data,
-        'color': form.color.data,
+        'colors': form.colors.data,
         'description': form.description.data,
         'errors': {
             'code': form.code.errors,
             'line': form.line_id.errors,
             'subline': form.subline_id.errors,
-            'color': form.color.errors,
+            #'color': form.color.errors,
             'description': form.description.errors,
             'items': form.items.errors
         }
@@ -149,6 +149,15 @@ def edit_product(product_id):
                            boom_materials = boom_materials)
 
 
+@products_bp.route('/products/<int:product_id>/delete')
+def delete_product(product_id):
+    try:
+        ProductServices.delete_product(product_id)
+        flash('Registro eliminado', 'success')
+        return redirect(url_for('products.view_products'))
+    except Exception as e:
+        flash(str(e), 'danger')
+        raise ValueError('No se pude eliminar le registro')
 #*******************************************************************
 #************************Linea de productos**************************
 #********************************************************************
