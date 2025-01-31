@@ -54,7 +54,7 @@ class Product(BaseModel, SoftDeleteMixin):
 
     line = db.relationship('ProductLine', back_populates='products')
     sub_line = db.relationship('ProductSubLine', back_populates='products')
-    colors = db.relationship('ProductColor', back_populates='product') 
+    colors = db.relationship('ProductColor', back_populates='product', cascade="all, delete-orphan") 
     
     sizes = db.relationship('Size', secondary=product_size_association, back_populates='products')
 

@@ -87,3 +87,29 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro elementView(id, code, name, description=None, status=None) %}
+
+    <div class="row border rounded mb-3" onclick="window.location.href='{{ url }}'" style="cursor: pointer;">
+        <div class="col-10">
+            <div class="text-muted fs-5 fw-bold">
+                {{ id }}
+            </div>
+            <div class="fw-semibold">
+                {{ name }}
+            </div>
+            <div class="fs-6">
+                {{ description }}
+            </div>
+        </div>
+        
+        <div class="p-0 col-2 my-auto text-end" >
+            <div >
+                {% if status %}
+                <span>{{ status }}</span>
+                {% endif %}
+            </div>
+            <i class="bi bi-chevron-right m-auto"></i>
+        </div>
+    </div>
+{% endmacro %}

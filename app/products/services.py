@@ -1,14 +1,10 @@
 from app import db
 
 from flask import current_app
-
+from werkzeug.utils import secure_filename
 from .models import Product, ProductLine, ProductSubLine, Color, SizeSeries, Size, ProductMaterialDetail, ProductImages
-
+from .models import ProductColor
 import os
-
-import re
-
-import uuid
 
 import pandas as pd
 
@@ -30,9 +26,8 @@ class ProductServices:
         return product
     
     @staticmethod
-    def create_product(line_id:int, code:str, colors, subline_id=None, description=None, items=None, images=None):
+    def create_product(line_id:int, code:str, colors, name=None, subline_id=None, description=None, items=None, images=None):
         line = ProductLine.query.get_or_404(line_id)
-
        
         if subline_id:
             subline = ProductSubLine.query.get_or_404(subline_id)
@@ -42,15 +37,16 @@ class ProductServices:
         if line:
             try:
                 new_product = Product(code = code,
-                                      name = 'namecitos',
+                                      name = name,
                                       description = description,
                                       line_id = line_id,
                                       sub_line_id = subline_id)
                 db.session.add(new_product)
                 db.session.flush()
-                if images:
-                    images_path = ImageServices.upload_images(images=images, product_code=code, product_id=new_product.id)
-                    ImageServices.save_product_images(product_id=new_product.id, image_paths=images_path)
+                # Check if there are any valid images in the list
+                valid_images = [image for image in images if image.filename != '']
+                if valid_images:   
+                    ImageServices.upload_and_save_images(valid_images, new_product.code, new_product.id)
                 BoomServices.create_boom_of_materials(new_product.id, items)
                 ColorServices.save_colors(new_product.id, colors)
                 db.session.commit()
@@ -61,14 +57,15 @@ class ProductServices:
                 raise ValueError(f'error al guardar modelo. e:{e}')
 
     @staticmethod
-    def get_next_code_model(line_code, subline_code=None, color_codes=[]):
+    def get_next_code_model(line_code, subline_code=None, color_codes=None):
         # Get the line and subline IDs based on the provided codes
-        print('color codes', color_codes)
         line = ProductLine.query.filter_by(code=line_code).first()
         subline = ProductSubLine.query.filter_by(code=subline_code).first() if subline_code else None
         
-        # Query existing products with the same line and subline
-        existing_codes = Product.query.filter_by(line_id=line.id, sub_line_id=subline.id if subline else None).all()
+        existing_codes = Product.query.filter(
+            Product.line_id == line.id,
+            (Product.sub_line_id == subline.id) if subline else (Product.sub_line_id == None),
+            ).all()
         
         # Extract the sequence numbers from existing codes
         sequence_numbers = []
@@ -86,10 +83,57 @@ class ProductServices:
         next_sequence_number_str = str(next_sequence_number).zfill(3)  # Ensure it's 3 digits
 
         # Construct the next code
-        next_code = f"{line_code}{subline_code or ''}{next_sequence_number_str}{''.join(color_codes)}"
+        next_code = f"{line_code}{subline_code or ''}{next_sequence_number_str}{''.join(color_codes if color_codes else [])}"
         
         print('next code: ', next_code)
         return next_code
+    
+
+    def update_product(product_id,
+                        line_id, 
+                        code, colors, 
+                        subline_id=None,
+                        name=None,
+                        description=None, 
+                        items=None, 
+                        images=None, 
+                        existing_images=None):
+        
+        product = Product.query.get_or_404(product_id)
+        line = ProductLine.query.get_or_404(line_id)
+        if subline_id:
+            subline = ProductSubLine.query.get_or_404(subline_id)
+            subline_id=subline.id
+        else:
+            subline_id=None
+        if line:
+            try:
+                product.code = code
+                product.line_id = line_id
+                product.sub_line_id = subline_id
+                product.description = description
+                db.session.add(product)
+                db.session.flush()
+
+                # Handle existing images
+                existing_image_paths = [image['url'].replace('/', '', 1) for image in existing_images]
+                current_images = ImageServices.get_images_from_db(product_id)
+                images_to_delete = set(current_images) - set(existing_image_paths)
+                for image_path in images_to_delete:
+                    ImageServices.delete_uploaded_image(image_path)
+                #handle new images
+                # Check if there are any valid images in the list
+                valid_images = [image for image in images if image.filename != '']
+                if valid_images:   
+                    ImageServices.upload_and_save_images(valid_images, product.code, product.id)
+                BoomServices.create_boom_of_materials(product.id, items)
+                ColorServices.update_colors(product.id, colors)
+                db.session.commit()
+                current_app.logger.info(f'Producto {product.name} actualizado')
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.warning(f'Error actualizando producto: {str(e)}')
+                raise ValueError(f'error al guardar modelo. e:{e}')
     
     def delete_product(product_id):
         """
@@ -232,12 +276,47 @@ class ColorServices:
         try:
             from .models import ProductColor
             for color in colors_ids:
-                new_color = ProductColor(product_id=product_id, color_id=color)
+                new_color = ProductColor(product_id=product_id, color_id=color['color'])
                 db.session.add(new_color)
             
         except Exception as e:
+            db.session.rollback()
             current_app.logger.warning(f'Error saving colors: {str(e)}')
+
             raise
+    
+    def update_colors(product_id, colors_ids):
+        """
+        Updates the colors associated with a product.
+
+        Args:
+            product_id (int): The ID of the product.
+            colors_ids (list): List of color IDs.
+
+        Raises:
+            ValueError: If there is an error while updating the product colors.
+
+        This function first deletes all existing ProductColor instances associated with the
+        product, then creates new instances with the provided color IDs. If an exception occurs
+        during this process, the session is rolled back, a warning is logged, and a ValueError is
+        raised with the error message.
+        """
+        from .models import ProductColor
+        try:
+            # Delete existing product colors
+            existing_colors = ProductColor.query.filter_by(product_id=product_id).all()
+            for color in existing_colors:
+                db.session.delete(color)
+            
+            # Save new colors
+            for color in colors_ids:
+                new_color = ProductColor(product_id=product_id, color_id=color['color'])
+                db.session.add(new_color)
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.warning(f'Error updating product colors: {str(e)}')
+            raise ValueError(f'Error updating product colors: {str(e)}')
 
 class SizeServices:
 
@@ -390,6 +469,7 @@ class BoomServices:
 
     def create_boom_of_materials(product_id, items):
         from .models import ProductMaterialDetail, Material, SizeSeries
+
         
         try:
             if items:
@@ -409,7 +489,7 @@ class BoomServices:
                     boom.append(new_product_material)
                 
                 db.session.add_all(boom)
-                db.session.commit()
+                
         except Exception as e:
             db.session.rollback()
             current_app.logger.warning(f'Error al guardar boom:{e}')
@@ -448,22 +528,32 @@ class ImageServices:
 
     
     @staticmethod
-    def save_image(image, product_code):
+    def save_image_at_server(image, product_code):
         """
         Guarda una imagen en el servidor y retorna su ruta relativa.
         :param image: Archivo subido (werkzeug.datastructures.FileStorage).
         :param product_code: Código único del producto.
         """
         if ImageServices.allowed_file(image.filename):
-            filename = image.filename
-            relative_path = os.path.join('uploads', product_code, filename)
-            image.save(os.path.join(current_app.config['UPLOAD_FOLDER'], relative_path))
-            return relative_path
+            try:
+                filename = secure_filename(image.filename)
+                relative_path = os.path.join('static','media','products', product_code, filename)
+                file_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], product_code, filename)
+                dir_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], product_code)
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path, exist_ok=True)
+                    print('path created')
+                image.save(file_path)
+                print('rp: ', relative_path)
+                return relative_path
+            except Exception as e:
+                current_app.logger.warning(f'Error guardando imagen en el servidor: {e}')
+                raise
         else:
             raise ValueError(f'Archivo {image.filename} No tiene una extension adecuada.')
 
     @staticmethod
-    def upload_images(images, product_code, product_id):
+    def upload_and_save_images(images, product_code, product_id):
         """
         Uploads images to the server and saves their relative paths.
 
@@ -475,21 +565,15 @@ class ImageServices:
         """
         image_paths = []
         try:
-            image_paths = [ImageServices.save_image(image, product_code) for image in images]
-            ImageServices.save_product_images(product_id, image_paths)
+            image_paths = [ImageServices.save_image_at_server(image, product_code) for image in images]
+            ImageServices.save_product_images_at_db(product_id, image_paths)
             return image_paths
         except Exception as e:
             current_app.logger.warning(f'Error uploading images for product {product_id}: {e}')
-            full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], product_code)
-            # Eliminar las imágenes subidas al servidor si ocurrió un error en la base de datos
-            for path in image_paths:
-                full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], path)
-                if os.path.exists(full_path):
-                    os.remove(full_path)
-            raise
+           
 
     @staticmethod
-    def save_product_images(product_id, image_paths):
+    def save_product_images_at_db(product_id, image_paths):
         """
         Guarda las rutas de las imágenes asociadas a un producto en la base de datos.
         :param product_id: ID del producto.
@@ -500,10 +584,16 @@ class ImageServices:
                 new_image = ProductImages(product_id=product_id, image_path=path)
                 db.session.add(new_image)
             
-        except Exception as e:
-            
-            current_app.logger.warning(f'Error saving product images: {str(e)}')
-            raise
+        except Exception as e:  
+            db.session.rollback()
+            current_app.logger.warning(f'Error saving product images at db: {str(e)}')
+            # Eliminar las imágenes subidas al servidor si ocurrió un error en la base de datos
+            for path in image_paths:
+                #full_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], path)
+                if os.path.exists(path):
+                    os.remove(path)
+            raise ValueError(f'Error al guardar imagenes en la base de datos. e:{e}')
+           
 
 
     @staticmethod
@@ -514,7 +604,7 @@ class ImageServices:
         :param image_path: The relative path of the image to be deleted.
         """
         try:
-            full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], image_path)
+            full_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], image_path)
             if os.path.exists(full_path):
                 os.remove(full_path)
                 current_app.logger.info(f'Imagen eliminada: {full_path}')

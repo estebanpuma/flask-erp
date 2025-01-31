@@ -36,9 +36,11 @@ class ProductModelForm(FlaskForm):
     code = StringField('Codigo', validators=[DataRequired(message='Campo requerido')])
     description = TextAreaField('Descripcion', validators=[Optional()])
     images = MultipleFileField('Imagenes', validators={Optional(), FileAllowed(['jpg', 'jpeg', 'png', 'gif'], 'Images only!')}, )
-    #file = FileField('Archivo', validators=[Optional()])
-    colors = FieldList(FormField(ColorList), min_entries=1)
-    items = FieldList(FormField(MaterialList), min_entries=0)
+    file = FileField('Archivo', validators=[Optional()])
+    name = StringField('Nombre')
+    colors = FieldList(FormField(ColorList), min_entries=1, validators=[DataRequired(message='Debe agregar al menos un colo')])
+    existing_images = FieldList(StringField('Existing Image'), min_entries=0)
+    items = FieldList(FormField(MaterialList), min_entries=1, validators=[DataRequired(message='Debe agregar al menos un item')] )
     submit = SubmitField('Guardar')
 
     def __init__(self, *args, **kwargs):

@@ -1,0 +1,12 @@
+.zoom-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.zoom-image {
+    transition: transform 0.2s ease-in-out;
+}
+
+.zoom-container:hover .zoom-image {
+    transform: scale(1.5); /* Adjust the scale value as needed */
+}

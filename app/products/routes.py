@@ -47,57 +47,45 @@ def add_product():
     title = 'Nuevo Modelo'
     prev_url = url_for('products.view_products')
     form = ProductModelForm()
-    line_form = ProductLineForm(prefix='line')
-    subline_form = ProductSubLineForm(prefix='subline')
 
-    np = None
-
-
+    
     if form.validate_on_submit():
         
         from .services import ProductServices
-        #interfce validadora pendiente
-        flash(form.data)
-        new_product = ProductServices.create_product(line_id=form.line_id.data,
-                                                     subline_id=form.subline_id.data,
-                                                      code= form.code.data,
-                                                       colors=form.colors.data,
+        try:
+            new_product = ProductServices.create_product(line_id=form.line_id.data,
+                                                        subline_id=form.subline_id.data,
+                                                        code= form.code.data,
+                                                        colors=form.colors.data,
+                                                        name= form.name.data,
                                                         description= form.description.data,
-                                                         items = form.items.data,
-                                                         images = form.images.data)
-
-    else:
-        flash('no valid el form priipal', 'danger')
-        flash(f'errores data: {form.errors}', 'danger')
-
-    boom_materials=[item for item in form.items.data]
-
+                                                        items = form.items.data,
+                                                        images = form.images.data)
+            flash('Modelo guardado', 'success')
+            return redirect(url_for('products.view_products'))
+        
+        except Exception as e:
+            flash('No se pudo guardar el modelo.', 'danger')
+    
+    flash(form.errors)
+    form_colors = [{'id':color['color']} for color in form.colors.data]
+    form_items = [{'code':item['code'], 'qty':item['qty'], 'serie':['serie']} for item in form.items.data]
     form_data = {
         'code': form.code.data,
         'line': form.line_id.data,
+        'name': form.name.data,
         'subline': form.subline_id.data,
-        'colors': form.colors.data,
-        'description': form.description.data,
-        'errors': {
-            'code': form.code.errors,
-            'line': form.line_id.errors,
-            'subline': form.subline_id.errors,
-            #'color': form.color.errors,
-            'description': form.description.errors,
-            'items': form.items.errors
-        }
-    }    
-
+        'colors': form_colors,
+        'items': form_items,
+        'description': form.description.data
+    }
     
     return render_template('products/models/add_product.html',
                            title = title,
                            prev_url = prev_url,
                            form = form,
-                           line_form = line_form,
-                           subline_form = subline_form,
-                           form_data = form_data,
-                           boom_materials = boom_materials,
-                           np = np)
+                           form_data = form_data)
+                           
 
 
 @products_bp.route('/products/massive_upload/create', methods=['GET', 'POST'])
@@ -118,35 +106,40 @@ def edit_product(product_id):
 
     product = ProductServices.get_product(product_id)
 
-    form = ProductModelForm(obj=product)
-    line_form = ProductLineForm(prefix='line')
-    subline_form = ProductSubLineForm(prefix='subline')
-    boom_materials=[item for item in form.items.data]
+    form = ProductModelForm()
 
-    form_data = {
-        'code': form.code.data,
-        'line': form.line_id.data,
-        'subline': form.subline_id.data,
-        'color': form.color.data,
-        'description': form.description.data,
-        'errors': {
-            'code': form.code.errors,
-            'line': form.line_id.errors,
-            'subline': form.subline_id.errors,
-            'color': form.color.errors,
-            'description': form.description.errors,
-            'items': form.items.errors
-        }
-    }    
+    obj_colors = [{'id':color.color_id} for color in product.colors]
+    obj_items = [{'code':item['code'], 'qty':item['qty'], 'serie':['serie']} for item in form.items.data]
+    obj_images = [{'id':image.id, 'url':image.image_path} for image in product.images]
+    obj_data = {
+        'code': product.code,
+        'line': product.line_id,
+        'name': product.name,
+        'subline': product.sub_line_id,
+        'colors': obj_colors,
+        'items': obj_items,
+        'images': obj_images,
+        'description': product.description
+    } 
+   
+    if form.validate_on_submit():
+        try:
+            ProductServices.update_product(product_id, line_id=form.line_id.data,
+                                           subline_id=form.subline_id.data,
+                                           code=form.code.data,
+                                           colors=form.colors.data,
+                                           description=form.description.data,
+                                           items=form.items.data,
+                                           images=form.images.data)
+            return redirect(url_for('products.view_product', product_id=product_id))
+        except Exception as e:
+            flash('No se pudo guardar el modelo.', 'danger')
     
-    return render_template('products/models/add_product.html',
+    return render_template('products/models/edit_product.html',
                            title = title,
-                           line_form = line_form,
-                           subline_form = subline_form,
                            prev_url = prev_url,
                            form = form,
-                           form_data = form_data,
-                           boom_materials = boom_materials)
+                           form_data = obj_data)
 
 
 @products_bp.route('/products/<int:product_id>/delete')

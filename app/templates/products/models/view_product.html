@@ -10,12 +10,16 @@
 <div x-data="viewProduct({{product_id}})">
     <div class="container">
         <div class="row">
+            
             <div class="col-md-6">
                 <div class="container mt-4" >
                     <!-- Imagen principal -->
                     <div class="row mb-3">
-                        <div class="col-12 text-center">
-                            <img :src="selectedImage" class="img-fluid border" style="max-height: 400px;" alt="Main Image">
+                        
+                        <div class="col-12 text-center zoom-container" @mousemove="zoomImage">
+                            <img :src="selectedImage.url" class="img-fluid border zoom-image" style="max-height: 400px;" alt="Main Image">
+                        <!-- Ventana emergente con imagen ampliada -->
+        
                         </div>
                     </div>
                     <!-- Carrusel de Thumbnails -->
@@ -31,7 +35,7 @@
                                 <template x-for="(image, index) in visibleThumbnails" :key="index">
                                     <div>
                                         <img 
-                                            :src="image" 
+                                            :src="image.url" 
                                             class="img-thumbnail border cursor-pointer" 
                                             :class="{'border-primary': selectedImage === image}" 
                                             style="max-height: 100px; cursor: pointer;" 
@@ -170,12 +174,13 @@ function viewProduct(product_id){
                     throw new Error('No se puede cargar imagenes');
                 }
                 const images = await response.json();
-                console.log('raw images: ', images)
                 this.images = [];
                 
 
                 
-                this.images= images;
+                this.images= images.map(image => ({
+                    url:`/${image}`
+                }));
                 console.log('images:', this.images);
 
                 this.selectedImage = this.images.length > 0 ? this.images[0] : ''; // Selecciona la primera imagen por defecto
@@ -190,6 +195,17 @@ function viewProduct(product_id){
         selectImage(image) {
                 this.selectedImage = image; // Cambia la imagen principal al hacer clic en un thumbnail
             },
+
+        zoomImage(event) {
+            const zoomContainer = event.currentTarget;
+            const zoomImage = zoomContainer.querySelector('.zoom-image');
+            const rect = zoomContainer.getBoundingClientRect();
+            const offsetX = event.clientX - rect.left;
+            const offsetY = event.clientY - rect.top;
+            const xPercent = (offsetX / rect.width) * 100;
+            const yPercent = (offsetY / rect.height) * 100;
+            zoomImage.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+        },
 
 
         async fetchMaterialDetails(product_id){

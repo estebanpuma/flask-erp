@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -7,194 +6,19 @@
 <section id="header">
     {% include '__title.html' %}
 </section>
-<div x-data="viewProduct({{product_id}})">
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="container mt-4" >
-                    <!-- Imagen principal -->
-                    <div class="row mb-3">
-                        <div class="col-12 text-center">
-                            <img :src="selectedImage" class="img-fluid border" style="max-height: 400px;" alt="Main Image">
-                        </div>
-                    </div>
-                    <!-- Carrusel de Thumbnails -->
-                    <div class="row">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <!-- Botón anterior -->
-                            
-                            <i class="bi-chevron-left" @click="prevThumbnail" :disabled="currentIndex === 0" style="cursor: pointer;"></i>
-                            
 
-                            <!-- Thumbnails visibles -->
-                            <div class="d-flex overflow-hidden" style="max-width: 100%;">
-                                <template x-for="(image, index) in visibleThumbnails" :key="index">
-                                    <div>
-                                        <img 
-                                            :src="image" 
-                                            class="img-thumbnail border cursor-pointer" 
-                                            :class="{'border-primary': selectedImage === image}" 
-                                            style="max-height: 100px; cursor: pointer;" 
-                                            @click="selectImage(image)"
-                                            alt="Thumbnail">
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Botón siguiente -->
-                            <i class="bi-chevron-right" @click="nextThumbnail" :disabled="currentIndex + itemsVisible >= images.length" style="cursor: pointer;"></i>
-                        </div>
-                    </div>
-                
-                    <!-- Cargando o errores -->
-                    <template x-if="loading">
-                        <div class="text-center mt-3">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </template>
-                    <template x-if="error">
-                        <div class="alert alert-danger mt-3" role="alert" x-text="error"></div>
-                    </template>
-                </div>
-            
-              
-            </div>
-            <div class="col-md-8">
-                <!-- Product Details -->
-                
-                <h2 class="mb-3 mt-3" x-text="product.code"></h2>
-                <h4 class="mb-3" text-muted x-text="product.name"></h4>
-                <p><strong>L&iacute;nea:</strong><small x-text="'edcua'"></small></p>
-                <p><strong>Sub L&iacute;nea:</strong><small x-text="'edcua'"></small></p>
-                <p><strong>Precio de Producción:</strong> $50.00</p>
-                <p><strong>Precio de Venta:</strong> $100.00</p>
-                <!-- Materials List -->
-                <div>
-                    <button class="btn btn-outline-dark mb-2" @click="showMaterials = !showMaterials, fetchMaterialDetails({{product_id}})">
-                        Mostrar Materiales <i class="bi bi-caret-down-fill"></i>
-                    </button>
-                    <div class="table-responsive" x-show="showMaterials">
-                        <table class="table table-hover">
-                            <thead>
-                                <th>C&oacute;digo</th>
-                                <th>Nombre</th>
-                                <th>Cantidad</th>
-                                <th>Unidad</th>
-                            </thead>
-                            <tbody>
-                                <template x-for="material in materials">
-                                    <tr>
-                                        <td x-text="material.material[0].code"></td>
-                                        <td x-text="material.material[0].name"></td>
-                                        <td x-text="material.quantity"></td>
-                                        <td x-text="material.unit"></td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </ul>
-                </div>
-            </div>
-        </div>
+<section>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('products.add_product_massive_upload') }}" class="btn btn-dark">
+            Carga masiva
+            <i class="bi bi-file-earmark-plus-fill"></i>
+        </a>
     </div>
-</div>
+    
+</section>
 
-
-<script>
-function viewProduct(product_id){
-    return{
-        images:[],
-        loading:true,
-        error:null,
-        selectedImage: '',
-        showMaterials: false,
-        currentIndex: 0,
-        itemsVisible: 3, // Número de thumbnails visibles
-
-        product:{},
-        materials:[],
-
-        get visibleThumbnails() {
-            return this.images.slice(this.currentIndex, this.currentIndex + this.itemsVisible);
-        },
-
-        
-        nextThumbnail() {
-                if (this.currentIndex + this.itemsVisible < this.images.length) {
-                    this.currentIndex++;
-                }
-            },
-
-        prevThumbnail() {
-            if (this.currentIndex > 0) {
-                this.currentIndex--;
-            }
-        },
-
-        init(){
-            this.fetchProduct(product_id);
-            this.fecthImages();
-          
-        },
-
-        async fetchProduct(product_id){
-            try{
-                const response = await fetch(`/api/v1/products/${product_id}`);
-                if(!response.ok){
-                    throw new Error('No se puede cargar el producto');
-                }
-                const product = await response.json();
-                this.product = product;
-                console.log(this.product);
-            }catch(error){
-                console.error(error);
-            }
-        },
-
-        async fecthImages(){
-            try{
-                const response = await fetch('/api/v1/product-images');
-                if(!response.ok){
-                    throw new Error('No se puede cargar imagenes');
-                }
-                const images = await response.json();
-                console.log('url:', images);
-                this.images.push('/'+images)
-                this.images.push("/static/media/products/E001NE/z2.webp")
-                this.images.push("/static/media/products/E001NE/z3.webp")
-                this.images.push("/static/media/products/E001NE/z2.webp")
-                this.selectedImage = this.images.length > 0 ? this.images[0] : ''; // Selecciona la primera imagen por defecto
-            }catch(error){
-                console.error(error);
-            } finally {
-                    this.loading = false;
-                }
-        },
-
-        selectImage(image) {
-                this.selectedImage = image; // Cambia la imagen principal al hacer clic en un thumbnail
-            },
-
-
-        async fetchMaterialDetails(product_id){
-            try{
-                const response = await fetch(`/api/v1/productMaterialDetails/${product_id}`);
-                
-                if(!response.ok){
-                    throw new Error('Error al cargar lista de materiales');
-                }
-                const materials = await response.json();
-                this.materials = materials;
-             
-            }catch(error){
-                console.error(error);
-            }
-        }
-    }
-}
-
-</script>
+<section>
+    {% include 'products/models/__productForm.html' %}
+</section>
 
 {% endblock %}

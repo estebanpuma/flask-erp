@@ -1,6 +1,6 @@
-{% from 'macros.html' import render_input_float, render_input %}
+{% from 'macros.html' import render_input_float, render_input, render_errors %}
 <section>
-    <form id="modelForm" method="post" novalidate enctype="multipart/form-data" x-data="newModelForm()" x-init='init({{form_data|tojson}}, {{boom_materials|tojson}});'>
+    <form id="modelForm" method="post" novalidate enctype="multipart/form-data" x-data='newModelForm({{form_data|tojson}})' >
 
         {{ form.hidden_tag() }}
         
@@ -17,11 +17,8 @@
                 </template>
             </select>
             <label for="line_id">Linea</label>
-            <span x-text="item.errors.line" class="text-danger">
-                <i class="bi bi-exclamation-circle-fill"></i>
-            </span>
+            {{render_errors(form.line_id)}}
         </div>
-
         <div class="form-floating">
                     
             <select x-bind:name="'subline_id'" x-bind:id="'subline_id'" 
@@ -34,38 +31,45 @@
                 </template>
             </select>
             <label for="subline">subLinea</label>
-            <span x-text="item.errors.subline" class="text-danger">
-                <i class="bi bi-exclamation-circle-fill"></i>
-            </span>
+            {{render_errors(form.subline_id)}}
     </div>
 
-    <div>
+    
+    <div id="colors">
         <template x-for="(color, index) in selectedColors" :key="index">
-            <div class="input-group mb-2">
-                <!-- Select dinámico para elegir un color -->
-                <div class="form-floating flex-grow-1">
-                    <select 
-                        x-bind:name="'colors-'+index+'-color'" 
-                        x-bind:id="'colors-'+index+'-color'"
-                        x-model="color.id" 
-                        class="form-select" 
-                        required
-                        @change="updateCode()"
+            <div>
+                <div class="input-group mb-2">
+                    <!-- Select dinámico para elegir un color -->
+                    <div class="form-floating flex-grow-1" :id="'colors-'+index">
+                        <select 
+                            x-bind:name="'colors-' + index  +'-color'" 
+                            x-bind:id="'colors-' + index + '-color'"
+                            x-model="color.id" 
+                            class="form-select" 
+                            required
+                            @change="updateCode()"
                         >
-                    >
-                        <option value="">Seleccione un color</option>
-                        <template x-for="option in colors" :key="option.id">
-                            <option :value="option.id" x-text="option.name" :disabled="isColorSelected(option.id)"></option>
-                        </template>
-                    </select>
-                    <label :for="'color-'+index">Color</label>
+                            <option value="" >Seleccione un color</option>
+                            <template x-for="option in colors" :key="option.id">
+                                <option 
+                                    :value="option.id" 
+                                    x-text="option.code + '-' + option.name" 
+                                    :disabled="isColorSelected(option.id) && color.id != option.id"
+                                     ></option>
+                            </template>
+                        </select>
+                        <label :for="'colors-'+index+'-color'">Color</label>
+                    </div>
+                    
+                    <!-- Botón para eliminar el color -->
+                    <button class="btn btn-outline-dark" type="button" @click="removeColor(index)">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                    
                 </div>
-                
-                <!-- Botón para eliminar el color -->
-                <button class="btn btn-outline-dark" type="button" @click="removeColor(index)">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+                {{render_errors(form.colors)}}
             </div>
+            
         </template>
         
     </div>  
@@ -78,43 +82,66 @@
         </div>
         
 
-
-
         <div class="form-floating">
                     
             <input type="text" x-bind:name="'code'" x-bind:id="'code'"  
             x-bind:placeholder="'code'" x-model="item.code"
             @input="item.code=item.code.toUpperCase()" class="form-control" />
-            <label x-bind:for="'code'">Codigo</label>
-            <span x-text="item.errors.code" class="text-danger">
-                <i class="bi bi-exclamation-circle-fill"></i>
-            </span>
+            <label for="code">Codigo</label>
+            {{render_errors(form.code)}}
         </div>
 
         <div class="form-floating">
-            <input type="text" name="name" id="name" class="form-control" placeholder="Nombre">
+            <input type="text" x-bind:name="'name'" x-bind:id="'name'" class="form-control" placeholder="Nombre">
             <label for="name">Nombre</label>
+            {{render_errors(form.name)}}
         </div>
 
         {{ render_input_float(form.description) }}
 
         <div>
             <label for="images">Im&aacute;genes</label>
-            {{ render_input(form.images, value='Elegir im&aacute;genes') }} 
+           
+            <input type="file" id="images" name="images" class="form-control" multiple @change="handleImageUpload">
+            {{render_errors(form.images)}}   
         </div>
-            
-       
 
-        <div class="input-group">
-            <input x-ref="fileInput" type="file" class="form-control" id="file" 
-            aria-describedby="upload_file" aria-label="Cargar" placeholder="Elegir archivo">
-            <button class="btn btn-dark" type="button" id="upload_file" @click="uploadFile()">Cargar</button>
+
+        <div id="imagePreviews" class="d-flex flex-wrap mt-2">
+            <template x-for="(image, index) in newImages" :key="index">
+            <div class="position-relative m-2">
+                <img :src="image.url" alt="Image preview" class="img-thumbnail" style="width: 100px; height: 100px;">
+                
+            </div>
+            </template>
         </div>
-      
+
+        <div class="d-flex flex-wrap mt-2" style="max-width: 100%;">
+            <template x-for="(image, index) in images" :key="index">
+                <div class="position-relative m-2">
+                    <img 
+                        :src="image.url" 
+                        class="img-thumbnail" 
+                        style="max-height: 100px; cursor: pointer;" 
+                        alt="Thumbnail">
+                        <button type="button" class="btn btn-close position-absolute top-0 end-0" >
+                        </button>
+                </div>
+            </template>
+        </div>
+    
+
+        
       
         <section id="fileData">
             <h2 class="my-3">Explosi&oacute;n de materiales</h2>
-            <div class="table-responsive">
+            <div class="input-group">
+                <input x-ref="fileInput" type="file" class="form-control" id="file" 
+                aria-describedby="upload_file" aria-label="Cargar" placeholder="Elegir archivo">
+                <button class="btn btn-dark" type="button" id="upload_file" @click="uploadFile()">Cargar</button>
+            </div>
+
+            <div class="table-responsive" x-show="items.length > 0">
                 <table class="table table-hover">
 
                     <thead>
@@ -136,44 +163,29 @@
                                     <input type="text" x-bind:name="'items-' + index + '-serie'" class="form-control px-1"
                                     x-model="item.serie" x-bind:id="'items-' + index + '-serie'" @input="item.serie=item.serie.toUpperCase()"
                                     @change="searchSerie(item.serie, index)"> 
-                                    <span x-text="itemErrors.serie" class="text-danger">
-                                        <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span>
                                        
                                 </td>
         
                                 <td class="px-1">                           
                                     <input type="text" x-bind:name="'items-' + index + '-code'" class="form-control px-1"
                                     x-model="item.code" x-bind:id="'items-' + index + '-code'" @change="searchMaterial(item.code, index)"
-                                    @input="item.code=item.code.toUpperCase()">  
-                                    <span x-text="itemErrors.code" class="text-danger">
-                                        <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span>         
+                                    @input="item.code=item.code.toUpperCase()">       
                                 </td>
                                     
                                 <td class="px-1" colspan="3">
                                     <p type="text"  x-bind:name="'items-' + index + '-detail'"  class="px-1"
-                                    x-model="item.detail" x-bind:id="'items-' + index + '-detail'" x-text="item.detail"></p>
-                                    <span x-text="itemErrors.detail" class="text-danger">
-                                        <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span>
+                                    x-text="item.detail" x-bind:id="'items-' + index + '-detail'" x-text="item.detail"></p>
                                     
                                 </td>
                                 <td class="px-1">                        
                                     <input type="number" x-bind:name="'items-' + index + '-qty'"  class="form-control px-1"
                                     x-model="item.qty" x-bind:id="'items-' + index + '-qty'">
                                     
-                                    <span x-text="itemErrors.qty" class="text-danger">
-                                        <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span> 
                                 </td>
                                 <td class="px-1">                           
                                     <input type="text" readonly  x-bind:name="'items-' + index + '-unit'" class="form-control-plaintext" 
                                     x-model="item.unit" x-bind:id="'items-' + index + '-unit'" x-text="item.unit"></input>
-                                    
-                                    <span x-text="itemErrors.unit" class="text-danger">
-                                        <i class="bi bi-exclamation-circle-fill"></i>
-                                    </span>    
+                                      
                                 </td>                    
                             
                                 <td >
@@ -183,12 +195,16 @@
                             </tr>
                             
                         </template>
+                       
                     </tbody>
                 
                 </table>
-            
-                <button type="button" @click="addItem()" class="btn btn-secondary">Add Item</button>
+                
+               
             </div>
+
+            {{ render_errors(form.items) }}
+            <button type="button" @click="addItem()" class="btn btn-secondary">Add Item</button>
         </section>
         {{ form.submit(class='btn btn-dark mt-3') }}
     </form>
@@ -202,19 +218,27 @@
 </section>
 
 <script>
-    function newModelForm(){
+    /**
+     * Initializes a new model form with the provided form data.
+     * This function sets up the form's state, including items, colors, and images.
+     * It also provides methods to handle form interactions such as adding/removing items and colors,
+     * uploading files, and fetching data from the server.
+     * 
+     * @param {Object} form_data - The initial data to populate the form.
+     * @returns {Object} - The form's state and methods.
+     */
+    function newModelForm(form_data){
     return{
-
+        form_datas: form_data,
         //
         item: { code: '',  line: '', subline: '', errors: ''},
-
-        selectedColors:[],
-
+        selectedColors:[{'id':''}],
+        newImages: [],
         items: [],
-        //compnentes para select inputs
         lines: [],
         sublines: [],
         colors: [],
+        images: [],
 
         addColor() {
                 // Añadir un nuevo color vacío (sin valor seleccionado)
@@ -241,6 +265,7 @@
             // Eliminar un color del formulario
             this.selectedColors.splice(index, 1);
             this.updateCode();
+      
         },
 
         isColorSelected(colorId) {
@@ -399,41 +424,24 @@
             }
         },
 
-        async init(form_data, boomMaterials) {
+        async init() {
             await this.fetchLines();
             await this.fetchSubLines();
-            await this.fetchColors();
-
-            
-
-            if(form_data!=undefined){
-                this.item.code = form_data.code
-                this.item.line = form_data.line
-                this.item.subline = form_data.subline
-                this.item.color = form_data.color
-                this.item.errors = form_data.errors
-                console.log('item', this.item)
-                
+            await this.fetchColors();     
+            console.log('form_data: ', form_data)
+ 
+            if(form_data!== undefined){
+                this.item.code = form_data.code;
+                this.item.name = form_data.name;
+                this.item.description = form_data.description;
+                this.item.line = form_data.line;
+                this.item.subline = form_data.subline;
+                this.selectedColors = form_data.colors.map(color => (color));
+                this.images = form_data.images.map(image => ({'id':image.id, 'url':`/${image.url}`}));
+                this.items = form_data.items.map(item => (item));
+                console.log('selected_colors: ', this.selectedColors);
+                console.log('selected_images: ', this.selectedImages);
             }
-            if (boomMaterials!=undefined && boomMaterials.length > 0) {
-                console.log(boomMaterials)
-                for(let i=0; i<boomMaterials.length; i++){
-                    let item = boomMaterials[i];                  
-                    let new_item = {
-                        serie: item.serie,
-                        serie_sizes: item.serie_sizes,
-                        code: item.code,
-                        detail:item.detail,
-                        unit: item.unit,
-                        qty: item.qty,
-                        
-                    }
-                    this.items.push(new_item);                    
-                        
-                }
-                    
-            }
-            
         },
 
         async fetchNextModelCode(subCode) {
@@ -489,6 +497,35 @@
             }catch(error){
                 console.error('errore:', error)
             }
+        },
+
+        handleImageUpload(event) {
+            const files = event.target.files;
+            this.newImages = [];
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.newImages.push({ url: e.target.result, file });
+                    this.updateImageInput();
+                };
+                reader.readAsDataURL(files[i]);
+            }
+        },
+        updateImageInput() {
+            const dataTransfer = new DataTransfer();
+            this.newImages.forEach(image => {
+                dataTransfer.items.add(image.file);
+            });
+            this.$refs.imageInput.files = dataTransfer.files;
+        },
+
+        removeExistingImage(index) {
+            this.selectedImages.splice(index, 1);
+        },
+
+        removeImage(index) {
+            this.newImages.splice(index, 1);
+            this.updateImageInput();
         }
 
     }
