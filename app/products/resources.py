@@ -31,10 +31,10 @@ class ProductResource(Resource):
             return products, 200
         
         except SQLAlchemyError as e:
-            current_app.logger.error(f'Error fetching users(s): {e}')
+            current_app.logger.warning(f'Error fetching users(s): {e}')
             abort(500, message="Internal server error")
         except Exception as e:
-            current_app.logger.error(f'Unexpected error: {e}')
+            current_app.logger.warning(f'Unexpected error: {e}')
             abort(500, message="Unexpected error occurred")
         
 
@@ -229,3 +229,14 @@ class ProductMaterialDetailResource(Resource):
             
         except Exception as e:
             return {"error": f"Error processing file: {str(e)}"}, 500
+        
+
+class ProductPriceResource(Resource):
+
+    def get(self, product_id):
+        try:
+            current_cost = ProductServices.calculate_material_cost(product_id)
+            current_price = ProductServices.calculate_product_price(product_id)
+            return {'cost': current_cost, 'price': current_price}, 200
+        except Exception as e:
+            return {"error": f"Error server: {str(e)}"}, 500

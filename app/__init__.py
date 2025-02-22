@@ -49,8 +49,14 @@ def create_app(config):
     from .crm import crm_bp
     app.register_blueprint(crm_bp)
 
+    from .finance import finance_bp
+    app.register_blueprint(finance_bp)
+
     from .inventory import inventory_bp
     app.register_blueprint(inventory_bp)
+
+    from .pricing import pricing_bp
+    app.register_blueprint(pricing_bp)
 
     from .production import production_bp
     app.register_blueprint(production_bp)

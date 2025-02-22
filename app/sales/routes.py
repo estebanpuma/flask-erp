@@ -96,7 +96,10 @@ def add_sale_order_client_info():
     prev_url = url_for('sales.add_sale_order_products_info')
     next_url = url_for('sales.add_sale_order_payment_info')
     form = ClientForm()
-
+    client = {}
+    if 'client' in session['sale_order']:
+        client = session['sale_order']['client']
+        
     if form.validate_on_submit():
 
         session["sale_order"]["client"] = form.data
@@ -111,7 +114,9 @@ def add_sale_order_client_info():
                            title = title,
                            prev_url = prev_url,
                            next_url = next_url,
-                           form = form)
+                           form = form,
+                           client = client
+                           )
 
 
 @sales_bp.route('/sale-order/products-info', methods=['GET', 'POST'])
@@ -123,14 +128,20 @@ def add_sale_order_products_info():
     from .forms import ProductOrderForm
 
     form = ProductOrderForm()
-
+    products = []
+    if 'products' in session['sale_order']:
+        products = session['sale_order']['products']
 
     if form.validate_on_submit():
-        session["sale_order"]["products"] =''
+        session["sale_order"]["products"] =[]
         for order in form.order.data: 
             new_product = order
             session["sale_order"]["products"].append(new_product)
-            session.modified = True
+        total_items = form.total_items.data
+        total_amount = form.total_amount.data
+        session["sale_order"]["total_items"] = total_items
+        session["sale_order"]["total_amount"] = total_amount
+        session.modified = True
         return redirect(url_for('sales.add_sale_order_client_info'))
     else:
         flash(form.errors)
@@ -139,7 +150,8 @@ def add_sale_order_products_info():
                            title = title,
                            prev_url = prev_url,
                            next_url = next_url,
-                           form = form)
+                           form = form,
+                           products = products)
 
 
 @sales_bp.route('/sale-order/payment-info', methods=['GET', 'POST'])
@@ -148,19 +160,29 @@ def add_sale_order_payment_info():
     prev_url = url_for('sales.add_sale_order_products_info')
     next_url = url_for('sales.sale_order_checkout')
     from .forms import PaymentForm
+    print('session', session['sale_order'])
     form = PaymentForm()
-    if form.validate_on_submit():
-        session['sale_order']['payment']=form.data
+    data = {}
+    if 'payment' in session['sale_order']:
+        data=session['sale_order']['payment']
+
         
-        flash(session)
-    else:
-        flash(form.errors)
+    
+    total_amount = session["sale_order"]["total_amount"]
+    
+    if form.validate_on_submit():
+        session['sale_order']['payment'] = form.data
+        session.modified = True
+        return redirect(url_for('sales.sale_order_checkout'))
+
 
     return render_template('sales/new-order/add_sale_order_payment_info.html',
-                           title = title,
-                           form = form,
-                           prev_url = prev_url,
-                           next_url = next_url
+                           title=title,
+                           form=form,
+                           prev_url=prev_url,
+                           next_url=next_url,
+                           total_amount=total_amount,
+                           data=data
                            )
 
 
@@ -169,10 +191,20 @@ def sale_order_checkout():
     title = 'Orden de Venta/Checkout'
     prev_url = url_for('sales.add_sale_order_payment_info')
     
+    order_number = SaleServices.get_new_sale_order_number()
+    session["sale_order"]["order_number"] = order_number
 
+    order_resume = session["sale_order"]  
 
+    if request.method == 'POST':
+        #SaleServices.create_sale(order_resume)
+
+        flash('Orden de venta creada con exito', 'success')
     return render_template('sales/new-order/sale_order_checkout.html',
                            title = title,
-                           prev_url = prev_url)
+                           prev_url = prev_url,
+                           order_resume = order_resume,
+                           order_number = order_number
+                           )
 
 

@@ -120,6 +120,7 @@ class MaterialForm(FlaskForm):
     name = StringField('Nombre', validators=[DataRequired()])
     detail = StringField('Detalle', validators=[Optional()])
     unit = StringField('Unidad', validators=[DataRequired()])
+    price = FloatField('Precio', validators=[DataRequired()])
     submit = SubmitField('Guardar')
 
     def __init__(self, *args, **kwargs):

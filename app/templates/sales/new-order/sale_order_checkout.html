@@ -16,19 +16,85 @@
 <div class="container mt-4">
     <h1 class="mb-3">Confirmar Orden</h1>
     <form>
-        <div class="mb-3">
+        <div class="mb-3" id="orderReview" x-data='orderReview({{order_resume|tojson|safe}})'>
             <label for="orderReview" class="form-label">Revisar la orden:</label>
-            <textarea class="form-control" id="orderReview" rows="5" readonly>
-                Order #12345 - Date: 2024-10-08
-                Customer: John Doe
-                Products: 5 pairs of shoes
-                Payment: Credit Card - $500.00
-            </textarea>
+            <div>
+                <div class="row">
+                    <div class="col">
+                        Orden:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.order_number"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        Fecha:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.order_date"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        Cliente:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.client.name"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        Total items: 
+                    </div>
+                    <div class="col">
+                        <p x-text="order.total_items"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        Total a pagar:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.total_amount"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        Numero de cuotas:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.payment.n_installements"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        M&eacute;todo de pago:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.payment.payment_method"></p>
+                    </div>
+                </div>
+            </div>
+            
         </div>
         <button type="submit" class="btn btn-dark">Confirm</button>
         <button type="button" class="btn btn-secondary" onclick="window.history.back()">Go Back</button>
     </form>
 </div>
+<script>
+    function orderReview(order_resume) {
+        return {
+            order: order_resume,
 
+            init() {
+                console.log('inittializing');
+                
+                console.log('client:', this.order.client.name);
+            }
+
+        }
+    }
+</script>
 
 {% endblock %}

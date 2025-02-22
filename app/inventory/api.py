@@ -7,4 +7,4 @@ inventory_api = Api(inventory_bp)
 
 
 
-inventory_api.add_resource(MaterialResource, '/api/v1/materials', '/api/v1/clients/<int:client_id>')
+inventory_api.add_resource(MaterialResource, '/api/v1/materials', '/api/v1/materials/<int:material_id>')

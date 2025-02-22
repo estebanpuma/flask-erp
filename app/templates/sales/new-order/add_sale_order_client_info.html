@@ -13,7 +13,7 @@
     {% include '/sales/new-order/__sale_order_nav.html' %}
 </section>
 
-<div x-data="sale_orderClientForm()" class="mb-3">
+<div x-data='sale_orderClientForm({{client|tojson}})' class="mb-3">
     <div x-model="modal">
         <!-- Botón para abrir el modal 
         <button @click="modal = true" class="btn btn-primary">Abrir Modal</button>-->
@@ -155,7 +155,7 @@
             </span>
         </div>
         <input type="submit" name="submit" id="submit" class="btn btn-dark" value="Guardar">
-        <button class="btn btn-secondary" type="reset" x-model="cleanAll()" >Limpiar</button>
+        <button class="btn btn-secondary" type="reset" @click="cleanAll()" >Limpiar</button>
     </form>
 </div>
 
@@ -163,13 +163,19 @@
 
 <script >
 
-function sale_orderClientForm() {
+function sale_orderClientForm(client) {
     return {
         query: '',
         results: [],
-        client: {},
+        client: client || {},
         clientErrors:{},
         modal: false,
+
+        init(){
+            this.client = client;
+            console.log('client', this.client)
+            console.log('client ruc', this.client.ruc_or_ci)
+        },
 
         // Función para buscar clientes
         search() {
@@ -190,6 +196,12 @@ function sale_orderClientForm() {
             this.client = item;
             console.log(this.client)
             this.results = []; // Ocultar resultados después de seleccionar
+        },
+
+
+        cleanAll(){
+            console.log('cleaning all')
+            this.client = {};
         }
     };
 }

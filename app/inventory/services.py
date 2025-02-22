@@ -34,6 +34,8 @@ class MaterialGroupServices:
             current_app.logger.info('MaterialGroup creado con exito')
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f'Error al crear material: {e}')
+            raise ValueError('Ocurrió un error al crear el material')
             current_app.logger.warning(f'MaterialGroup no se pudo guardar. Error: {e}')
             raise ValueError('Ocurrio un error al guardar MaterialGroup')
 
@@ -94,23 +96,48 @@ class MaterialServices:
         return materials
 
     @staticmethod
-    def create_material(code:str, group:int, name:str, unit:str, detail:str):
+    def create_material(code: str, name: str, unit: str, detail: str, price: float, group: int=None):
+        """
+        Create a new material.
+
+        Parameters:
+        code (str): The code of the material.
+        group (int): The ID of the material group.
+        name (str): The name of the material.
+        unit (str): The unit of the material.
+        detail (str): The detail description of the material.
+        price (float): The price of the material.
+
+            db.session.flush()
+        Material: The newly created material.
+        """
         from ..products import Material
-        new_material = Material(code = code,
-                                material_group_id = group,
-                                name = name,
-                                detail = detail,
-                                unit = unit)
-        
         try:
+            new_material = Material(code = code,
+                                    material_group_id = group,
+                                    name = name,
+                                    detail = detail,
+                                    unit = unit)
+            from ..products.models import MaterialPriceHistory  
+            
+            
             db.session.add(new_material)
+            db.session.flush()
+            new_price = MaterialPriceHistory(material_id = new_material.id,
+                                            price = price,
+                                            start_date = datetime.today(),
+                                            is_actual_price = True)
+            db.session.add(new_price)
             db.session.commit()
             return new_material
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f'Error al crear material: {e}')
+            raise ValueError('Ocurrió un error al crear el material')
+
 
     @staticmethod
-    def update_material(material_id:int, code:str, group:int, name:str, unit:str, detail:str):
+    def update_material(material_id:int, code:str, name:str, unit:str, detail:str, price:float, group:int=None):
         from ..products import Material
         material = Material.query.get_or_404(material_id)
         material.code = code,
@@ -119,8 +146,15 @@ class MaterialServices:
         material.detail = detail,
         material.unit = unit
         
+        from ..products.models import MaterialPriceHistory
+        new_price = MaterialPriceHistory(material_id = material.id,
+                                        price = price,
+                                        start_date = datetime.today(),
+                                        is_actual_price = True)
+        
         try:
             db.session.add(material)
+            db.session.add(new_price)
             db.session.commit()
             current_app.logger.info('Material guardado')
         except Exception as e:

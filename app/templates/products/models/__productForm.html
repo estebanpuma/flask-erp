@@ -92,17 +92,23 @@
         </div>
 
         <div class="form-floating">
-            <input type="text" x-bind:name="'name'" x-bind:id="'name'" class="form-control" placeholder="Nombre">
+            <input type="text" x-bind:name="'name'" x-model="item.name" x-bind:id="'name'" class="form-control" placeholder="Nombre">
             <label for="name">Nombre</label>
             {{render_errors(form.name)}}
         </div>
 
-        {{ render_input_float(form.description) }}
+        <div class="form-floating">
+            <input type="text" x-bind:name="'description'" x-model="item.description" x-bind:id="'description'" class="form-control" placeholder="Descripción">
+            <label for="description">Nombre</label>
+            {{render_errors(form.description)}}
+        </div>
+
+        
 
         <div>
             <label for="images">Im&aacute;genes</label>
            
-            <input type="file" id="images" name="images" class="form-control" multiple @change="handleImageUpload">
+            <input type="file" id="images" name="images" class="form-control" multiple @change="handleImageUpload" ref="imageInput">
             {{render_errors(form.images)}}   
         </div>
 
@@ -111,7 +117,8 @@
             <template x-for="(image, index) in newImages" :key="index">
             <div class="position-relative m-2">
                 <img :src="image.url" alt="Image preview" class="img-thumbnail" style="width: 100px; height: 100px;">
-                
+                <button type="button" class="btn btn-close position-absolute top-0 end-0" @click="removeImage(index)">
+                </button>
             </div>
             </template>
         </div>
@@ -124,7 +131,7 @@
                         class="img-thumbnail" 
                         style="max-height: 100px; cursor: pointer;" 
                         alt="Thumbnail">
-                        <button type="button" class="btn btn-close position-absolute top-0 end-0" >
+                        <button type="button" class="btn btn-close position-absolute top-0 end-0" @click="removeExistingImage(index)">
                         </button>
                 </div>
             </template>
@@ -229,9 +236,8 @@
      */
     function newModelForm(form_data){
     return{
-        form_datas: form_data,
-        //
-        item: { code: '',  line: '', subline: '', errors: ''},
+        
+        item: { code: '',  line: '', subline: '', name:'', description:''},
         selectedColors:[{'id':''}],
         newImages: [],
         items: [],
@@ -239,6 +245,7 @@
         sublines: [],
         colors: [],
         images: [],
+        selectedImages: [],
 
         addColor() {
                 // Añadir un nuevo color vacío (sin valor seleccionado)
@@ -383,6 +390,35 @@
             }
         },
 
+        async fecthSerie(serie_id){
+            try {
+                const response = await fetch(`/api/v1/sizeSeries/${serie_id}`); 
+                if (response.ok) {
+                    let serie_code = await response.json();
+                    console.log(serie_code)
+                    return serie_code;  
+                } else {
+                    console.error("Error al cargar la serie");
+                }
+            } catch (error) {
+                console.error("Hubo un problema con la solicitud:", error);
+            }
+        },
+
+        async fecthMaterial(material_id){
+            try {
+                const response = await fetch(`/api/v1/materials/${material_id}`); 
+                if (response.ok) {
+                    let material = await response.json();
+                    console.log(material)
+                    return material;  
+                } else {
+                    console.error("Error al cargar el material");
+                }
+            } catch (error) {
+                console.error("Hubo un problema con la solicitud:", error);
+            }
+        },
 
         async fetchLines() {
             try {
@@ -424,12 +460,14 @@
             }
         },
 
+        
+
         async init() {
             await this.fetchLines();
             await this.fetchSubLines();
             await this.fetchColors();     
             console.log('form_data: ', form_data)
- 
+            
             if(form_data!== undefined){
                 this.item.code = form_data.code;
                 this.item.name = form_data.name;
@@ -438,7 +476,17 @@
                 this.item.subline = form_data.subline;
                 this.selectedColors = form_data.colors.map(color => (color));
                 this.images = form_data.images.map(image => ({'id':image.id, 'url':`/${image.url}`}));
-                this.items = form_data.items.map(item => (item));
+                this.items = await Promise.all(form_data.items.map(async item => {
+                    let serie = await this.fecthSerie(item.serie_id);
+                    let material = await this.fecthMaterial(item.material_id);
+                    item.serie = serie.name;
+                    item.code = material.code
+                    item.qty = item.qty;
+                    item.detail = material.name
+                    item.unit = material.unit
+                    return item;
+                }));
+                console.log('items: ', this.items);
                 console.log('selected_colors: ', this.selectedColors);
                 console.log('selected_images: ', this.selectedImages);
             }
@@ -501,6 +549,9 @@
 
         handleImageUpload(event) {
             const files = event.target.files;
+            if (!files.length) {
+                return;
+            }
             this.newImages = [];
             for (let i = 0; i < files.length; i++) {
                 const reader = new FileReader();
@@ -521,6 +572,7 @@
 
         removeExistingImage(index) {
             this.selectedImages.splice(index, 1);
+            this.updateImageInput()
         },
 
         removeImage(index) {

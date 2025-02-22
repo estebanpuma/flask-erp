@@ -1,5 +1,7 @@
 from ..common import BaseModel, SoftDeleteMixin
 
+from datetime import datetime
+
 from app import db
 
 
@@ -49,6 +51,7 @@ class Product(BaseModel, SoftDeleteMixin):
     description = db.Column(db.Text, nullable=True)
     line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'), nullable=False)
     sub_line_id = db.Column(db.Integer, db.ForeignKey('product_sub_lines.id'), nullable=True)
+    pvp = db.Column(db.Float, nullable=True, default=0)
     
     images = db.relationship('ProductImages', back_populates='product', cascade='all, delete-orphan')
 
@@ -61,8 +64,7 @@ class Product(BaseModel, SoftDeleteMixin):
     material_details = db.relationship('ProductMaterialDetail', back_populates='product', cascade="all, delete-orphan")
 
     sale_order = db.relationship('SaleOrderProduct', back_populates='products')
-    price_history = db.relationship('ProductPriceHistory', back_populates='product')
-
+    
     def __repr__(self):
         return f'<Product(code={self.code}, name={self.name})>'
     
@@ -87,6 +89,19 @@ class MaterialGroup(BaseModel):
     materials = db.relationship('Material', back_populates='material_group')
     
 
+class MaterialPriceHistory(BaseModel):
+    __tablename__ = 'material_price_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    material_id = db.Column(db.Integer, db.ForeignKey('materials.id'), nullable=False)
+    price = db.Column(db.Float, nullable=False, check_constraint='price >= 0')  # Precio por unidad (ej: $10/metro)
+    currency = db.Column(db.String(3), nullable=False, default='USD')
+    start_date = db.Column(db.Date, nullable=False, default=datetime.today())
+    end_date = db.Column(db.Date)  # Null = precio vigente
+    is_actual_price = db.Column(db.Boolean, nullable=False, default=False)
+    material = db.relationship('Material', back_populates='price_history')
+
+
 class Material(BaseModel):
     __tablename__ = 'materials'
 
@@ -101,6 +116,15 @@ class Material(BaseModel):
 
     product_material_details = db.relationship('ProductMaterialDetail', back_populates='material')
     material_group = db.relationship('MaterialGroup', back_populates='materials')
+    price_history = db.relationship('MaterialPriceHistory', back_populates = 'material', order_by='MaterialPriceHistory.start_date.desc()')
+
+    @property
+    def current_price(self):
+        return next(
+            (ph.price for ph in self.price_history if ph.end_date is None),
+            None  # Si no hay precio vigente
+        )
+
 
 
     def __repr__(self):

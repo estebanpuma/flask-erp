@@ -73,8 +73,8 @@
                 <h2 class="mb-3" text-muted x-text="product.name"></h2>
                 <p><strong>L&iacute;nea:</strong><small x-text="'edcua'"></small></p>
                 <p><strong>Sub L&iacute;nea:</strong><small x-text="'edcua'"></small></p>
-                <p><strong>Precio de Producción:</strong> $50.00</p>
-                <p><strong>Precio de Venta:</strong> $100.00</p>
+                <p><strong>Precio de Producción:</strong> <small x-text="product.production_cost"></small></p>
+                <p><strong>Precio de Venta:</strong> <small x-text="product.pvp"></small></p>
                 <p><strong>Total vendidos:</strong> 500</p>
                 <button class="btn btn-outline-dark mb-2" @click="showMaterials = !showMaterials, fetchMaterialDetails({{product_id}})">
                     Mostrar Materiales <i class="bi bi-caret-down-fill"></i>
@@ -149,8 +149,11 @@ function viewProduct(product_id){
 
         init(){
             this.fetchProduct(product_id);
+            
             this.fecthImages();
-          
+
+            this.fetchProductPrice(product_id);
+            
         },
 
         async fetchProduct(product_id){
@@ -161,10 +164,30 @@ function viewProduct(product_id){
                 }
                 const product = await response.json();
                 this.product = product;
+                
                 console.log(this.product);
             }catch(error){
                 console.error(error);
             }
+        },
+
+        async fetchProductPrice(product_id) {
+            try {
+                const response = await fetch(`/api/v1/product-price/${product_id}`);
+                if (response.ok) {
+                    const price = await response.json();
+                    this.product.production_cost = price.cost.material_cost.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                    this.product.pvp = price.price.pvp.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                    console.log('cost: ', this.product.production_cost);
+                } else {
+                    console.error("Error al cargar el precio del producto");
+                }
+            } catch (error) {
+                console.error("Hubo un problema con la solicitud:", error);
+            }
+            return 0
+            
+            ;
         },
 
         async fecthImages(){

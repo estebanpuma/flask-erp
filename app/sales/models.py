@@ -48,6 +48,6 @@ class ProductPriceHistory(BaseModel):
     start_date = db.Column(db.Date, nullable=False)  # Fecha desde la cual este precio es válido
     end_date = db.Column(db.Date, nullable=True)  # Fecha hasta cuando es válido. Si es NULL, es el precio actual.
 
-    product = db.relationship('Product', back_populates='price_history')
+    #product = db.relationship('Product', back_populates='price_history')
 
 

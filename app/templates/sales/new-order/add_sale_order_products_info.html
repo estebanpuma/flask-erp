@@ -13,7 +13,7 @@
     {% include '/sales/new-order/__sale_order_nav.html' %}
 </section>
 
-<div x-data="orderForm()" class="container my-4">
+<div x-data='orderForm({{products|tojson}})' class="container my-4">
 
     <!-- Formulario de pedidos -->
     <div class="card p-4 shadow-sm">
@@ -99,7 +99,7 @@
                 Subtotal$
             </div>
             <div>
-                100
+                <small x-text="summary.subtotal"></small>
             </div>
           </div>
 
@@ -156,8 +156,12 @@
                     <span x-text="total_summary.sizes"></span>
                 </div>
                 <div>
-                    Cantidad total:
+                    Items totales:
                     <span x-text="total_summary.qty"></span>
+                </div>
+                <div>
+                    Total:
+                    <span x-text="total_summary.total"></span>
                 </div>
             </div>
             <li class="list-group-item text-center" x-show="order.length === 0">
@@ -184,6 +188,9 @@
                         </template>
                     </div>  
                 </template>
+                <input type="number" x-bind:name="'total_items'" x-bind:id="'total_items'" x-model="total_summary.qty" readonly>
+                <input type="number" x-bind:name="'total_amount'" x-bind:id="'total_amount'" x-model="total_summary.total" readonly>
+
             </div>
     
             <input class="btn btn-dark" type="submit" name="submit" id="submit" value="Siguiente">
@@ -194,23 +201,30 @@
 
 
 <script>
-function orderForm() {
+function orderForm(products) {
     return {
         model: '',
         selectedModel: '',
+        selectedModelObject: '',
         order: [],
         orderErrors:[],
-        summary:{ series:0, sizes:0, qty:0 },
+        summary:{ series:0, sizes:0, qty:0, subtotal:0 },
         series:[],        
-        total_summary:{ series:0, sizes:0, qty:0},
+        total_summary:{ series:0, sizes:0, qty:0, total:0},
         fakesizes:[20,21,22,23,24,'...'],
+        models: [],
 
+        prod: products || [],
 
 
         init(){
             this.fecthModels();
             this.fetchSeries();
+            this.initOrder();
+            console.log('products', this.prod)
+
             console.log('init')
+            
         },
 
         editModelOrder(model){
@@ -220,6 +234,17 @@ function orderForm() {
                 console.error(error);
             }
             
+        },
+
+        initOrder(){
+            for (let i = 0; i < this.prod.length; i++) {
+                this.order.push({
+                    model: this.prod[i].model,
+                    sizes: this.prod[i].sizes,
+                    summary: { series: 0, sizes: 0, qty: 0, subtotal: 0 },
+                });
+            }
+            console.log('order', this.order)
         },
 
         addToOrder() {
@@ -233,6 +258,7 @@ function orderForm() {
                     series: this.summary.series,
                     sizes: this.summary.sizes,
                     qty: this.summary.qty,
+                    subtotal: this.summary.subtotal,
                 };
 
                 // Crear el objeto para el modelo seleccionado
@@ -275,7 +301,7 @@ function orderForm() {
                 }
 
                 // Inicializar el total_summary con valores predeterminados
-                this.total_summary = { series: 0, sizes: 0, qty: 0 };
+                this.total_summary = { series: 0, sizes: 0, qty: 0, total: 0 };
                 console.log('this order in calculate summary: ', this.order)
                 // Usar reduce para acumular valores
                 this.total_summary = this.order.reduce(
@@ -283,9 +309,10 @@ function orderForm() {
                         totals.series += model.summary.series;
                         totals.sizes += model.summary.sizes;
                         totals.qty += model.summary.qty;
+                        totals.total += model.summary.subtotal;
                         return totals;
                     },
-                    { series: 0, sizes: 0, qty: 0 } // Valores iniciales
+                    { series: 0, sizes: 0, qty: 0, total: 0 } // Valores iniciales
                 );
 
                 console.log("Total Summary:", this.total_summary);
@@ -348,8 +375,12 @@ function orderForm() {
             this.summary.series = items_selected.length; // Total de series con tallas seleccionadas
             this.summary.sizes = sizes_withvalue_selected; // Total de tallas seleccionadas
             this.summary.qty = total_items; // Total de artículos seleccionados
+            this.summary.subtotal = total_items*this.selectedModelObject.pvp; // Subtotal de la orden (por implementar)
+
+            console.log('summary', this.summary)
             },
 
+            
 
         removeOrder(index) {
             this.order.splice(index, 1);
@@ -420,6 +451,8 @@ function orderForm() {
             if(model){
                 this.orderErrors.model = [];
                 this.selectedModel = model.code;
+                this.selectedModelObject = model;
+                console.log('selected objetc', this.selectedModelObject)
             }else{
                 this.orderErrors.model = 'Codigo incorrecto';
                 this.selectedModel = ''

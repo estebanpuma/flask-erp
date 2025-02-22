@@ -3,7 +3,7 @@ from app import db
 from flask import current_app
 from werkzeug.utils import secure_filename
 from .models import Product, ProductLine, ProductSubLine, Color, SizeSeries, Size, ProductMaterialDetail, ProductImages
-from .models import ProductColor
+from .models import ProductColor, MaterialPriceHistory
 import os
 
 import pandas as pd
@@ -23,8 +23,48 @@ class ProductServices:
     @staticmethod
     def get_product_by_code(code):
         product = Product.query.filter_by(code=code).first()
+        
         return product
     
+    @staticmethod
+    def calculate_product_price(product_id):
+        # Precio = Costo materiales + Costo mano de obra directa    
+        try:
+            material_cost = ProductServices.calculate_material_cost(product_id)['material_cost']
+            print('material cost: ', material_cost)
+            from ..pricing.services import PricingServices
+            gross_margin = PricingServices.get_active_gross_margin()
+            mcp = material_cost / (1 - (gross_margin.value)/100)
+            return {'pvp': mcp}
+        except Exception as e:
+            current_app.logger.warning(f'Error calculando precio del producto: {str(e)}')
+            return {'pvp': 0.0}
+    
+    @staticmethod
+    def calculate_material_cost(product_id):
+        try:
+            product = ProductServices.get_product(product_id)
+            # Costo materiales = sum( cantidad * precio_vigente )
+            materials = product.material_details
+            print('materials: ', materials)
+            total_cost=0
+            for material in materials:
+                if material.material.current_price:
+                    total_cost = material.material.current_price * material.quantity + total_cost
+                print('totalcost', total_cost)
+
+            material_cost = total_cost
+
+            print('material cost: ', material_cost)
+            return {
+                "material_cost": material_cost,
+                }
+        except Exception as e:
+            current_app.logger.warning(f'Error calculando costo de materiales: {str(e)}')
+            return {
+                "material_cost": 0.0,
+            }
+
     @staticmethod
     def create_product(line_id:int, code:str, colors, name=None, subline_id=None, description=None, items=None, images=None):
         line = ProductLine.query.get_or_404(line_id)
@@ -116,14 +156,16 @@ class ProductServices:
                 db.session.flush()
 
                 # Handle existing images
-                existing_image_paths = [image['url'].replace('/', '', 1) for image in existing_images]
-                current_images = ImageServices.get_images_from_db(product_id)
-                images_to_delete = set(current_images) - set(existing_image_paths)
-                for image_path in images_to_delete:
-                    ImageServices.delete_uploaded_image(image_path)
+                if existing_images:
+                    existing_image_paths = [image['url'].replace('/', '', 1) for image in existing_images]
+                    current_images = ImageServices.get_images_from_db(product_id)
+                    images_to_delete = set(current_images) - set(existing_image_paths)
+                    for image_path in images_to_delete:
+                        ImageServices.delete_uploaded_image(image_path)
                 #handle new images
                 # Check if there are any valid images in the list
                 valid_images = [image for image in images if image.filename != '']
+                print('valid images ', valid_images)
                 if valid_images:   
                     ImageServices.upload_and_save_images(valid_images, product.code, product.id)
                 BoomServices.create_boom_of_materials(product.id, items)

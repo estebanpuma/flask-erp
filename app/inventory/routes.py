@@ -142,7 +142,8 @@ def add_material():
                                                             group = form.group.data,
                                                         name = form.name.data,
                                                         detail = form.detail.data,
-                                                        unit = form.unit.data)
+                                                        unit = form.unit.data,
+                                                        price = form.price.data)
             flash('Registro guardado!', 'success')
             return redirect(url_for('inventory.view_materials'))
         
@@ -168,12 +169,13 @@ def update_material(material_id):
 
     if form.validate_on_submit():
         try: 
-            update_material = MaterialServices.update_material(material_id=material_id,
-                                                               code = form.code.data,
-                                                                group = form.group.data,
-                                                                name = form.name.data,
-                                                                detail = form.detail.data,
-                                                                unit = form.unit.data)
+            MaterialServices.update_material(material_id=material_id,
+                                             code = form.code.data,
+                                             group = form.group.data,
+                                             name = form.name.data,
+                                             detail = form.detail.data,
+                                             unit = form.unit.data,
+                                             price= form.price.data)
             flash('Registro guardado!', 'success')
             return redirect(url_for('inventory.view_materials'))
         

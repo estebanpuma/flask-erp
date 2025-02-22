@@ -34,6 +34,8 @@ class SelectedModelForm(FlaskForm):
 
 class ProductOrderForm(FlaskForm):
     order = FieldList(FormField(SelectedModelForm), min_entries=1)
+    total_items = IntegerField(validators=[DataRequired()])
+    total_amount = FloatField(validators=[DataRequired()])
     submit = SubmitField()
 
 

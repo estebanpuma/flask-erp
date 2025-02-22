@@ -6,8 +6,10 @@ product_fields = {
     'name': fields.String,
     'line_id': fields.String,
     'subline_id': fields.String,
-    'description': fields.String
+    'description': fields.String,
+    'pvp': fields.Float
 }
+
 
 material_fields ={
     'code': fields.String,

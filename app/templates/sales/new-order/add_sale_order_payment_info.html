@@ -1,4 +1,4 @@
-{% from 'macros.html' import cardContainer %}
+{% from 'macros.html' import cardContainer, render_errors %}
 
 {% extends 'base.html' %}
 
@@ -15,7 +15,7 @@
 
 <div class="container mt-3">
     <h1 class="mb-3">Informacion de Pago</h1>
-    <form method="post" novalidate id="paymentInfoForm" x-data="paymentInfo()">
+    <form method="post" novalidate id="paymentInfoForm" x-data='paymentInfo({{total_amount|tojson}}, {{data|tojson}})' >
 
         {{ form.hidden_tag() }}
         
@@ -24,18 +24,21 @@
             x-bind:placeholder="'payment_method'" x-model="payment.method" class="form-select" >
                 <option value="">Seleccione tipo de pago</option>
                 <template x-for="method in payment_methods">
-                    <option :value="method.id" x-text="method.name"></option>
+                    <option :value="method.id"  x-text="method.name"
+                    x-bind:selected="method.id==payment.method" ></option>
                 </template>
             </select>
             <label x-bind:for="'payment_method'">Pago</label>
+            {{ render_errors(form.payment_method) }}
             <span x-text="paymentErrors.method" class="text-danger">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
         </div>
         <div class="form-floating">           
             <input type="number" x-bind:name="'total_amount'" x-bind:id="'total_amount'"  
-            x-bind:placeholder="'total_amount'" x-model="payment.amount" class="form-control"  />
+            x-bind:placeholder="'total_amount'" x-model="payment.amount" class="form-control"  @change="setInstallements()" />
             <label x-bind:for="'total_amount'">Total a pagar</label>
+            {{ render_errors(form.total_amount) }}
             <span x-text="paymentErrors.amount" class="text-danger">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
@@ -44,6 +47,7 @@
             <input type="number" x-bind:name="'n_installements'" x-bind:id="'n_installements'" @change="setInstallements()" 
             x-bind:placeholder="'n_installements'" x-model="payment.total_installements" class="form-control"  />
             <label x-bind:for="'n_installements'">N&uacute;mero de cuotas</label>
+            {{ render_errors(form.n_installements) }}
             <span x-text="paymentErrors.total_installements" class="text-danger">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
@@ -58,6 +62,7 @@
                     x-bind:placeholder="'installements-'+index+'-n_installement'" x-model="installement.n_installement" >
                     <label for="floatingPlaintextInput" readonly>Cuota</label>
                   </div>
+                  
                
                 <div class="form-floating col-6">           
                     <input type="date" x-bind:name="'installements-'+index+'-payment_date'" x-bind:id="'installements-'+index+'-payment_date'"  
@@ -69,7 +74,7 @@
                 </div>
                 <div class="form-floating col-4">           
                     <input type="number" x-bind:name="'installements-'+index+'-amount'" x-bind:id="'installements-'+index+'-amount'"  
-                    x-bind:placeholder="'installement_amount'" x-model="installement.installement_amount" class="form-control"  />
+                    x-bind:placeholder="'installement_amount'" x-model="installement.amount" class="form-control"  />
                     <label x-bind:for="'installements-'+index+'-amount'">$Monto</label>
                     <span x-text="paymentErrors.installement_amount" class="text-danger">
                         <i class="bi bi-exclamation-circle-fill"></i>
@@ -77,7 +82,7 @@
                 </div>
             </div>
         </template>
-        
+        {{ render_errors(form.installements) }}
         <input class="btn btn-primary my-5" type="submit" id="submit" name="submit" value="Siguiente"></input>
 
     </form>
@@ -85,29 +90,42 @@
 
 <script>
 
-function paymentInfo(){
+function paymentInfo(total_amount, data){
     return {
         payment:{
-            method:'',
-            amount:'',
-            total_installements: 0
+            method: parseInt(data.payment_method ) || '',
+            amount: data.total_amount || 0,
+            total_installements: data.n_installements || 0
         },
-        installements: [],
+        installements: data.installements || [],
         paymentErrors:[],
-
+        // Parse the total amount from the JSON string
+        total_amount: JSON.parse(total_amount),
         payment_methods:[],
 
         init(){
             this.fetchPaymentMethods()
+            this.total_amount = parseFloat(this.total_amount);
+            this.payment.amount = this.total_amount;
+            this.initInstallements();
+            console.log('payment', this.payment);
+            console.log('installements', this.installements)
+        },
+
+        initInstallements(){
+            this.installements.forEach(element => {
+                element.payment_date = new Date(element.payment_date).toISOString().split('T')[0];
+            });
         },
 
         setInstallements(){
+            console.log('setting installements')
             this.installements = [];
             for(let i=0; i<this.payment.total_installements; i++){
                 let installement = {
                     n_installement: i+1,
                     payment_date: '',
-                    installement_amount: (this.payment.amount/this.payment.total_installements).toFixed([2])
+                    amount: (this.payment.amount/this.payment.total_installements).toFixed([2])
                 }
                 this.installements.push(installement)
             }

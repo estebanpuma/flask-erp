@@ -109,7 +109,11 @@ def edit_product(product_id):
     form = ProductModelForm()
 
     obj_colors = [{'id':color.color_id} for color in product.colors]
-    obj_items = [{'code':item['code'], 'qty':item['qty'], 'serie':['serie']} for item in form.items.data]
+    obj_items = product.material_details
+    obj_items = [{'material_id':item.material_id, 'qty':item.quantity, 'serie_id':item.serie_id} for item in obj_items]
+    
+        
+    print('items: ',obj_items)
     obj_images = [{'id':image.id, 'url':image.image_path} for image in product.images]
     obj_data = {
         'code': product.code,
