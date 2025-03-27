@@ -12,6 +12,7 @@ class ClientForm(FlaskForm):
         choices = [('', 'Seleccione una opcion'), ('natural', 'Natural'), ('juridica', 'Juridica')],
         validators=[DataRequired()]
     )
+    is_new_client = BooleanField('Nuevo')
     ruc_or_ci = StringField('RUC/CI', validators=[DataRequired(message="Este campo es obligatorio."), validate_ruc_or_ci])
     is_special_taxpayer = BooleanField('Especial', validators=[Optional()])
     #is_ci = BooleanField('CI', validators=[Optional()])

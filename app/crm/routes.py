@@ -46,6 +46,7 @@ def view_client(client_id):
 def add_client():
     title = 'Crear Cliente'
     prev_url = url_for('crm.view_clients')
+    data=None
 
     form = ClientForm()
 
@@ -64,4 +65,50 @@ def add_client():
     return render_template('crm/add_client.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = form,
+                           data=data)
+
+
+@crm_bp.route('/crm/provinces')
+def view_provinces():
+    title = 'Provincias'
+    prev_url = url_for('crm.index')
+
+    from .services import LocationsServices
+
+    provinces = LocationsServices.get_provinces()
+
+    return render_template('crm/view_provinces.html',
+                           title = title,
+                           prev_url = prev_url,
+                           provinces = provinces)
+
+@crm_bp.route('/crm/provinces/<int:province_id>')
+def view_province(province_id):
+    title = 'Provincia'
+    prev_url = url_for('crm.view_provinces')
+
+    return render_template('crm/view_province.html',
+                           title = title,
+                           prev_url = prev_url)
+
+
+@crm_bp.route('/crm/provinces/add')
+def add_province():
+    title = 'Crear Provincia'
+    prev_url = url_for('crm.view_provinces')
+
+    return render_template('crm/add_province.html',
+                           title = title,
+                           prev_url = prev_url)
+
+
+
+@crm_bp.route('/crm/cities')
+def view_cities():
+    title = 'Ciudades'
+    prev_url = url_for('crm.index')
+
+    return render_template('crm/view_cities.html',
+                           title = title,
+                           prev_url = prev_url)

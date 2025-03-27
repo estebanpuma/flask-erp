@@ -31,7 +31,7 @@ class ProductResource(Resource):
             return products, 200
         
         except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error fetching users(s): {e}')
+            current_app.logger.warning(f'Error fetching models(s): {e}')
             abort(500, message="Internal server error")
         except Exception as e:
             current_app.logger.warning(f'Unexpected error: {e}')

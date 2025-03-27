@@ -1,36 +1,142 @@
 {% from 'macros.html' import render_input_float %}
 
-<form action="" method="post" novalidate>
-
+<form id="clientForm" novalidate method="post" x-data='clientInfo({{data|tojson}})' >
     {{ form.hidden_tag() }}
-
-    {{ render_input_float(form.client_type, class='form-select', placeholder="hola") }}
-
+    <div>
+        Datos del cliente
+    </div>
     <div class="input-group">
-        <div class="form-floating">              
-            {{ render_input_float(form.ruc_or_ci) }}
+        <div class="form-floating">           
+            <input x-bind:name="'ruc_or_ci'" x-bind:id="'ruc_or_ci'"  
+            x-bind:placeholder="'ruc/ci'" x-model="client.ruc_or_ci" class="form-control" @change="fecth_ruc_or_ci()"> 
+            </input>
+            <label x-bind:for="'ruc_or_ci'">RUC o CI</label>
+            <span x-text="clientErrors.ruc_or_ci" class="text-danger">
+                <i class="bi bi-exclamation-circle-fill" ></i>
+            </span>
         </div>
         <div class="input-group-text rounded-bottom-0">
             <div>
-                <label class="" for="is_ci"><small>CI</small></label>
-                {{ form.is_ci(class='form-check-input') }}
-            </div>
-            
-        </div>
-        <div class="input-group-text rounded-bottom-0">
-            <div>
-                <label class="" for="is_ci"><small>Especial</small></label>
-                {{ form.is_ci(class='form-check-input') }}
+                <label class="" for="is_special_taxpayer">
+                    <small>
+                        <div>Cont</div>
+                        <div>Especial</div>
+                    </small>
+                </label>
+                <input type="checkbox" name="is_special_taxpayer" id="is_special_taxpayer" class="form-check-input">
             </div>
             
         </div>
     </div>
-    {{ render_input_float(form.name) }}
-    {{ render_input_float(form.city) }}
-    {{ render_input_float(form.address) }}
-    {{ render_input_float(form.phone) }}
-    {{ render_input_float(form.email) }}
+    <div class="form-floating">           
+        <select x-bind:name="'client_type'" x-bind:id="'client_type'"  
+        x-bind:placeholder="'client'" x-model="client.client_type" class="form-select" >
+            <option value="">Seleccione tipo cliente</option>
+            <option value="natural" x-bind:selected="client.client_type=='natural'">Natural</option>
+            <option value="juridica" x-bind:selected="client.client_type=='juridica'">Juridica</option>
+        </select>
+        <label x-bind:for="'client_type'">Tipo de personería</label>
+        <span x-text="clientErrors.client_type" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    
+    <div class="form-floating">           
+        <input x-bind:name="'name'" x-bind:id="'name'"  
+        x-bind:placeholder="'ruc/ci'" x-model="client.name" class="form-control" >
+        </input>
+        <label x-bind:for="'name'">Nombre o razon social</label>
+        <span x-text="clientErrors.name" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    <div class="form-floating">           
+        <input x-bind:name="'email'" x-bind:id="'email'"  
+        x-bind:placeholder="'email'" x-model="client.email" class="form-control" >
+        </input>
+        <label x-bind:for="'email'">Email</label>
+        <span x-text="clientErrors.email" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    <div class="form-floating">           
+        <input x-bind:name="'city'" x-bind:id="'city'"  
+        x-bind:placeholder="'city'" x-model="client.city" class="form-control" >
+        </input>
+        <label x-bind:for="'city'">Ciudad</label>
+        <span x-text="clientErrors.city" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    <div class="form-floating">           
+        <input x-bind:name="'address'" x-bind:id="'address'"  
+        x-bind:placeholder="'address'" x-model="client.address" class="form-control" >
+        </input>
+        <label x-bind:for="'address'">Direccion</label>
+        <span x-text="clientErrors.address" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    <div class="form-floating">           
+        <input x-bind:name="'phone'" x-bind:id="'phone'"  
+        x-bind:placeholder="'phone'" x-model="client.phone" class="form-control" >
+        </input>
+        <label x-bind:for="'phone'">Telefono</label>
+        <span x-text="clientErrors.phone" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    <div class="mt-3 ">
+        <div class="row p-2 justify-content-between">
+            <button class="btn btn-secondary col-sm-4 mb-3" type="reset" @click="cleanAll()" >Limpiar</button>
+            <input type="submit" name="submit" id="submit" class="btn btn-dark col-sm-4 mb-3" value="Guardar">
+        </div>
+        
+    </div>
 
-    {{ form.submit(class='btn btn-dark mt-3') }}
-
+    
 </form>
+
+<script>
+    function clientInfo(data){
+        return {
+            client: {
+                ruc_or_ci: data?.ruc_or_ci || '',
+                client_type: data?.client_type || '',
+                name: data?.name || '',
+                email: data?.email || '',
+                city: data?.city || '',
+                address: data?.address || '',
+                phone: data?.phone || ''
+            },
+            clientErrors:[],
+            init(){
+                console.log('client', this.client);
+            },
+            cleanAll(){
+                this.client = {
+                    ruc_or_ci: '',
+                    client_type: '',
+                    name: '',
+                    email: '',
+                    city: '',
+                    address: '',
+                    phone: ''
+                }
+            },
+
+            async fecth_ruc_or_ci(){
+                console.log('fetching ruc or ci');
+                console.log('ruc or ci', this.client.ruc_or_ci);
+                try {
+                    const response = await fetch('/api/v1/search/client?ci='+ this.client.ruc_or_ci);
+                    
+                    const data = await response.json();
+                    console.log('data', data);
+                } catch (error) {
+                    console.error('error', error);
+                }
+            }
+        }
+    }
+</script>

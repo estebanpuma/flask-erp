@@ -70,16 +70,30 @@
             </li>
         </template>
     </ul>
+    
+    <div >
+        <div class="mb-4 d-grid justify-content-md-end">
+            <button @click="client_info = true; is_new_client=true; cleanAll()" type="button" class="btn btn-dark">Nuevo cliente</button>
+        </div>
+        
+    </div>
+    
     <!-- Formulario -->
-    <form id="clientForm" novalidate method="post">
+    <form id="clientForm" novalidate method="post" x-show="client_info">
         {{ form.hidden_tag() }}
+        <div>
+            Datos del cliente
+        </div>
+        <div class="hidden">
+            <input type="checkbox" name="is_new_client" id="is_new_client" x-model="is_new_client" hidden>
+        </div>
         <div class="input-group">
             <div class="form-floating">           
                 <input x-bind:name="'ruc_or_ci'" x-bind:id="'ruc_or_ci'"  
-                x-bind:placeholder="'ruc/ci'" x-model="client.ruc_or_ci" class="form-control" >
+                x-bind:placeholder="'ruc/ci'" x-model="client.ruc_or_ci" class="form-control"  @change="fetchClient()">
                 </input>
                 <label x-bind:for="'ruc_or_ci'">RUC o CI</label>
-                <span x-text="clientErrors.ruc_or_ci" class="text-danger">
+                <span x-text="clientErrors.ruc_or_ci" class="text-danger" >
                     <i class="bi bi-exclamation-circle-fill"></i>
                 </span>
             </div>
@@ -154,8 +168,18 @@
                 <i class="bi bi-exclamation-circle-fill"></i>
             </span>
         </div>
-        <input type="submit" name="submit" id="submit" class="btn btn-dark" value="Guardar">
-        <button class="btn btn-secondary" type="reset" @click="cleanAll()" >Limpiar</button>
+        <div class="mt-3">
+            <input type="submit" name="submit" id="submit" x-show="is_new_client" class="btn btn-dark col-sm-4 mb-3" value="Guardar nuevo cliente">
+        </div>
+        <div class="mt-3 ">
+            <div class="row p-2 justify-content-between">
+                <button class="btn btn-secondary col-sm-4 mb-3" type="reset" @click="cleanAll()" >Limpiar</button>
+                <input type="submit" name="submit" id="submit" class="btn btn-dark col-sm-4 mb-3" value="Guardar">
+            </div>
+            
+        </div>
+    
+        
     </form>
 </div>
 
@@ -170,8 +194,11 @@ function sale_orderClientForm(client) {
         client: client || {},
         clientErrors:{},
         modal: false,
+        client_info: false,
+        is_new_client: false,
 
         init(){
+            console.log(client)
             this.client = client;
             console.log('client', this.client)
             console.log('client ruc', this.client.ruc_or_ci)
@@ -194,8 +221,33 @@ function sale_orderClientForm(client) {
         // Función para seleccionar un cliente
         selectClient(item) {
             this.client = item;
+            this.client_info = true;
             console.log(this.client)
             this.results = []; // Ocultar resultados después de seleccionar
+        },
+
+        async fetchClient(){
+            console.log('fetching client')
+            let ruc_or_ci = this.client.ruc_or_ci;
+            try{
+                console.log('trying fetching client')
+                const response = await fetch(`/api/v1/search/client?ci=${this.client.ruc_or_ci}`);
+                if(response.ok){
+
+                    const client = await response.json()
+                    this.client = client;
+                    console.log('client: ', this.client)
+
+                }else{
+                    this.client = {};
+                    this.client.ruc_or_ci = ruc_or_ci;
+                    this.is_new_client = true
+                    console.log('ups: ', response)
+                }
+                console.log('response: ', response)
+            }catch(error){
+                console.error('error al buscar cliente: ',error)
+            }
         },
 
 

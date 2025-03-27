@@ -60,3 +60,32 @@ class Contact(BaseModel):
         return f'<Contacto(nombre={self.name}, client={self.client.name})>'
 
 
+class Provinces(db.Model):
+
+    __tablename__ = 'provinces'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    code = db.Column(db.String(6), nullable=False, unique=True)
+    capital = db.Column(db.String(100), nullable=True)
+    population = db.Column(db.Integer, nullable=True)
+    cantons = db.relationship('Cantons', back_populates='province', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<Provincia(nombre={self.name})>'
+    
+
+class Cantons(db.Model):
+
+    __tablename__ = 'cantons'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.String(6), nullable=False, unique=True)
+    population = db.Column(db.Integer, nullable=True)
+    province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=False)
+    province = db.relationship('Provinces', back_populates='cantons')
+    
+    
+    def __repr__(self):
+        return f'<Cantón(nombre={self.name})>'

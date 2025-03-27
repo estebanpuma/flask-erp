@@ -4,10 +4,6 @@
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.path == url_for('sales.add_sale_order_info') %}active{% endif %}" 
-                    href="{{url_for('sales.add_sale_order_info')}}">General</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link {% if request.path == url_for('sales.add_sale_order_client_info') %}active{% endif %}" 
                     href="{{url_for('sales.add_sale_order_client_info')}}">Cliente</a>
                 </li>
@@ -15,9 +11,14 @@
                     <a class="nav-link {% if request.path == url_for('sales.add_sale_order_products_info') %}active{% endif %}" 
                     href="{{url_for('sales.add_sale_order_products_info')}}">Productos</a>
                 </li>
+                
                 <li class="nav-item">
                     <a class="nav-link {% if request.path == url_for('sales.add_sale_order_payment_info') %}active{% endif %}" 
                     href="{{url_for('sales.add_sale_order_payment_info')}}">Pago</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == url_for('sales.add_sale_order_info') %}active{% endif %}" 
+                    href="{{url_for('sales.add_sale_order_info')}}">Orden</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if request.path == url_for('sales.sale_order_checkout') %}active{% endif %}" 

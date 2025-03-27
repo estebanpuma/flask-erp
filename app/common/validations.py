@@ -57,12 +57,9 @@ def validate_ruc_or_ci(form, field):
     if not ruc_or_ci.isdigit():
         raise ValidationError('El RUC/CI debe contener solo números.')
     
-    if form.client_type.data == 'juridica':
-        if len(ruc_or_ci) != 13:
-            raise ValidationError('El RUC debe tener 13 digitos')
-    else:  # RUC de persona jurídica
-        if len(ruc_or_ci) != 13 or len(ruc_or_ci) !=10 :
-            raise ValidationError('El campo debe tener 10 digitos si es cedula o 13 dígitos si es RUC')
+    if len(ruc_or_ci) != 13 and len(ruc_or_ci) !=10 :
+        raise ValidationError('El campo debe tener 10 digitos si es cedula o 13 dígitos si es RUC')
+    
         
 def validate_massive_file(form, field):
     file = field.data

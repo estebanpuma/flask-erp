@@ -1,0 +1,53 @@
+{% from 'macros.html' import cardContainer, tableHover %}
+
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section id="header">
+    {% include '__title.html' %}
+</section>
+
+<section>
+    <a href="{{ url_for('crm.add_province') }}" class="btn btn-dark">Nueva provincia</a>
+    <a href="" class="btn btn-dark">Carga masiva</a>
+</section>
+
+<section>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <th>Provincia</th>
+                <th>C&oacute;digo</th>
+                <th>Capital</th>
+                <th>Poblaci&aacute;n</th>
+                <th>Clientes</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for province in provinces %}
+                {% set url = url_for('crm.view_province',province_id=province.id ) %}
+                <tr data-url="{{ url_for('crm.view_province',province_id=province.id ) }}" style="cursor: pointer;" onclick="redirectTo()">
+                    <td>{{ province.name }}</td>
+                    <td>{{ province.code }}</td>
+                    <td>{{ province.capital }}</td>
+                    <td>{{ province.population }}</td>
+                    <td>33</td>
+                    <td><i class="bi bi-chevron-right"></i></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    
+</section>
+<script>
+    function redirectTo() {
+        const url = event.target.closest('tr').getAttribute('data-url');
+        window.location.href = url;
+    }
+</script>
+
+{% endblock %}

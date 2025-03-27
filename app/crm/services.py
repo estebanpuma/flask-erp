@@ -16,6 +16,12 @@ class CRMServices:
         return client
     
     @staticmethod
+    def get_client_by_ci(ci):
+        from .models import Client
+        client = Client.query.filter_by(ruc_or_ci=ci).first()
+        return client
+    
+    @staticmethod
     def create_client(ruc_or_ci, name, client_type, address, city=None, email=None, phone=None):
         from .models import Client
 
@@ -35,3 +41,17 @@ class CRMServices:
             current_app.logger.warning(f'Error al guardar el cliente: {e}')
 
         return new_client
+    
+
+class LocationsServices:
+    @staticmethod
+    def get_provinces():
+        from .models import Provinces
+        provinces = Provinces.query.all()
+        return provinces
+    
+    @staticmethod
+    def get_province(province_id):
+        from .models import Provinces
+        province = Provinces.query.get_or_404(province_id)
+        return province

@@ -68,8 +68,8 @@
                                     <div class="input-group mb-3" style="width: 40%;" >
                                         <button class="btn btn-outline-secondary btn-sm rounded-start"
                                          type="button" @click="size.qty= parseInt(size.qty) + 1">+</button>
-                                        <input type="number" class="form-control form-control-sm text-center" 
-                                         placeholder="0" x-bind:id="size.value" x-model="size.qty" @input="size.qty=parseInt(size.qty)">
+                                        <input type="text" inputmode="numeric"  class="form-control form-control-sm text-center" value='0'
+                                         placeholder="0" x-bind:id="size.value" x-model="size.qty" @input="size.qty=parseInt(size.qty.replace(/\D/g, ''))">
                                         <button class="btn btn-outline-secondary btn-sm rounded-end" 
                                         @click="size.qty= size.qty>0? parseInt(size.qty)-1: parseInt(0)" type="button">-</button>
                                     </div>
@@ -139,7 +139,7 @@
                                 </template>
 
                                 <tr>
-                                    <td>Total</td>
+                                    <td>Total pares</td>
                                     <td x-text="model.summary.qty"></td>
                                 </tr>
                                 
@@ -149,20 +149,26 @@
                     </div>
                 </li>
             </template>
-            <div x-show="order.length > 0">
-                Resumen del pedido: 
-                <div>
-                    Tallas seleccionadas:
-                    <span x-text="total_summary.sizes"></span>
+            <div x-show="order.length > 0" class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        Resumen del pedido: 
+                    </h5>
+                    
+                    <div>
+                        Tallas seleccionadas:
+                        <span x-text="total_summary.sizes"></span>
+                    </div>
+                    <div>
+                        Pares totales:
+                        <span x-text="total_summary.qty"></span>
+                    </div>
+                    <div>
+                        Total a pagar:
+                        <span x-text="total_summary.total">$</span>
+                    </div>
                 </div>
-                <div>
-                    Items totales:
-                    <span x-text="total_summary.qty"></span>
-                </div>
-                <div>
-                    Total:
-                    <span x-text="total_summary.total"></span>
-                </div>
+                
             </div>
             <li class="list-group-item text-center" x-show="order.length === 0">
                 No hay pedidos añadidos
@@ -193,7 +199,12 @@
 
             </div>
     
-            <input class="btn btn-dark" type="submit" name="submit" id="submit" value="Siguiente">
+            <div class="mt-3 ">
+                <div class="row p-2 justify-content-between">
+                    <a href="{{prev_url}}" class="btn btn-secondary col-sm-4 mb-3" type="button"  >Atr&aacute;s</a>
+                    <input type="submit" name="submit" id="submit" class="btn btn-dark col-sm-4 mb-3" value="Guardar">
+                </div>  
+            </div>
         </form>  
     </section>
 </div>
@@ -236,15 +247,23 @@ function orderForm(products) {
             
         },
 
-        initOrder(){
+        async initOrder(){
             for (let i = 0; i < this.prod.length; i++) {
+                let total_items = 0;
+                let total_sizes = this.prod[i].sizes.filter(size => size.qty);
+                
+                await this.fetchModel(this.prod[i].model); //debo esperar a que cargue el producto
+                let qty = total_sizes.forEach(size => {
+                    total_items += size.qty;
+                });
                 this.order.push({
                     model: this.prod[i].model,
                     sizes: this.prod[i].sizes,
-                    summary: { series: 0, sizes: 0, qty: 0, subtotal: 0 },
+                    summary: { sizes: total_sizes.length, qty: total_items, subtotal: total_items*this.selectedModelObject.pvp },
                 });
+                this.calculateTotalSummary();
             }
-            console.log('order', this.order)
+            console.log('total summary', this.total_summary)
         },
 
         addToOrder() {
@@ -302,7 +321,6 @@ function orderForm(products) {
 
                 // Inicializar el total_summary con valores predeterminados
                 this.total_summary = { series: 0, sizes: 0, qty: 0, total: 0 };
-                console.log('this order in calculate summary: ', this.order)
                 // Usar reduce para acumular valores
                 this.total_summary = this.order.reduce(
                     (totals, model) => {
@@ -315,7 +333,6 @@ function orderForm(products) {
                     { series: 0, sizes: 0, qty: 0, total: 0 } // Valores iniciales
                 );
 
-                console.log("Total Summary:", this.total_summary);
             } catch (error) {
                 console.error("Error en calculateTotalSummary:", error);
             }
@@ -377,16 +394,30 @@ function orderForm(products) {
             this.summary.qty = total_items; // Total de artículos seleccionados
             this.summary.subtotal = total_items*this.selectedModelObject.pvp; // Subtotal de la orden (por implementar)
 
-            console.log('summary', this.summary)
+            
             },
 
             
 
         removeOrder(index) {
             this.order.splice(index, 1);
-            this.calculateTotalSummary()
+            this.getOrderSummary();
+            this.calculateTotalSummary();
+
         },
 
+        async fetchModel(model_code){
+            try{
+                const response = await fetch(`/api/v1/products?code=${model_code}`);
+                if(response.ok){
+                    const model = await response.json();
+                    this.selectedModelObject = model;
+                    console.log('model loaded', this.selectedModelObject)
+                }
+            }catch(error){
+                console.error(error)
+            }
+        },
 
         async fecthModels(){
             try{
@@ -394,6 +425,7 @@ function orderForm(products) {
                 if(response.ok){
                     const products = await response.json();
                     this.models = products;
+                    console.log('models loaded')
                 }
             }catch(error){
                 console.log(error)

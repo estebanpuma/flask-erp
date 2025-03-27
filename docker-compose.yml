@@ -27,7 +27,20 @@ services:
       - 8080:8080
     networks:
       - erp-network 
-      
+  
+  # PgAdmin (gestor avanzado)
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: estepuma94@gmail.com  # Cambia esto
+      PGADMIN_DEFAULT_PASSWORD: password123  # Define en .env
+    ports:
+      - "5050:80"  # Acceso solo desde tu IP local
+    networks:
+      - erp-network
+    depends_on:
+      - db
+    restart: unless-stopped
 
   db:
     image: postgres:16
@@ -44,6 +57,7 @@ services:
 
 networks:
   erp-network:
-
+    #internal: true  # Aísla la red (no accesible desde fuera de Docker)
+    
 volumes:
   postgres-data:
