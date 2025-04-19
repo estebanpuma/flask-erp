@@ -1,6 +1,7 @@
 from flask_restful import Resource, marshal, marshal_with, abort, request
 from werkzeug.exceptions import HTTPException
 
+from flask import flash
 from .services import CRMServices, LocationsServices
 from .schemas import client_fields, province_fields, canton_fields
 
@@ -75,7 +76,12 @@ class CantonResource(Resource):
     def get(self, canton_id=None):
      
         try:
-
+            province_id = request.args.get('province_id', False)
+            if province_id:
+                cantons = LocationsServices.get_cantons_by_province(province_id)
+                print(f'id: {province_id}')
+                return cantons, 200 if cantons else abort(404)
+            
             if canton_id:
                 
                 canton = LocationsServices.get_canton(canton_id)

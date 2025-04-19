@@ -26,9 +26,8 @@ class Client(BaseModel):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
-    city = db.Column(db.String(250), nullable=True)
     province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=True)
-    canton_id = db.Column(db.String(250))
+    canton_id = db.Column(db.Integer, db.ForeignKey('cantons.id'), nullable=True)
     address = db.Column(db.String(200), nullable=True)
     email = db.Column(db.String(120), nullable=True, unique=False)
     phone = db.Column(db.String(20), nullable=False)
@@ -36,9 +35,12 @@ class Client(BaseModel):
     is_special_taxpayer = db.Column(db.Boolean, default=False)
     client_type = db.Column(db.String(20), nullable=False)
     client_category_id = db.Column(db.Integer, db.ForeignKey('client_categories.id', ondelete='RESTRICT'), nullable=True)
+
     client_category = db.relationship('ClientCategory', backref='clients')
     contacts = db.relationship('Contact', back_populates='client', lazy=True, cascade="all, delete-orphan")
     orders = db.relationship('SaleOrder', back_populates='client', cascade="all, delete-orphan")
+    province = db.relationship('Provinces', back_populates='clients')
+    canton = db.relationship('Cantons', back_populates='clients')
     
     def __repr__(self):
         return f'<Cliente(nombre={self.name}, ruc_o_cedula={self.ruc_or_ci})>'
@@ -72,6 +74,7 @@ class Provinces(db.Model):
     capital = db.Column(db.String(100), nullable=True)
     population = db.Column(db.Integer, nullable=True)
     cantons = db.relationship('Cantons', back_populates='province', cascade='all, delete-orphan')
+    clients = db.relationship('Client', back_populates='province')
     
     def __repr__(self):
         return f'<Provincia(nombre={self.name})>'
@@ -87,6 +90,7 @@ class Cantons(db.Model):
     population = db.Column(db.Integer, nullable=True)
     province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=False)
     province = db.relationship('Provinces', back_populates='cantons')
+    clients = db.relationship('Client', back_populates='canton')
     
     
     def __repr__(self):

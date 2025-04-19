@@ -60,11 +60,28 @@
         </span>
     </div>
     <div class="form-floating">           
-        <input x-bind:name="'city'" x-bind:id="'city'"  
-        x-bind:placeholder="'city'" x-model="client.city" class="form-control" >
-        </input>
-        <label x-bind:for="'city'">Ciudad</label>
-        <span x-text="clientErrors.city" class="text-danger">
+        <select x-bind:name="'province'" x-bind:id="'province'"  
+        x-bind:placeholder="'province'" x-model="client.province" class="form-select" @click="fetch_cantons(client.province)" @select="is_province_selected=true">
+            <option value="">Seleccione provincia</option>
+            <template x-for="province in provinces" :key="province.id">
+                <option :value="province.id" x-text="province.name"></option>
+            </template>
+        </select>
+        <label x-bind:for="'province'">Provincia</label>
+        <span x-text="clientErrors.province" class="text-danger">
+            <i class="bi bi-exclamation-circle-fill"></i>
+        </span>
+    </div>
+    <div class="form-floating">           
+        <select x-bind:name="'canton'" x-bind:id="'canton'" x-bind:enabled="is_province_selected"
+        x-bind:placeholder="'canton'" x-model="client.canton" class="form-select" >
+            <option value="">Seleccione cant&oacute;n</option>
+            <template x-for="canton in cantons">
+                <option value="canton.id" x-text="canton.name"></option>
+            </template>
+        </select>
+        <label x-bind:for="'canton'">Cant&oacute;n</label>
+        <span x-text="clientErrors.canton" class="text-danger">
             <i class="bi bi-exclamation-circle-fill"></i>
         </span>
     </div>
@@ -72,7 +89,7 @@
         <input x-bind:name="'address'" x-bind:id="'address'"  
         x-bind:placeholder="'address'" x-model="client.address" class="form-control" >
         </input>
-        <label x-bind:for="'address'">Direccion</label>
+        <label x-bind:for="'address'">Direcci&oacute;n</label>
         <span x-text="clientErrors.address" class="text-danger">
             <i class="bi bi-exclamation-circle-fill"></i>
         </span>
@@ -81,7 +98,7 @@
         <input x-bind:name="'phone'" x-bind:id="'phone'"  
         x-bind:placeholder="'phone'" x-model="client.phone" class="form-control" >
         </input>
-        <label x-bind:for="'phone'">Telefono</label>
+        <label x-bind:for="'phone'">Tel&eacute;fono</label>
         <span x-text="clientErrors.phone" class="text-danger">
             <i class="bi bi-exclamation-circle-fill"></i>
         </span>
@@ -105,14 +122,23 @@
                 client_type: data?.client_type || '',
                 name: data?.name || '',
                 email: data?.email || '',
-                city: data?.city || '',
+                province: '',
+                canton: '',
                 address: data?.address || '',
                 phone: data?.phone || ''
             },
             clientErrors:[],
+            provinces:[],
+            cantons:[],
+            is_province_selected: false,
+
+
             init(){
                 console.log('client', this.client);
+                this.fetch_provinces();
+                //this.fetch_cantons();
             },
+
             cleanAll(){
                 this.client = {
                     ruc_or_ci: '',
@@ -135,6 +161,41 @@
                     console.log('data', data);
                 } catch (error) {
                     console.error('error', error);
+                }
+            },
+
+            async fetch_provinces(){
+                console.log('fetching provinces');
+                try{
+                    const response = await fetch(`/api/v1/provinces`);
+                    if(response.ok){
+                        const provinces = await response.json();
+                        this.provinces = provinces;
+                        console.log('provinces: ', provinces);
+                    }
+
+                }catch(error){
+                    console.error('Error al cargar provincias.', error);
+                }
+            },
+
+            async fetch_cantons(id){
+                console.log('fetching cantons, province id: ', id);
+                
+                try{
+                    if(id){
+                        const response = await fetch(`/api/v1/cantons?province_id=${id}`);
+                        if(response.ok){
+                            const cantons = await response.json();
+                            this.cantons = cantons;
+                            console.log('cantns', cantons)
+                        }
+                    }else{
+                        console.log('sin province_id')
+                    }
+                    
+                }catch(error){
+                    console.error('error cargando cantones.', error);
                 }
             }
         }
