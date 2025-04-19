@@ -1,8 +1,8 @@
 from flask_restful import Resource, marshal, marshal_with, abort, request
 from werkzeug.exceptions import HTTPException
 
-from .services import CRMServices
-from .schemas import client_fields
+from .services import CRMServices, LocationsServices
+from .schemas import client_fields, province_fields, canton_fields
 
 from .models import Client
 
@@ -47,3 +47,43 @@ class ClientResource(Resource):
         
         clients = CRMServices.get_all_clients()
         return clients, 200
+    
+
+class ProvinceResource(Resource):
+
+    @marshal_with(province_fields)
+    def get(self, province_id=None):
+     
+        try:
+
+            if province_id:
+                
+                province = LocationsServices.get_province(province_id)
+
+                return province, 200 if province else abort(404)
+            
+            provinces = LocationsServices.get_provinces()
+
+            return provinces, 200 if provinces else abort(404)
+        except Exception as e:
+            abort(500, message=f'{str(e)}')
+
+
+class CantonResource(Resource):
+
+    @marshal_with(canton_fields)
+    def get(self, canton_id=None):
+     
+        try:
+
+            if canton_id:
+                
+                canton = LocationsServices.get_canton(canton_id)
+
+                return canton, 200 if canton else abort(404)
+            
+            cantons = LocationsServices.get_cantons()
+
+            return cantons, 200 if cantons else abort(404)
+        except Exception as e:
+            abort(500, message=f'{str(e)}')

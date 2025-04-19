@@ -55,3 +55,15 @@ class LocationsServices:
         from .models import Provinces
         province = Provinces.query.get_or_404(province_id)
         return province
+    
+    @staticmethod
+    def get_cantons():
+        from .models import Cantons
+        cantons = Cantons.query.all()
+        return cantons
+    
+    @staticmethod
+    def get_canton(canton_id):
+        from .models import Cantons
+        canton = Cantons.query.get_or_404(canton_id)
+        return canton

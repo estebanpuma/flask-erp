@@ -57,3 +57,7 @@ class PaymentForm(FlaskForm):
      def __init__(self, *args, **kwargs):
           super(PaymentForm, self).__init__(*args, **kwargs)
           self.payment_method.choices += [(c.id, c.name) for c in PaymentMethodService.get_all_payment_methods()]
+
+
+class CheckoutForm(FlaskForm):
+     submit = SubmitField()

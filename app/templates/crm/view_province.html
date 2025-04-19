@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<section id="header" class="mb-4">
+    {% include '__title.html' %}
+</section>
+
+<section id="user" class="container">
+    <div class="card shadow-sm" x-data="view_province({{province_id}})" x-init="init()">
+        <div class="card-header bg-light">
+            <p class="mb-0">
+                <i class="bi bi-info-circle">Provincia</i> 
+            </p>
+        </div>
+        <div class="card-body">
+            <h2 class="card-title text-primary" x-text="province.name"></h2>
+            
+            <hr class="my-3">
+
+            <div class="mb-3">
+                <strong>Cantones:</strong>
+                    <div class="table-responsive">
+                        <table class="table-responsive">
+                            <thead>
+                                <th>Nombre</th>
+                                <th>Clientes</th>
+                                <th>Población total</th>
+                            </thead>
+                            <tbody>
+                                <template x-for="canton in cantons">
+                                    <tr>
+                                        <td x-text="canton.name"></td>
+                                        <td x-text="'0'" ></td>
+                                        <td x-text="canton.population" ></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+
+                    </div>
+            </div>
+            
+        </div>
+    </div>
+</section>
+
+<script>
+    function view_province(province_id){
+        return{
+            province: {},
+            cantons:[],
+
+            init(){
+                this.fetch_province(province_id);
+            },
+
+            async fetch_province(province_id){
+                try{
+                    const response = await fetch(`/api/v1/provinces/${province_id}`)
+                    if(response.ok){
+                        const province = await response.json()
+                        this.province = province;
+                        this.cantons = province.cantons;
+                        console.log(province)
+                    }
+                }catch{
+                    console.error('Error al cargar la provincia')
+                }
+            },
+        }
+    }
+</script>
+
+{% endblock %}

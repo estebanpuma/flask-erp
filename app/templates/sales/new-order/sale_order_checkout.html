@@ -15,7 +15,8 @@
 
 <div class="container mt-4">
     <h1 class="mb-3">Confirmar Orden</h1>
-    <form>
+    <form id="checkout_form" method="post" >
+        {{ form.hidden_tag() }}
         <div class="mb-3" id="orderReview" x-data='orderReview({{order_resume|tojson|safe}})'>
             <label for="orderReview" class="form-label">Revisar la orden:</label>
             <div>
@@ -32,7 +33,7 @@
                         Fecha:
                     </div>
                     <div class="col">
-                        <p x-text="order.order_date"></p>
+                        <p x-text="order.general.request_date"></p>
                     </div>
                 </div>
                 <div class="row">
@@ -41,6 +42,14 @@
                     </div>
                     <div class="col">
                         <p x-text="order.client.name"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        RUC/CI:
+                    </div>
+                    <div class="col">
+                        <p x-text="order.client.ruc_or_ci" ></p>
                     </div>
                 </div>
                 <div class="row">
@@ -56,7 +65,7 @@
                         Total a pagar:
                     </div>
                     <div class="col">
-                        <p x-text="order.total_amount"></p>
+                        <p x-text="order.total_amount + '$'"></p>
                     </div>
                 </div>
                 <div class="row">
@@ -72,7 +81,7 @@
                         M&eacute;todo de pago:
                     </div>
                     <div class="col">
-                        <p x-text="order.payment.payment_method"></p>
+                        <p x-text="payment_method.name"></p>
                     </div>
                 </div>
             </div>
@@ -90,11 +99,27 @@
     function orderReview(order_resume) {
         return {
             order: order_resume,
+            payment_method: '',
 
             init() {
                 console.log('inittializing');
-                
+                console.log(order_resume)
                 console.log('client:', this.order.client.name);
+                this.fetchPaymentMethod(order_resume.payment.payment_method)
+            },
+
+            async fetchPaymentMethod(payment_method_id){
+                console.log('fetching payment method')
+                try{
+                    const response = await fetch(`/api/v1/payment_methods/${payment_method_id}`);
+                    if(!response.ok) throw new Error('No se puede cargar el metodo de pago');
+                    const method = await response.json();
+                    this.payment_method = method;
+                    console.log(method);
+
+                    }catch(error){
+                        console.error(error)
+                    }
             }
 
         }

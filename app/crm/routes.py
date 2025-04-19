@@ -83,14 +83,17 @@ def view_provinces():
                            prev_url = prev_url,
                            provinces = provinces)
 
+
 @crm_bp.route('/crm/provinces/<int:province_id>')
 def view_province(province_id):
     title = 'Provincia'
     prev_url = url_for('crm.view_provinces')
+    province_id = int(province_id)
 
     return render_template('crm/view_province.html',
                            title = title,
-                           prev_url = prev_url)
+                           prev_url = prev_url,
+                           province_id =province_id)
 
 
 @crm_bp.route('/crm/provinces/add')

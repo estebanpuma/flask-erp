@@ -11,3 +11,18 @@ client_fields = {
     'address': fields.String,
     'phone': fields.String
 }
+
+canton_fields = {
+    'id':fields.Integer,
+    'name':fields.String,
+    'population':fields.Integer,
+    'province_id':fields.Integer,
+}
+
+province_fields = {
+    'id':fields.Integer,
+    'name':fields.String,
+    'population':fields.Integer,
+    'cantons':fields.Nested(canton_fields)
+}
+

@@ -4,7 +4,7 @@ from flask_login import current_user
 
 from ..crm.services import CRMServices
 
-from .forms import ClientForm
+from .forms import ClientForm, CheckoutForm
 from .services import SaleServices
 from . import sales_bp
 
@@ -205,19 +205,20 @@ def add_sale_order_payment_info():
 def sale_order_checkout():
     title = 'Orden de Venta/Checkout'
     prev_url = url_for('sales.add_sale_order_payment_info')
-    
-    
+    form = CheckoutForm()
 
     order_resume = session["sale_order"]  
 
     if request.method == 'POST':
-        #SaleServices.create_sale(order_resume)
+        print('se posteo el checkout')
+        SaleServices.create_sale_order(order_resume)
 
         flash('Orden de venta creada con exito', 'success')
     return render_template('sales/new-order/sale_order_checkout.html',
                            title = title,
                            prev_url = prev_url,
                            order_resume = order_resume,
+                           form = form
                            )
 
 

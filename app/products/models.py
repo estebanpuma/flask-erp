@@ -94,7 +94,7 @@ class MaterialPriceHistory(BaseModel):
     
     id = db.Column(db.Integer, primary_key=True)
     material_id = db.Column(db.Integer, db.ForeignKey('materials.id'), nullable=False)
-    price = db.Column(db.Float, nullable=False, check_constraint='price >= 0')  # Precio por unidad (ej: $10/metro)
+    price = db.Column(db.Float, nullable=False) 
     currency = db.Column(db.String(3), nullable=False, default='USD')
     start_date = db.Column(db.Date, nullable=False, default=datetime.today())
     end_date = db.Column(db.Date)  # Null = precio vigente
@@ -113,6 +113,7 @@ class Material(BaseModel):
     detail = db.Column(db.String(), nullable=True)
     unit = db.Column(db.String(), nullable=False)
     stock = db.Column(db.Float, nullable=True, default=0)
+    #provvedor = db.Column() codigo contable vs codigo de inventario
 
     product_material_details = db.relationship('ProductMaterialDetail', back_populates='material')
     material_group = db.relationship('MaterialGroup', back_populates='materials')

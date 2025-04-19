@@ -27,6 +27,8 @@ class Client(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     city = db.Column(db.String(250), nullable=True)
+    province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=True)
+    canton_id = db.Column(db.String(250))
     address = db.Column(db.String(200), nullable=True)
     email = db.Column(db.String(120), nullable=True, unique=False)
     phone = db.Column(db.String(20), nullable=False)
@@ -81,7 +83,7 @@ class Cantons(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    code = db.Column(db.String(6), nullable=False, unique=True)
+    code = db.Column(db.String(6), nullable=True, unique=False)
     population = db.Column(db.Integer, nullable=True)
     province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=False)
     province = db.relationship('Provinces', back_populates='cantons')
