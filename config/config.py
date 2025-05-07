@@ -1,4 +1,6 @@
 import os
+from datetime import timedelta
+
 
 class Config:
     DEBUG = True
@@ -17,5 +19,15 @@ class Config:
     }
 
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+
+    JWT_SECRET_KEY = 'super-clave-muy-segura-que-debes-cambiar'
+    JWT_COOKIE_CSRF_PROTECT = False
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+
 
    

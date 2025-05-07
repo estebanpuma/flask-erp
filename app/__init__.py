@@ -13,10 +13,11 @@ from flask_restful import Api
 
 from flask_wtf.csrf import CSRFProtect
 
+from flask_jwt_extended import JWTManager
+
 
 csrf = CSRFProtect()
 
-api = Api(decorators=[csrf.exempt])
 db = SQLAlchemy()
 
 migrate = Migrate()
@@ -28,14 +29,49 @@ def create_app(config):
     app = Flask(__name__)
     app.config.from_object(config)
     
+    jwt = JWTManager(app)
+
     login_manager.init_app(app)
 
     db.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
 
+
+    @jwt.unauthorized_loader
+    def missing_token_callback(err):
+        return {"msg": "Token de acceso requerido"}, 401
+
+    @jwt.expired_token_loader
+    def expired_token_callback(expired_token):
+        return {"msg": "Token expirado"}, 401
+
+    @jwt.invalid_token_loader
+    def invalid_token_callback(err):
+        return {"msg": f"Token inválido, {err}"}, 422
+    
+    @jwt.invalid_token_loader
+    def invalid_token_callback(reason):
+        return jsonify({"error": "Token inválido", "reason": reason}), 401
+
     from .logs import setup_logging
     setup_logging(app)
+
+    from .crm.api import crm_api_bp
+    app.register_blueprint(crm_api_bp)
+
+    # Exime TODO el API CRM del CSRF
+    csrf.exempt(crm_api_bp)
+
+    from .core.api import core_api_bp
+    app.register_blueprint(core_api_bp)
+    csrf.exempt(core_api_bp)
+
+    from .auth.api import auth_bp
+
+    app.register_blueprint(auth_bp)
+    csrf.exempt(auth_bp)   # exime CSRF en todo /api/v1/auth
+
 
     from .admin import admin_bp
     app.register_blueprint(admin_bp)
@@ -90,11 +126,6 @@ def register_error_handlers(app):
     def error_404_handler():
         return render_template('404.html'), 404
     
-    @app.errorhandler(api)
-    def handle_abort(err):
-        response = jsonify({'message': err['message']})
-        response.status_code = err['status']
-        return response
     
     @app.errorhandler(TemplateNotFound)
     def handle_template_not_found():

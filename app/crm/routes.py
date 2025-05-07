@@ -69,6 +69,11 @@ def add_client():
                            data=data)
 
 
+@crm_bp.route('/clients/<int:client_id>/update')
+def update_client(client_id):
+    return render_template('crm/update_client.html', client_id=client_id)
+
+
 @crm_bp.route('/crm/provinces')
 def view_provinces():
     title = 'Provincias'

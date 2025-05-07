@@ -6,6 +6,27 @@ from flask import jsonify, make_response, current_app
 from .services import AdminServices
 from .schemas import user_fields, job_fields, role_fields
 
+from ..core.resources import BaseDeleteResource, BaseGetResource, BasePatchResource, BasePostResource, BasePutResource
+
+
+
+class UserGetResource(BaseGetResource):
+    schema_get = staticmethod(AdminServices.get_user)       #servicio para obtener un elemento
+    schema_list = staticmethod(AdminServices.get_all_users)      #servicio para obtener una lista de elementos
+    output_fields = user_fields    #qué campos devolver(marshal)
+
+
+class UserPostResource(BasePostResource):
+    pass
+
+
+class UserPatchResource(BasePatchResource):
+    pass
+
+
+class UserDeleteResource(BaseDeleteResource):
+    pass
+
 
 class UserResource(Resource):
 

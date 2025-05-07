@@ -59,7 +59,7 @@ def add_sale_order():
         "payment": {}       # Datos del pago
     }
     
-    return redirect(url_for('sales.add_sale_order_client_info'))
+    return render_template('sales/new-order/add_sale_order.html')
 
 
 @sales_bp.route('/sale-order/info', methods=['GET', 'POST'])
