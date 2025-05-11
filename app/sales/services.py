@@ -2,6 +2,11 @@ from app import db
 
 from flask import current_app
 
+from .models import SaleOrder, SaleOrderProduct
+
+from datetime import datetime
+from decimal import Decimal
+
 class SaleServices:
 
     @staticmethod
@@ -17,90 +22,32 @@ class SaleServices:
         return sale
     
     @staticmethod
-    def create_sale_order(
-                            order_info:dict
-                          ):
-        
-        try:
-            print('esta es la order info')
-         
-            new_sale_order = SaleServices.create_sale_order(
-                                                            order_number = order_info['general']['order_number'],
-                                                            order_date = order_info['general']['request_date'],
-                                                            delivery_date = order_info['general']['delivery_date'],
-                                                            status = order_info.get('status', 'Pendiente'),
-                                                            delivery_address = order_info.get('delivery_address', 'Quito'),
-                                                            client_id = 1,
-                                                            sales_person_id = order_info['general']['salesperson']
-                                                            )
-            
+    def create_order(data):
+        order = SaleOrder(
+            order_number=data['order_number'],
+            order_date=datetime.strptime(data['order_date'], "%Y-%m-%d").date(),
+            delivery_date=datetime.strptime(data['delivery_date'], "%Y-%m-%d").date() if data.get('delivery_date') else None,
+            status=data['status'],
+            delivery_address=data.get('delivery_address'),
+            client_id=data['client_id'],
+            sales_person_id=data['sales_person_id']
+        )
 
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'Error al gurdar orden de venta. e:{e}')
-    
-    @staticmethod
-    def save_sale_order(
-                            order_number:int,
-                            order_date:str,
-                            delivery_date: str,
-                            status:str,
-                            delivery_address: str,
-                            client_id: int,
-                            sales_person_id: int
-                          ):
-        from .models import SaleOrder
-        print('entra a save sale order')
-        try:
+        for item in data['order_products']:
+            order_item = SaleOrderProduct(
+                product_id=item['product_id'],
+                size=item.get('size'),
+                qty=item['qty'],
+                price=Decimal(item['price']),
+                discount=Decimal(item.get('discount', 0)),
+                notes=item.get('notes')
+            )
+            order.order_products.append(order_item)
 
-            new_sale_order = SaleOrder(order_number = order_number,
-                                    order_date = order_date,
-                                    delivery_date = delivery_date,
-                                    status = 'Pendiente',
-                                    delivery_addressc= delivery_address,
-                                    client_id = client_id,
-                                    sales_person_id = sales_person_id
-                                    )
-            db.session.add(new_sale_order)
-            db.session.flush()
-            print('in session')
-            print(new_sale_order)
-            return new_sale_order
+        db.session.add(order)
+        db.session.commit()
+        return order
 
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'Error guardando orden de venta. e:{e}')
-            raise Exception(str(e))
-    
-
-    @staticmethod
-    def save_sale_order_product(  
-                                    order_id:int,   
-                                    product_id:int,
-                                    #product_code:str,
-                                    size:float,
-                                    qty:int,
-                                    price:float,
-                                    notes:str
-                                ):
-        from .models import SaleOrderProduct
-        try:
-            new_sale_order_product = SaleOrderProduct(
-                                                        order_id = order_id,
-                                                        product_id = product_id,
-                                                        size = size,
-                                                        qty = qty,
-                                                        price = price,
-                                                        notes = notes
-                                                    )
-            
-            db.session.add(new_sale_order_product)
-            
-            return new_sale_order_product
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'Error al guardar los productos a la orden. e:{e}')
-            raise Exception(str(e))
         
     @staticmethod
     def save_payment_plan(
@@ -108,7 +55,7 @@ class SaleServices:
         total_amount:float,
         payment_method_id:int,
         total_installments:int
-    ):
+        ):
         from ..payments.models import PaymentPlan
         try:
             new_payment_plan = PaymentPlan(

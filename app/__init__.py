@@ -7,13 +7,10 @@ from flask_migrate import Migrate
 
 from flask_login import LoginManager
 
-from jinja2 import TemplateNotFound
-
-from flask_restful import Api
-
 from flask_wtf.csrf import CSRFProtect
 
 from flask_jwt_extended import JWTManager
+
 
 
 csrf = CSRFProtect()
@@ -37,6 +34,8 @@ def create_app(config):
     migrate.init_app(app, db)
     csrf.init_app(app)
 
+    from .core.error_handlers import register_error_handlers
+    register_error_handlers(app)
 
     @jwt.unauthorized_loader
     def missing_token_callback(err):
@@ -57,22 +56,28 @@ def create_app(config):
     from .logs import setup_logging
     setup_logging(app)
 
+    #API blueprints
     from .crm.api import crm_api_bp
     app.register_blueprint(crm_api_bp)
-
-    # Exime TODO el API CRM del CSRF
     csrf.exempt(crm_api_bp)
 
     from .core.api import core_api_bp
     app.register_blueprint(core_api_bp)
     csrf.exempt(core_api_bp)
 
-    from .auth.api import auth_bp
+    from .sales.api import sales_api_bp
+    app.register_blueprint(sales_api_bp)
+    csrf.exempt(sales_api_bp)
 
+    from .auth.api import auth_bp
     app.register_blueprint(auth_bp)
     csrf.exempt(auth_bp)   # exime CSRF en todo /api/v1/auth
 
+    from .payments.api import payments_api_bp
+    app.register_blueprint(payments_api_bp)
+    csrf.exempt(payments_api_bp)
 
+    #routes blueprints
     from .admin import admin_bp
     app.register_blueprint(admin_bp)
 
@@ -116,18 +121,4 @@ def create_app(config):
     return app
 
 
-def register_error_handlers(app):
-
-    @app.errorhandler(500)
-    def base_error_handler():
-        return render_template('500.html'), 500
-    
-    @app.errorhandler(404)
-    def error_404_handler():
-        return render_template('404.html'), 404
-    
-    
-    @app.errorhandler(TemplateNotFound)
-    def handle_template_not_found():
-         return render_template('error.html', message="Lo sentimos, la página que buscas no se pudo encontrar."), 404
     

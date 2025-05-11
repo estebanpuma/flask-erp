@@ -4,6 +4,7 @@ from flask_restful import Resource, marshal
 from flask import request, abort, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.exceptions import HTTPException
+from .error_handlers import *
 
 from .utils import success_response, error_response, validation_error_response
 
@@ -47,16 +48,21 @@ class BaseGetResource(Resource):
             if resource_id:
                 instance = self.schema_get(resource_id)
                 if not instance:
-                    return error_response("Recurso no encontrado", 404)
+                    raise NotFoundError("Recurso no encontrado")  # usamos excepción personalizada
                 return success_response(marshal(instance, self.output_fields))
+
             else:
                 instances = self.schema_list()
                 return success_response(marshal(instances, self.output_fields))
 
         except HTTPException as e:
-            raise e
+            raise e  # errores de Flask siguen igual
+        except NotFoundError as e:
+            return error_response(str(e), 404)  # puedes dejarlo aquí o usar handler global
+        except AppError as e:
+            return error_response(str(e), 400)
         except Exception as e:
-            return error_response(f"Error inesperado: {str(e)}")
+            return error_response("Error inesperado: " + str(e), 500)
 
 
 class BasePostResource(Resource):
@@ -118,16 +124,20 @@ class BaseDeleteResource(Resource):
 
     def delete(self, resource_id):
         try:
-            success = self.service_delete(resource_id)
-            if not success:
+            deleted = self.service_delete(resource_id)
+            if deleted:
+                return success_response({"message": "Recurso eliminado correctamente"}, 200)
+            else:
                 return error_response("No se pudo eliminar el recurso", 400)
 
-            return success_response({"message": "Recurso eliminado correctamente"})
-
+        except NotFoundError as e:
+            return error_response(str(e), 404)
+        except AppError as e:
+            return error_response(str(e), 400)
         except HTTPException as e:
             raise e
         except Exception as e:
-            return error_response(f"Error inesperado: {str(e)}")
+            return error_response(f"Error inesperado: {str(e)}", 500)
 
 
 class BasePatchResource(Resource):

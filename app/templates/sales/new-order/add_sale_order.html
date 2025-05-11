@@ -62,7 +62,7 @@
               <input type="text" class="form-control" id="client_search" x-model="clientQuery" @input.debounce.100="searchClients">
               <label for="client_search">Buscar cliente (CI / RUC / nombre)</label>
             </div>
-  
+            
             <template x-if="filteredClients.length">
               <ul class="list-group mb-3">
                 <template x-for="c in filteredClients" :key="c.id">
@@ -108,11 +108,23 @@
               </div>
               
             </template>
-  
-            <div class="d-flex justify-content-between">
-              <button type="button" class="btn btn-secondary" @click="step--">Anterior</button>
-              <button type="button" class="btn btn-primary" @click="step++" :disabled="!selectedClient">Siguiente</button>
+            <div>
+              <div class="mb-3">
+                <button type="button" class="btn btn-dark" @click="new_client=!new_client">Nuevo cliente</button>
+                <div>
+                  <template x-if="new_client">
+                    <div>
+                      {% include 'crm/__clientForm_new.html' %}
+                    </div>
+                  </template>
+                </div>
+              </div>
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" @click="step--">Anterior</button>
+                <button type="button" class="btn btn-primary" @click="step++" :disabled="!selectedClient">Siguiente</button>
+              </div>
             </div>
+            
           </div>
         </div>
       </template>
@@ -154,6 +166,7 @@
       filteredClients: [],
       selectedClient: null,
       vendors: [],
+      new_client: false,
 
       async init() {
         //this.form.order_number = await this.fetchNextOrderNumber();
@@ -203,6 +216,7 @@
         const res = await fetch(`/api/v1/clients/search/client?q=${this.clientQuery}`);
         const data = await res.json();
         this.filteredClients = data;
+        
       },
   
       selectClient(client) {

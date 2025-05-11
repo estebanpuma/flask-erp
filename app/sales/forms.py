@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms.validators import Email, DataRequired
 from wtforms import StringField, IntegerField, SubmitField, DateField, SelectField, FormField, FieldList, FloatField
 from ..admin.services import AdminServices
-from ..payments.services import PaymentMethodService
+from ..payments.services import PaymentServices
 
 from ..crm.forms import ClientForm
 
@@ -56,7 +56,7 @@ class PaymentForm(FlaskForm):
 
      def __init__(self, *args, **kwargs):
           super(PaymentForm, self).__init__(*args, **kwargs)
-          self.payment_method.choices += [(c.id, c.name) for c in PaymentMethodService.get_all_payment_methods()]
+          self.payment_method.choices += [(c.id, c.name) for c in PaymentServices.get_all_payment_methods()]
 
 
 class CheckoutForm(FlaskForm):

@@ -1,6 +1,6 @@
 from flask import render_template, redirect, request, flash, url_for
 
-from .services import PaymentMethodService
+from .services import PaymentServices
 from .forms import PaymentMethodForm
 
 from . import payments_bp
@@ -43,7 +43,7 @@ def add_payment_method():
     if form.validate_on_submit():
         
         try:
-            PaymentMethodService.create_payment_method(form.name.data, form.description.data)
+            PaymentServices.create_payment_method(form.name.data, form.description.data)
             flash('Metodo creado correctamente', 'success')
             return redirect(url_for('payments.view_payment_methods'))
         except Exception:

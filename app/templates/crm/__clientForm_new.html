@@ -94,6 +94,7 @@
       errors: {},
       provinces: [],
       cantons: [],
+      created_client:{},
 
       async init() {
         const res = await fetch('/api/v1/provinces');
@@ -152,6 +153,8 @@
           } else {
             alert('creado exitosamente');
             this.client = ''
+            return result
+            
           }
         } catch (e) {
           console.error('Error enviando datos:', e);
