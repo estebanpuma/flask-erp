@@ -18,26 +18,28 @@ class SaleServices:
     @staticmethod
     def get_sale(sale_id):
         from .models import SaleOrder
-        sale = SaleOrder.query.get_or_404(sale_id)
+        sale = SaleOrder.query.get(sale_id)
         return sale
     
     @staticmethod
-    def create_order(data):
+    def create_sale_order(order_number, order_date, status, client_id, sales_person_id,
+                          delivery_date=None, delivery_address=None, order_products=[]):
+
         order = SaleOrder(
-            order_number=data['order_number'],
-            order_date=datetime.strptime(data['order_date'], "%Y-%m-%d").date(),
-            delivery_date=datetime.strptime(data['delivery_date'], "%Y-%m-%d").date() if data.get('delivery_date') else None,
-            status=data['status'],
-            delivery_address=data.get('delivery_address'),
-            client_id=data['client_id'],
-            sales_person_id=data['sales_person_id']
+            order_number=order_number,
+            order_date=order_date,
+            delivery_date=delivery_date,
+            delivery_address=delivery_address,
+            status=status,
+            client_id=client_id,
+            sales_person_id=sales_person_id
         )
 
-        for item in data['order_products']:
+        for item in order_products:
             order_item = SaleOrderProduct(
                 product_id=item['product_id'],
-                size=item.get('size'),
                 qty=item['qty'],
+                size=item.get('size'),
                 price=Decimal(item['price']),
                 discount=Decimal(item.get('discount', 0)),
                 notes=item.get('notes')
@@ -45,7 +47,12 @@ class SaleServices:
             order.order_products.append(order_item)
 
         db.session.add(order)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            raise
+
         return order
 
         

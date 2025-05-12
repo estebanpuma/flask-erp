@@ -1,5 +1,6 @@
 # validations/sales_validations.py
 from ..core.enums import OrderStatus
+from app.core.exceptions import ValidationError
 
 def validate_sale_order_data(data):
     required_fields = ['order_number', 'order_date', 'status', 'client_id', 'sales_person_id', 'order_products']
@@ -10,6 +11,5 @@ def validate_sale_order_data(data):
     if data['status'] not in [s.value for s in OrderStatus]:
         raise ValueError(f"Estado inválido: {data['status']}")
 
-    for i, item in enumerate(data['order_products']):
-        if 'product_id' not in item or 'qty' not in item or 'price' not in item:
-            raise ValueError(f"El producto #{i+1} debe tener product_id, qty y price.")
+    if not isinstance(data['order_products'], list) or len(data['order_products']) == 0:
+        raise ValidationError("Debe agregar al menos un producto al pedido.")

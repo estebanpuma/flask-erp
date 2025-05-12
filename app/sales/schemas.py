@@ -1,6 +1,7 @@
 # fields/sales_fields.py
 from flask_restful import fields
 
+
 sale_order_product_fields = {
     'product_id': fields.Integer,
     'qty': fields.Integer,
