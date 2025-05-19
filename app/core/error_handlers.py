@@ -20,12 +20,12 @@ def register_error_handlers(app):
         return jsonify({"error": str(e)}), 500
     
     @app.errorhandler(500)
-    def base_error_handler():
-        return render_template('500.html'), 500
+    def base_error_handler(e):
+        return jsonify({"error": str(e)}), 500
     
     @app.errorhandler(404)
-    def error_404_handler():
-        return render_template('404.html'), 404
+    def error_404_handler(e):
+        return jsonify({"error": str(e)}), 404
     
     
 

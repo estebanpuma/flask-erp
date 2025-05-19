@@ -39,33 +39,7 @@
                       <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                     </div>
                     <div class="offcanvas-body">
-                      {% if current_user.is_authenticated %}
-                        <p>Bienvenido {{ current_user.username }}</p>
-                        {% if current_user.ci != '0000000000' %}
-                        <div>
-                          Perfil
-                        </div>
-                        {% endif %}
-                        {% if current_user.has_role('Administrator') %}
-                          <div>
-                            <a href="{{ url_for('admin.view_users') }}" class="btn text-decoration-none text-body">Usuarios</a>
-                          </div>
-                          <div>
-                            <a href="{{ url_for('admin.view_jobs') }}" class="btn text-decoration-none text-body">Cargos</a>
-                          </div>
-                          <div>
-                            <a href="{{ url_for('admin.view_roles') }}" class="btn text-decoration-none text-body">Roles</a>
-                          </div>
-                        {% endif %}
-                        <div>
-                          <a href="{{ url_for('auth.logout') }}" class="btn text-decoration-none text-body">Logout</a>
-                        </div>
-                        
-                      {% else %}
-                        <div>
-                          <a href="{{ url_for('auth.login') }}" class="btn text-decoration-none text-body">Login</a>
-                        </div>
-                      {% endif %}
+                      
                     </div>
 
                 </div>

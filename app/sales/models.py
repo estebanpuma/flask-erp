@@ -4,6 +4,8 @@ from ..common import BaseModel
 
 from ..core.enums import OrderStatus
 
+from datetime import datetime
+
 
 class SaleOrder(BaseModel):
 
@@ -34,21 +36,18 @@ class SaleOrder(BaseModel):
     
 
 class SaleOrderProduct(BaseModel):
-
     __tablename__ = 'sale_order_products'
 
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('sale_orders.id'))
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'))
-
-    size = db.Column(db.Float)
-    qty = db.Column(db.Integer, nullable=False)
-    notes = db.Column(db.String())
-    price = db.Column(db.Float, nullable=False)  # Guardar el precio en el momento de la venta
+    sale_order_id = db.Column(db.Integer, db.ForeignKey('sale_orders.id'), nullable=False)
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_variants.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price_unit = db.Column(db.Float, nullable=False)
     discount = db.Column(db.Float, default=0.00)  # Descuento por unidad (opcional)
 
     order = db.relationship('SaleOrder', back_populates='order_products')
-    products = db.relationship('Product', back_populates='sale_order')
+
+    variant = db.relationship('ProductVariant')
 
     @property
     def subtotal(self):
@@ -58,15 +57,17 @@ class SaleOrderProduct(BaseModel):
     
 
 class ProductPriceHistory(BaseModel):
-
     __tablename__ = 'product_price_history'
 
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    start_date = db.Column(db.Date, nullable=False)  # Fecha desde la cual este precio es válido
-    end_date = db.Column(db.Date, nullable=True)  # Fecha hasta cuando es válido. Si es NULL, es el precio actual.
+    currency = db.Column(db.String(3), nullable=False, default='USD')
+    start_date = db.Column(db.Date, nullable=False, default=datetime.today())
+    end_date = db.Column(db.Date)
+    is_actual_price = db.Column(db.Boolean, default=False)
 
-    #product = db.relationship('Product', back_populates='price_history')
+    product = db.relationship('Product', backref='price_history')
+
 
 

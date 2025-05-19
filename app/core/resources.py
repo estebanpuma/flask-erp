@@ -1,5 +1,5 @@
 # app/core/resources.py
-
+import inspect
 from flask_restful import Resource, marshal
 from flask import request, abort, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -7,6 +7,7 @@ from werkzeug.exceptions import HTTPException
 from .error_handlers import *
 
 from .utils import success_response, error_response, validation_error_response
+from ..common.utils import ExcelImportService
 
 
 class HealthCheckResource(Resource):
@@ -76,42 +77,19 @@ class BasePostResource(Resource):
             if not data:
                 return error_response("No se enviaron datos", 400)
 
-            errors = self.schema(data)
-            if errors:
-                return validation_error_response(errors)
+            if self.schema:
+                errors = self.schema(data)
+                if errors:
+                    return validation_error_response(errors)
 
-            instance = self.service_create(**data)
+            
+            # 🔒 Contracto claro: data como dict completo
+            instance = self.service_create(data)
+
             if not instance:
                 return error_response("No se pudo crear el recurso", 400)
 
             return success_response(marshal(instance, self.output_fields), 201)
-
-        except HTTPException as e:
-            raise e
-        except Exception as e:
-            return error_response(f"Error inesperado: {str(e)}")
-
-
-class BasePutResource(Resource):
-    schema_validate = None          #que campos deben ingresar
-    service_update = None           #servicio que actualizará todo el elemento
-    output_fields = None            #que campos devolver
-
-    def put(self, resource_id):
-        try:
-            data = request.get_json()
-            if not data:
-                return error_response("No se enviaron datos", 400)
-
-            errors = self.schema_validate(data)
-            if errors:
-                return validation_error_response(errors)
-
-            instance = self.service_update(resource_id, data)
-            if not instance:
-                return error_response("No se pudo actualizar el recurso", 400)
-
-            return success_response(marshal(instance, self.output_fields))
 
         except HTTPException as e:
             raise e
@@ -145,9 +123,10 @@ class BasePatchResource(Resource):
     Clase base para hacer actualizaciones parciales (PATCH) de recursos.
     """
 
-    schema_validate_partial = None   # Validaciones opcionales
-    service_patch = None             # Servicio que hará la actualización parcial
-    output_fields = None             # Qué campos devolver (marshal)
+    schema_validate_partial = None         # Función que valida el input (data, instance)
+    service_get = None            # Servicio que obtiene la instancia actual por ID
+    service_patch = None          # Servicio que aplica cambios sobre la instancia
+    output_fields = None                   # Campos a devolver
 
     def patch(self, resource_id):
         try:
@@ -155,19 +134,91 @@ class BasePatchResource(Resource):
             if not data:
                 return error_response("No se enviaron datos", 400)
 
-            if self.schema_validate_partial:
-                errors = self.schema_validate_partial(data)
-                if errors:
-                    return validation_error_response(errors)
+            if not self.service_get or not self.service_patch:
+                raise AppError("Faltan servicios obligatorios en el recurso PATCH.")
 
-            instance = self.service_patch(resource_id, data)
+            # Obtener instancia actual
+            instance = self.service_get(resource_id)
             if not instance:
-                return error_response("No se pudo actualizar el recurso parcialmente", 400)
+                raise NotFoundError("Recurso no encontrado")
+
+            # Validación (si aplica)
+            if self.schema_validate_partial:
+                self.schema_validate_partial(data, instance)
+
+            # Aplicar actualización
+            updated = self.service_patch(instance, data)
+
+            
+            
+            return success_response(marshal(updated, self.output_fields))
+
+        except HTTPException as e:
+            raise e
+        except NotFoundError as e:
+            return error_response(str(e), 404)
+        except AppError as e:
+            return error_response(str(e), 400)
+        except Exception as e:
+            current_app.logger.warning(f"Error inesperado: {e}")
+            return error_response(f"Error inesperado: {str(e)}", 500)
+        
+
+
+class BasePutResource(Resource):
+    schema_validate = None          #que campos deben ingresar
+    service_update = None           #servicio que actualizará todo el elemento
+    output_fields = None            #que campos devolver
+
+    def put(self, resource_id):
+        try:
+            data = request.get_json()
+            if not data:
+                return error_response("No se enviaron datos", 400)
+
+            errors = self.schema_validate(data)
+            if errors:
+                return validation_error_response(errors)
+
+            instance = self.service_update(resource_id, data)
+            if not instance:
+                return error_response("No se pudo actualizar el recurso", 400)
 
             return success_response(marshal(instance, self.output_fields))
 
         except HTTPException as e:
             raise e
         except Exception as e:
-            current_app.logger.warning(f"errorrr {e}")
             return error_response(f"Error inesperado: {str(e)}")
+        
+
+
+class BulkUploadBaseResource(Resource):
+    """
+    Recurso base para carga masiva desde archivo Excel.
+    Espera que la subclase defina:
+    - `import_service`: clase con método .process(file, row_handler)
+    - `row_handler`: función que valida e inserta cada fila
+    """
+
+    import_service = None
+    row_handler = None
+
+    def post(self):
+        try:
+            if 'file' not in request.files:
+                return error_response("No se encontró archivo Excel con clave 'file'.", 400)
+
+            file = request.files['file']
+
+            if not self.import_service or not self.row_handler:
+                raise ValueError("Faltan componentes en la clase hija: 'import_service' y/o 'row_handler'.")
+
+            result = self.import_service.process(file, self.row_handler)
+
+            return success_response(result)
+
+        except ValidationError as e:
+            return error_response(str(e), 400)
+        except Exception as e:
+            return error_response(f"Error inesperado: {str(e)}", 500)

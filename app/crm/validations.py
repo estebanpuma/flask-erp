@@ -73,7 +73,7 @@ def validate_non_existing_ruc_or_ci(ruc_or_ci: str) -> bool:
             
 # app/crm/validations.py
 
-def validate_client_partial_data(data: dict) -> dict:
+def validate_client_partial_data(data: dict, instance) -> dict:
     errors = {}
 
     if 'ruc_or_ci' in data:

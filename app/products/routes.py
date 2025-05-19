@@ -1,12 +1,17 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
 
 from . import products_bp
-from .forms import ProductModelForm, ProductLineForm, ProductSubLineForm, ColorForm, SerieForm
+
 from .services import ProductServices, ColorServices, LineServices, SublineServices, SeriesServices
 
 import pandas as pd
 import io
 
+
+
+@products_bp.route("/test/upload-image/<int:variant_id>")
+def test_upload_variant_image(variant_id):
+    return render_template("upload_variant_image.html", variant_id=variant_id)
 
 @products_bp.route('/models/index')
 def index():
@@ -46,53 +51,7 @@ def view_product(product_id):
 def add_product():
     title = 'Nuevo Modelo'
     prev_url = url_for('products.view_products')
-    form = ProductModelForm()
-
     
-    if form.validate_on_submit():
-        
-        from .services import ProductServices
-        try:
-            new_product = ProductServices.create_product(line_id=form.line_id.data,
-                                                        subline_id=form.subline_id.data,
-                                                        code= form.code.data,
-                                                        colors=form.colors.data,
-                                                        name= form.name.data,
-                                                        description= form.description.data,
-                                                        items = form.items.data,
-                                                        images = form.images.data)
-            flash('Modelo guardado', 'success')
-            return redirect(url_for('products.view_products'))
-        
-        except Exception as e:
-            flash('No se pudo guardar el modelo.', 'danger')
-    
-    flash(form.errors)
-    form_colors = [{'id':color['color']} for color in form.colors.data]
-    form_items = [{'code':item['code'], 'qty':item['qty'], 'serie':['serie']} for item in form.items.data]
-    form_data = {
-        'code': form.code.data,
-        'line': form.line_id.data,
-        'name': form.name.data,
-        'subline': form.subline_id.data,
-        'colors': form_colors,
-        'items': form_items,
-        'description': form.description.data
-    }
-    
-    return render_template('products/models/add_product.html',
-                           title = title,
-                           prev_url = prev_url,
-                           form = form,
-                           form_data = form_data)
-                           
-
-
-@products_bp.route('/products/massive_upload/create', methods=['GET', 'POST'])
-def add_product_massive_upload():
-    title = 'Carga Masiva'
-    prev_url = url_for('products.view_products')
-
     return render_template('products/models/add_product_massive_upload.html',
                            title = title,
                            prev_url = prev_url)
@@ -106,44 +65,12 @@ def edit_product(product_id):
 
     product = ProductServices.get_product(product_id)
 
-    form = ProductModelForm()
-
-    obj_colors = [{'id':color.color_id} for color in product.colors]
-    obj_items = product.material_details
-    obj_items = [{'material_id':item.material_id, 'qty':item.quantity, 'serie_id':item.serie_id} for item in obj_items]
-    
-        
-    print('items: ',obj_items)
-    obj_images = [{'id':image.id, 'url':image.image_path} for image in product.images]
-    obj_data = {
-        'code': product.code,
-        'line': product.line_id,
-        'name': product.name,
-        'subline': product.sub_line_id,
-        'colors': obj_colors,
-        'items': obj_items,
-        'images': obj_images,
-        'description': product.description
-    } 
-   
-    if form.validate_on_submit():
-        try:
-            ProductServices.update_product(product_id, line_id=form.line_id.data,
-                                           subline_id=form.subline_id.data,
-                                           code=form.code.data,
-                                           colors=form.colors.data,
-                                           description=form.description.data,
-                                           items=form.items.data,
-                                           images=form.images.data)
-            return redirect(url_for('products.view_product', product_id=product_id))
-        except Exception as e:
-            flash('No se pudo guardar el modelo.', 'danger')
     
     return render_template('products/models/edit_product.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form,
-                           form_data = obj_data)
+                           form = None,
+                           form_data = None)
 
 
 @products_bp.route('/products/<int:product_id>/delete')
@@ -188,21 +115,12 @@ def view_line(line_id):
 def add_line():
     title = 'Nueva Linea'
     prev_url = url_for('products.view_lines')
-    line_form = ProductLineForm()
-
-    if line_form.validate_on_submit():
-        try:
-            new_line = LineServices.create_line(line_form.code.data,
-                                              line_form.name.data,
-                                              line_form.description.data)
-            return redirect(url_for('products.view_lines'))
-        except Exception as e:
-            flash(f'Ocurrio un error: {e}')
+    
     
     return render_template('products/lines/add_line.html',
                            title = title,
                            prev_url = prev_url,
-                           line_form = line_form)
+                           line_form = None)
 
 
 @products_bp.route('/lines/<int:line_id>/put', methods=['GET', 'POST'])
@@ -248,21 +166,12 @@ def view_subline(subline_id):
 def add_subline():
     title = 'Nueva SubLinea'
     prev_url = url_for('products.view_sublines')
-    subline_form = ProductSubLineForm()
-
-    if subline_form.validate_on_submit():
-        try:
-            new_subline = SublineServices.create_subline(subline_form.code.data,
-                                              subline_form.name.data,
-                                              subline_form.description.data)
-            return redirect(url_for('products.view_sublines'))
-        except Exception as e:
-            flash(f'Ocurrio un error: {e}')
+    
     
     return render_template('products/sublines/add_subline.html',
                            title = title,
                            prev_url = prev_url,
-                           subline_form = subline_form)
+                           subline_form = None)
 
 
 @products_bp.route('/sublines/<int:subline_id>/put', methods=['GET', 'POST'])
@@ -306,38 +215,23 @@ def view_model_color(model_color_id):
 def add_model_color():
     title = 'Colores'
     prev_url = url_for('products.view_model_colors')
-    form = ColorForm()
-
-    if form.validate_on_submit():
-        try:
-            new_color = ColorServices.create_color(code=form.code.data,
-                                               name=form.name.data,
-                                               hex=form.hex.data,
-                                               description=form.description.data)
-            return redirect(url_for('products.view_model_colors'))
-        except Exception as e:
-            flash('Ocurrio un error', 'danger')
+    
 
     return render_template('products/colors/add_model_color.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = None)
 
 
 @products_bp.route('/model_colors/<int:model_color_id>/update')
 def update_model_color(model_color_id):
     title = 'Editar Colores'
     prev_url = url_for('products.view_model_colors')
-    model_color = ColorServices.get_color(model_color_id)
-    form = ColorForm(obj=model_color)
-
-    if form.validate_on_submit():
-        flash(form.data)
-
+    
     return render_template('products/colors/update_model_color.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = None)
 
 
 
@@ -372,25 +266,11 @@ def view_serie(serie_id):
 def add_serie():
     title = 'Nueva Serie'
     prev_url = url_for('products.view_series')
-    form = SerieForm()
-
-    if form.validate_on_submit():
-        
-        try:
-            new_serie = SeriesServices.create_serie(name=form.name.data,
-                                                    start_size=form.start_size.data,
-                                                    end_size=form.end_size.data,
-                                                    description=form.description.data)
-            
-            flash(f'Serie{form.name.data} guardada', 'success')
-            return redirect(url_for('products.view_series'))
-        except Exception as e:
-            flash(f'Ocurrio un error{e}', 'danger')
-
+    
     return render_template('products/series/add_serie.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = None)
 
 
 @products_bp.route('/products/series/<int:serie_id>/update', methods=['GET', 'POST'])
@@ -398,22 +278,11 @@ def update_serie(serie_id):
     title = 'Editar Colores'
     prev_url = url_for('products.view_series')
     serie = SeriesServices.get_serie(serie_id)
-    form = SerieForm(obj=serie)
-
-    if form.validate_on_submit():
-        flash(form.data)
+    
 
     return render_template('products/series/add_serie.html',
                            title = title,
                            prev_url = prev_url,
-                           form = form)
+                           form = None)
 
 
-@products_bp.route('/products/series/<int:serie_id>/delete')
-def delete_serie(serie_id):
-    try:
-        serie = SeriesServices.delete_serie(serie_id)
-        return redirect(url_for('products.view_series'))
-    except Exception:
-        flash('Ocurrio un error. No se puede borrar registro')
-        raise ValueError('Ocurrio un error. No se puede borrar registro')

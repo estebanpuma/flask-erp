@@ -12,7 +12,7 @@ class PaymentMethodCreateResource(BasePostResource):
     Crea un nuevo método de pago.
     """
     schema = staticmethod(validate_payment_method_data)
-    service_create = staticmethod(PaymentServices.create_payment_method)
+    service_create = staticmethod(PaymentServices.create_obj)
     output_fields = payment_method_fields
 
 
@@ -20,8 +20,8 @@ class PaymentMethodGetResource(BaseGetResource):
     '''
     Obtiene los metodos o metodo de pago
     '''
-    schema_get = staticmethod(PaymentServices.get_payment_method)      #servicio para obtener un elemento
-    schema_list = staticmethod(PaymentServices.get_all_payment_methods)      #servicio para obtener una lista de elementos
+    schema_get = staticmethod(PaymentServices.get_obj)      #servicio para obtener un elemento
+    schema_list = staticmethod(lambda: PaymentServices.get_obj_list(request.args.to_dict()))      #servicio para obtener una lista de elementos
     output_fields = payment_method_fields    #qué campos devolver(marshal)
 
 
@@ -31,7 +31,8 @@ class PaymentMethodUpdateResource(BasePatchResource):
     Actualiza un método de pago existente.
     """
     schema_validate_partial = staticmethod(validate_payment_method_patch_data)
-    service_patch = staticmethod(PaymentServices.update_payment_method)
+    service_get = staticmethod(PaymentServices.get_obj)
+    service_patch = staticmethod(PaymentServices.patch_obj)
     output_fields = payment_method_fields
 
 
@@ -40,7 +41,7 @@ class PaymentMethodDeleteResource(BaseDeleteResource):
     DELETE /payment_methods/<id>
     Elimina un método de pago por ID.
     """
-    service_delete = staticmethod(PaymentServices.delete_payment_method)
+    service_delete = staticmethod(PaymentServices.delete_obj)
 
 
 

@@ -2,8 +2,14 @@ from app import db
 
 from flask import current_app
 from werkzeug.utils import secure_filename
-from .models import Product, ProductLine, ProductSubLine, Color, SizeSeries, Size, ProductMaterialDetail, ProductImages
-from .models import ProductColor, MaterialPriceHistory
+from .models import Product, ProductLine, ProductSubLine, ProductVariant, ProductVariantMaterialDetail, ProductVariantImage
+from .models import ProductVariantColor, Color, SizeSeries, Size
+from ..core.exceptions import *
+
+from ..core.filters import apply_filters
+from ..core.utils import FileUploader
+
+from .utils import generate_variant_code
 import os
 
 import pandas as pd
@@ -11,201 +17,342 @@ import pandas as pd
 class ProductServices:
 
     @staticmethod
-    def get_all_products():
-        products = Product.query.all()
-        return products
+    def get_obj_list(filters=None):
+        from .models import Product
+        return apply_filters(Product, filters)
     
     @staticmethod
-    def get_product(product_id):
-        product = Product.query.get_or_404(product_id)
+    def get_obj(product_id):
+        product = Product.query.get(product_id)
+        if not product:
+            raise NotFoundError('Recurso no encontrado')
         return product
     
     @staticmethod
-    def get_product_by_code(code):
-        product = Product.query.filter_by(code=code).first()
-        
+    def create_obj(data:dict):
+        if Product.query.filter_by(code=data["code"]).first():
+            raise ConflictError("Ya existe un producto con este código.")
+
+        product = ProductServices._create_product(data)
+        variant_data = data.get("variant")
+
+        if not variant_data:
+            raise ValidationError("Debes incluir al menos una variante inicial.")
+
+        variant = ProductVariantService._create_variant(product, variant_data)
+        ProductVariantService._add_colors_to_variant(variant, variant_data["color_ids"])
+        ProductVariantService._add_materials_to_variant(variant, variant_data)
+        try:
+            db.session.commit()
+            return product
+        except:
+            db.session.rollback()
+            current_app.logger.warning('Error creando el producto')
+            raise
+
+    # ----------------------- Sub-funciones privadas ------------------------
+
+    @staticmethod
+    def _create_product(data):
+        product = Product(
+            code=data["code"].strip().upper(),
+            name=data["name"].strip(),
+            line_id=data.get("line_id"),
+            sub_line_id=data.get("sub_line_id"),
+            description=data.get("description")
+        )
+        db.session.add(product)
+        db.session.flush()
         return product
+
     
     @staticmethod
-    def calculate_product_price(product_id):
-        # Precio = Costo materiales + Costo mano de obra directa    
+    def patch_obj(instance, data):
+        if 'code' in data:
+            instance.code = data['code'].strip().upper()
+        if 'name' in data:
+            instance.name = data['name'].strip()
+        if 'description' in data:
+            instance.description = data['description']
+        if 'line_id' in data:
+            instance.line_id = data['line_id']
+        if 'sub_line_id' in data:
+            instance.sub_line_id = data['sub_line_id']
         try:
-            material_cost = ProductServices.calculate_material_cost(product_id)['material_cost']
-            print('material cost: ', material_cost)
-            from ..pricing.services import PricingServices
-            gross_margin = PricingServices.get_active_gross_margin()
-            mcp = material_cost / (1 - (gross_margin.value)/100)
-            return {'pvp': mcp}
+            db.session.commit()
+            return instance
         except Exception as e:
-            current_app.logger.warning(f'Error calculando precio del producto: {str(e)}')
-            return {'pvp': 0.0}
+            db.session.rollback()
+            current_app.logger.warning(f'Error al acualizar. e:{str(e)}')
+            raise
     
-    @staticmethod
-    def calculate_material_cost(product_id):
-        try:
-            product = ProductServices.get_product(product_id)
-            # Costo materiales = sum( cantidad * precio_vigente )
-            materials = product.material_details
-            print('materials: ', materials)
-            total_cost=0
-            for material in materials:
-                if material.material.current_price:
-                    total_cost = material.material.current_price * material.quantity + total_cost
-                print('totalcost', total_cost)
-
-            material_cost = total_cost
-
-            print('material cost: ', material_cost)
-            return {
-                "material_cost": material_cost,
-                }
-        except Exception as e:
-            current_app.logger.warning(f'Error calculando costo de materiales: {str(e)}')
-            return {
-                "material_cost": 0.0,
-            }
-
-    @staticmethod
-    def create_product(line_id:int, code:str, colors, name=None, subline_id=None, description=None, items=None, images=None):
-        line = ProductLine.query.get_or_404(line_id)
-       
-        if subline_id:
-            subline = ProductSubLine.query.get_or_404(subline_id)
-            subline_id=subline.id
-        else:
-            subline_id=None
-        if line:
-            try:
-                new_product = Product(code = code,
-                                      name = name,
-                                      description = description,
-                                      line_id = line_id,
-                                      sub_line_id = subline_id)
-                db.session.add(new_product)
-                db.session.flush()
-                # Check if there are any valid images in the list
-                valid_images = [image for image in images if image.filename != '']
-                if valid_images:   
-                    ImageServices.upload_and_save_images(valid_images, new_product.code, new_product.id)
-                BoomServices.create_boom_of_materials(new_product.id, items)
-                ColorServices.save_colors(new_product.id, colors)
-                db.session.commit()
-                current_app.logger.info(f'Producto {new_product.name} creado')
-            except Exception as e:
-                db.session.rollback()
-                current_app.logger.warning(f'Error creando producto: {str(e)}')
-                raise ValueError(f'error al guardar modelo. e:{e}')
-
-    @staticmethod
-    def get_next_code_model(line_code, subline_code=None, color_codes=None):
-        # Get the line and subline IDs based on the provided codes
-        line = ProductLine.query.filter_by(code=line_code).first()
-        subline = ProductSubLine.query.filter_by(code=subline_code).first() if subline_code else None
-        
-        existing_codes = Product.query.filter(
-            Product.line_id == line.id,
-            (Product.sub_line_id == subline.id) if subline else (Product.sub_line_id == None),
-            ).all()
-        
-        # Extract the sequence numbers from existing codes
-        sequence_numbers = []
-        for product in existing_codes:
-            code = product.code
-            # Extract the sequence number part of the code
-            sequence_part = code[len(line_code) + (len(subline_code) if subline_code else 0):len(line_code) + (len(subline_code) if subline_code else 0) + 3]
-            try:
-                sequence_numbers.append(int(sequence_part))
-            except ValueError:
-                continue
-        
-        # Find the next sequence number
-        next_sequence_number = max(sequence_numbers, default=0) + 1
-        next_sequence_number_str = str(next_sequence_number).zfill(3)  # Ensure it's 3 digits
-
-        # Construct the next code
-        next_code = f"{line_code}{subline_code or ''}{next_sequence_number_str}{''.join(color_codes if color_codes else [])}"
-        
-        print('next code: ', next_code)
-        return next_code
     
-
-    def update_product(product_id,
-                        line_id, 
-                        code, colors, 
-                        subline_id=None,
-                        name=None,
-                        description=None, 
-                        items=None, 
-                        images=None, 
-                        existing_images=None):
-        
-        product = Product.query.get_or_404(product_id)
-        line = ProductLine.query.get_or_404(line_id)
-        if subline_id:
-            subline = ProductSubLine.query.get_or_404(subline_id)
-            subline_id=subline.id
-        else:
-            subline_id=None
-        if line:
-            try:
-                product.code = code
-                product.line_id = line_id
-                product.sub_line_id = subline_id
-                product.description = description
-                db.session.add(product)
-                db.session.flush()
-
-                # Handle existing images
-                if existing_images:
-                    existing_image_paths = [image['url'].replace('/', '', 1) for image in existing_images]
-                    current_images = ImageServices.get_images_from_db(product_id)
-                    images_to_delete = set(current_images) - set(existing_image_paths)
-                    for image_path in images_to_delete:
-                        ImageServices.delete_uploaded_image(image_path)
-                #handle new images
-                # Check if there are any valid images in the list
-                valid_images = [image for image in images if image.filename != '']
-                print('valid images ', valid_images)
-                if valid_images:   
-                    ImageServices.upload_and_save_images(valid_images, product.code, product.id)
-                BoomServices.create_boom_of_materials(product.id, items)
-                ColorServices.update_colors(product.id, colors)
-                db.session.commit()
-                current_app.logger.info(f'Producto {product.name} actualizado')
-            except Exception as e:
-                db.session.rollback()
-                current_app.logger.warning(f'Error actualizando producto: {str(e)}')
-                raise ValueError(f'error al guardar modelo. e:{e}')
-    
-    def delete_product(product_id):
+    def delete_obj(product_id):
         """
         Elimina un producto y sus imágenes asociadas.
         :param product_id: ID del producto.
         """
-        try:
-            product = ProductServices.get_product(product_id)
-            if product:
-                # Delete associated images 
-                
-                ImageServices.delete_product_images(product_id)
-                
-                # Delete the product and associated images from the database
-                db.session.delete(product)
-                db.session.commit()
-                current_app.logger.info(f'Producto {product.code} eliminado')
-            else:
-                raise ValueError('Producto no existe')
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'Error eliminando el producto. e:{e}')
-            raise
+        pass
 
-class ProductMaterialDetailServices:
+
+class ProductVariantService:
 
     @staticmethod
-    def get_product_material_detail(product_id):
-        product_material_detail = ProductMaterialDetail.query.filter_by(product_id=product_id).all()
-        return product_material_detail
+    def get_obj(variant_id):
+        variant = ProductVariant.query.get(variant_id)
+        if not variant:
+            raise NotFoundError("Variante no encontrada.")
+        return variant
+    
+    @staticmethod
+    def get_obj_list(filters=None):
+        
+        return apply_filters(ProductVariant, filters)
+
+    @staticmethod
+    def get_obj_list_by_product(product_id):
+        return ProductVariant.query.filter_by(product_id=product_id).all()
+
+    @staticmethod
+    def _check_foreign_keys(data):
+        if not Product.query.get(data["product_id"]):
+            raise ValidationError("Producto no válido.")
+        if not Size.query.get(data["size_id"]):
+            raise ValidationError("Talla no válida.")
+        for cid in data["color_ids"]:
+            if not Color.query.get(cid):
+                raise ValidationError(f"Color inválido: {cid}")
+            
+    @staticmethod
+    def create_obj(data):
+        product = Product.query.get(str(data['product_id']))
+        variant = ProductVariantService._create_variant(product, data)
+        ProductVariantService._add_colors_to_variant(variant, data['color_ids'])
+        ProductVariantService._add_materials_to_variant(variant, data)
+
+        try:
+            db.session.commit()
+            return variant
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.warning(f'Error creando variante: {e}')
+
+    @staticmethod
+    def _create_variant(product, variant_data):
+        # Validaciones
+        if not variant_data.get("size_id"):
+            raise ValidationError("Debes indicar la talla de la variante.")
+
+        color_ids = variant_data.get("color_ids", [])
+        if not color_ids or not isinstance(color_ids, list):
+            raise ValidationError("Debes proporcionar al menos un color.")
+
+        # Verificar existencia de size
+        size = Size.query.get(variant_data["size_id"])
+        if not size:
+            raise ValidationError("La talla especificada no existe.")
+
+        # Verificar existencia de colores
+        color_objs = Color.query.filter(Color.id.in_(color_ids)).all()
+        if len(color_objs) != len(set(color_ids)):
+            raise ValidationError("Alguno de los colores especificados no existe.")
+
+        # Generar código único para la variante
+        color_codes = [c.code for c in color_objs]
+        variant_code = generate_variant_code(product.code, color_codes)
+
+        # Crear la variante
+        variant = ProductVariant(
+            product_id=product.id,
+            size_id=variant_data["size_id"],
+            code=variant_code,
+            barcode=variant_data.get("barcode"),
+            stock=0
+        )
+        db.session.add(variant)
+        db.session.flush()  # para obtener ID
+        return variant
+    
+
+    @staticmethod
+    def _add_materials_to_variant(variant, variant_data):
+        materials = variant_data.get("materials", [])
+        serie_id = variant_data.get("serie_id")
+
+        for mat in materials:
+            db.session.add(ProductVariantMaterialDetail(
+                variant_id=variant.id,
+                material_id=mat["material_id"],
+                serie_id=serie_id,
+                quantity=mat["quantity"]
+            ))
+
+    @staticmethod
+    def _add_colors_to_variant(variant, color_ids):
+        if not color_ids or not isinstance(color_ids, list):
+            raise ValidationError("Debes proporcionar una lista de colores válida.")
+
+        for cid in color_ids:
+            if not Color.query.get(cid):
+                raise ValidationError(f"Color no válido: {cid}")
+            db.session.add(ProductVariantColor(
+                variant_id=variant.id,
+                color_id=cid
+            ))
+
+    @staticmethod
+    def patch_obj(instance, data):
+        if "barcode" in data:
+            instance.barcode = data["barcode"]
+        if "stock" in data:
+            instance.stock = data["stock"]
+
+        if "color_ids" in data:
+            # Reemplazar los colores
+            ProductVariantColor.query.filter_by(variant_id=instance.id).delete()
+            for cid in data["color_ids"]:
+                if not Color.query.get(cid):
+                    raise ValidationError(f"Color inválido: {cid}")
+                db.session.add(ProductVariantColor(variant_id=instance.id, color_id=cid))
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise
+
+        return instance
+
+    @staticmethod
+    def delete_obj(variant_id):
+        variant = ProductVariant.query.get(variant_id)
+        if not variant:
+            raise NotFoundError("Variante no encontrada.")
+
+        db.session.delete(variant)
+        db.session.commit()
+        return True   
+
+
+class ProductVariantMaterialService:
+
+    @staticmethod
+    def get_obj(variant_material_id):
+        obj = ProductVariantMaterialDetail.query.get(variant_material_id)
+        if not obj:
+            raise NotFoundError("Material de variante no encontrado.")
+        return obj
+
+    @staticmethod
+    def get_obj_list(filters=None):
+        return apply_filters(ProductVariantMaterialDetail, filters)
+    
+    @staticmethod
+    def get_obj_list_by_product(product_id):
+        return ProductVariant.query.filter_by(product_id=product_id).all()
+    
+    @staticmethod
+    def _check_foreign_keys(data):
+        from ..materials.models import Material
+        if not ProductVariant.query.get(data["variant_id"]):
+            raise ValidationError("La variante no existe.")
+        if not Material.query.get(data["material_id"]):
+            raise ValidationError("El material no existe.")
+        if not SizeSeries.query.get(data["serie_id"]):
+            raise ValidationError("La serie de tallas no existe.")
+
+
+    @staticmethod
+    def create_obj(data):
+               
+        ProductVariantMaterialService._check_foreign_keys(data)
+             
+        obj = ProductVariantMaterialDetail(
+            variant_id=data["variant_id"],
+            material_id=data["material_id"],
+            serie_id=data["serie_id"],
+            quantity=data["quantity"]
+        )
+        db.session.add(obj)
+        try:
+            db.session.commit()
+            return obj
+        except:
+            db.session.rollback()
+            current_app.logger.warning('Error al crear la variante BOM')
+            raise
+
+    @staticmethod
+    def patch_obj(instance, data):
+        if "quantity" in data:
+            instance.quantity = data["quantity"]
+        if "serie_id" in data:
+            instance.serie_id = data["serie_id"]
+        if "material_id" in data:
+            instance.material_id = data["material_id"]
+
+        db.session.commit()
+        return instance
+
+    @staticmethod
+    def delete_obj(id):
+        obj = ProductVariantMaterialDetail.query.get(id)
+        if not obj:
+            raise NotFoundError("No existe este material asociado.")
+        db.session.delete(obj)
+        db.session.commit()
+        return True
+
+class ProductVariantImageService:
+
+    @staticmethod
+    def get_images_by_variant(variant_id):
+        return ProductVariantImage.query.filter_by(variant_id=variant_id).all()
+    
+    @staticmethod
+    def delete_image(image_id):
+        image = ProductVariantImage.query.get(image_id)
+        if not image:
+            raise NotFoundError("Imagen no encontrada.")
+
+        # Eliminar archivo físico (opcional)
+        try:
+            file_path = os.path.join(current_app.root_path, 'static', image.file_path.replace('/static/', ''))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            current_app.logger.warning(f"No se pudo borrar archivo físico: {e}")
+
+        db.session.delete(image)
+        db.session.commit()
+        return True
+
+    @staticmethod
+    def create_image(variant_id, file):
+        # Verificar que la variante exista
+        if not ProductVariant.query.get(variant_id):
+            raise NotFoundError("La variante no existe.")
+
+        # Subir imagen usando el servicio genérico
+        try:
+            public_path = FileUploader.save_file(
+                file=file,
+                subfolder='products',
+                entity_id=variant_id
+            )
+        except ValueError as e:
+            raise ValidationError(str(e))
+
+        # Registrar en base de datos
+        image = ProductVariantImage(
+            variant_id=variant_id,
+            file_name=file.filename,
+            file_path=public_path
+        )
+        db.session.add(image)
+        db.session.commit()
+        return image
+
 
 class LineServices:
 
@@ -249,11 +396,12 @@ class SublineServices:
     
     @staticmethod
     def create_subline(code:str, name:str, description:str=None):
+        
+        new_subline = ProductSubLine(code=code,
+                                name = name,
+                                description = description)
+        db.session.add(new_subline)
         try:
-            new_subline = ProductSubLine(code=code,
-                                   name = name,
-                                   description = description)
-            db.session.add(new_subline)
             db.session.commit()
             return new_subline
         
@@ -265,222 +413,228 @@ class SublineServices:
 class ColorServices:
     
     @staticmethod
-    def get_all_colors():
-        colors = Color.query.all()
-        return colors
+    def get_obj_list(filters = None ):
+        
+        """
+        query = Color.query
+        if filters:
+            if 'code' in filters:
+                query = query.filter(Color.code == str(filters['code'].upper()))
+            if 'hex_value' in filters:
+                query = query.filter(Color.hex_value == str(filters['hex_value']))
+            if 'name' in filters:
+                query = query.filter(Color.name.ilike(f"%{filters['name']}%"))
+
+        return query.all()
+        """
+        return apply_filters(Color,filters)
+    
         
     @staticmethod
-    def get_color(color_id):
-        color = Color.query.get_or_404(color_id)
+    def get_obj(color_id):
+        color = Color.query.get(color_id)
+        if not color:
+            raise NotFoundError("Color no encontrado")
         return color
     
     @staticmethod
-    def get_color_by_code(color_code):
-        color_code = str(color_code).upper()
+    def create_obj(data):
+        if Color.query.filter_by(code=data['code']).first():
+            raise ConflictError("Ya existe un color con ese código.")
         
-        color = Color.query.filter_by(code = color_code).first()
-        return color
-    
-    @staticmethod
-    def create_color(code:str, name:str, hex:str=None, description:str=None):
+        new_color = Color(code = data['code'],
+                        name = data['name'],
+                        hex_value = data.get('hex_value'),
+                        description = data.get('description'))
+        db.session.add(new_color)
         try:
-            new_color = Color(code = code,
-                            name = name,
-                            hex_value = hex,
-                            description = description)
-            db.session.add(new_color)
             db.session.commit()
             current_app.logger.info(f'Nuevo color guardado. {new_color.name}')
-            
-        except Exception as e:
+            return new_color
+        except:
             db.session.rollback()
-            current_app.logger.warning(f'Error al cuargar color e:{e}')
-       
+            current_app.logger.warning('Error al crear el color')
+            raise     
         
-   
+    
     @staticmethod
-    def save_colors(product_id, colors_ids):
-        """
-        Saves a product color to the database.
+    def patch_obj(instance, data):
+        if 'name' in data:
+            instance.name = data['name'].strip()
+        if 'code' in data:
+            if Color.query.filter_by(code=data['code']).first():
+                raise ConflictError("Ya existe un color con ese código.")
+            instance.code = data['code']
+        if 'hex_value' in data:
+            instance.hex_value = data['hex_value']
+        if 'description' in data:
+            instance.description = data['description']
 
-        Args:
-            product_id (int): The ID of the product.
-            color_id (int): The ID of the color.
-
-        Raises:
-            ValueError: If there is an error while saving the product color.
-
-        This function attempts to create a new ProductColor instance with the given
-        product_id and color_id, adds it to the database session, and commits the session.
-        If an exception occurs during this process, the session is rolled back, a warning
-        is logged, and a ValueError is raised with the error message.
-        """
         try:
-            from .models import ProductColor
-            for color in colors_ids:
-                new_color = ProductColor(product_id=product_id, color_id=color['color'])
-                db.session.add(new_color)
-            
-        except Exception as e:
+            db.session.commit()
+            return instance
+        except:
             db.session.rollback()
-            current_app.logger.warning(f'Error saving colors: {str(e)}')
-
+            current_app.logger.warning('Error al actualizar el recurso')
             raise
     
-    def update_colors(product_id, colors_ids):
-        """
-        Updates the colors associated with a product.
+    @staticmethod
+    def delete_obj(id):
+        color = Color.query.get(id)
+        if not color:
+            raise NotFoundError("Color no encontrado.")
+        db.session.delete(color)
+        db.session.commit()
+        return True
 
-        Args:
-            product_id (int): The ID of the product.
-            colors_ids (list): List of color IDs.
 
-        Raises:
-            ValueError: If there is an error while updating the product colors.
-
-        This function first deletes all existing ProductColor instances associated with the
-        product, then creates new instances with the provided color IDs. If an exception occurs
-        during this process, the session is rolled back, a warning is logged, and a ValueError is
-        raised with the error message.
-        """
-        from .models import ProductColor
-        try:
-            # Delete existing product colors
-            existing_colors = ProductColor.query.filter_by(product_id=product_id).all()
-            for color in existing_colors:
-                db.session.delete(color)
-            
-            # Save new colors
-            for color in colors_ids:
-                new_color = ProductColor(product_id=product_id, color_id=color['color'])
-                db.session.add(new_color)
-
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'Error updating product colors: {str(e)}')
-            raise ValueError(f'Error updating product colors: {str(e)}')
-
+#**************************SIZE SERVICES*******************************************
 class SizeServices:
 
     @staticmethod
-    def get_all_sizes():
-        sizes = Size.query.all()
-        return sizes
+    def get_all_sizes(filters=None):
+        query = Size.query
+        if filters:
+            if 'serie' in filters:
+                query = query.filter(Size.series_id == int(filters['serie']))
+            if 'value' in filters:
+                query = query.filter(Size.value == str(filters['value']))
+        
+        return query.all()
     
     @staticmethod
     def get_size(size_id):
-        size = Size.query.get_or_404(size_id)
+        size = Size.query.get(size_id)
+        if not size:
+            raise NotFoundError('Plan de pago no encontrado')
         return size
     
+    
     @staticmethod
-    def get_size_by_value(value):
-        size = Size.query.filter_by(value=value).first()
-        if size is None:
-            return None
+    def generate_sizes_for_series(series_id, start_size, end_size, step=1):
+        current = start_size
+        while current <= end_size:
+            db.session.add(Size(value=str(current), series_id=series_id))
+            current += step
+
+
+    @staticmethod
+    def create_size(value, series_id):
+        series = db.session.get(SizeSeries, series_id)
+        if not series:
+            raise ValueError("Serie de tallas no encontrada")
+
+        size = Size(value=value, series_id=series_id)
+        db.session.add(size)
+        try:
+            db.session.commit()
+            
+        except Exception as e:
+            db.session.rollback()
+            raise
         return size
+    
+
+    @staticmethod
+    def delete_size(resource_id):
+        size = db.session.get(Size, resource_id)
+        if not size:
+            return False
+        db.session.delete(size)
+        db.session.commit()
+        return True
 
 
+
+###***********************************SERIES SERVICES****************************************
 class SeriesServices:
 
     @staticmethod
-    def get_all_series():
-        series = SizeSeries.query.all()
-        return series
+    def get_all_series(filters=None):
+        query = SizeSeries.query
+        if not filters:
+            return query.all()
+        
+        if 'name' in filters:
+            query = query.filter(SizeSeries.name == str(filters['name']))
+            
+        return query.all()
     
     @staticmethod
     def get_serie(serie_id):
-        serie = SizeSeries.query.get_or_404(serie_id)
+        serie = SizeSeries.query.get(serie_id)
+        if not serie:
+            raise NotFoundError('Serie no encontrada')
         return serie
-
-    @staticmethod
-    def get_active_series():
-        series = SizeSeries.query.filter(SizeSeries.is_active==True).all()
-        return series
-    
-    @staticmethod
-    def get_serie_by_size(size_value):
-        try:
-            size_obj = SizeServices.get_size_by_value(str(size_value))
-            serie = size_obj.series.name
-            return serie
-        except Exception as e:
-            current_app.logger.warning('No se puede obtener la serie')
-            raise e
-
-
-    @staticmethod
-    def get_serie_by_code(query):
-        print(query)
-        if 'CODE=' in query:
-            code = query.removeprefix('CODE=')         
         
-        try:
-            serie = SizeSeries.query.filter_by(name=code).first()
-            
-            return serie
-        except Exception as e:
-            raise ValueError(f'Ocurio un error e:{e}')
-        
-    
     @staticmethod
     def get_all_sizes():
         sizes = Size.query.all()
         return sizes
     
     @staticmethod
-    def create_serie(name:str, start_size:int, end_size:int, description:str=None):
-        if start_size<end_size:
-            try:
-                new_serie=SizeSeries(name = name,
-                                    start_size= start_size,
-                                    end_size = end_size,
-                                    description = description)
-                db.session.add(new_serie)
-                db.session.flush() 
-                
-                sizes = [Size(value=str(size), series_id=new_serie.id) for size in range(start_size, end_size+1)]
-               
-                # Agregar todas las instancias de tamaño en una sola transacción
-                db.session.add_all(sizes)
-                
-                db.session.commit()
+    def create_series(name,  start_size:int, end_size:int, description=None,):
+        if end_size < start_size:
+            raise AppError("La talla final no puede ser menor que la inicial")
+        
+        series = SizeSeries(name=name, description=description, start_size=start_size, end_size=end_size)
+        db.session.add(series)
+        db.session.flush()  # Consigue el ID
 
-                current_app.logger.info(f'Nueva serie creada')
-            except Exception as e:
-                db.session.rollback()
-                current_app.logger.warning(f'Error al guardar serie e:{e}')
-                raise ValueError('Ocurrio un error')
-        else:
-            raise ValueError('La talla de inicio debe ser menor a la talla final')
+        SizeServices.generate_sizes_for_series(series.id, start_size, end_size)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise
+        return series
+    
+    @staticmethod
+    def delete_series(resource_id):
+        series = db.session.get(SizeSeries, resource_id)
+        if not series:
+            return NotFoundError('Recurso no encontrado')
+        db.session.delete(series)
+        db.session.commit()
+        return True
+ 
+    
         
     @staticmethod
-    def update_serie(serie_id:int, name:str, start_size:int, end_size:int, description:str=None):
-        serie = SizeSeries.query.get_or_404(serie_id)
+    def update_serie(instance, data):
+        from .models import Size 
+
+        changed_range = False
+
+        if 'name' in data:
+            instance.name = data['name'].strip()
+        if 'description' in data:
+            instance.description = data['description']
+        if 'start_size' in data:
+            instance.start_size = data['start_size']
+            changed_range = True
+        if 'end_size' in data:
+            instance.end_size = data['end_size']
+            changed_range = True
         
-        serie.name = name,
-        serie.start_size = start_size,
-        serie.end_size = end_size,
-        serie.description = description
+        if changed_range:
+            # 1. Borrar tallas anteriores
+            Size.query.filter(Size.series_id == instance.id).delete()
+            db.session.flush()  # importante para no dejar tallas fantasma
+
+            # 2. Regenerar tallas
+            SizeServices.generate_sizes_for_series(instance.id, instance.start_size, instance.end_size)
 
         try:
-            db.session.add(serie)
             db.session.commit()
-            current_app.logger.info(f'Serie {serie.name} actualizda')
-        except Exception as e:
+            return instance
+        except:
             db.session.rollback()
-            current_app.logger.warning(f'Error al actualizar serie e:{e}')
+            current_app.logger.warning(f'Error al actualizar serie e')
+            raise
 
-
-    @staticmethod 
-    def delete_serie(serie_id):
-        serie = SizeSeries.query.get_or_404(serie_id)
-        try:
-            db.session.delete(serie)
-            db.session.commit()
-            current_app.logger.info(f'Serie {serie.name} eliminada')
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'No se pudo eliminar registro. <Serie {serie.name}>. Error: {e}')
+        
+                 
 
 
 
@@ -510,53 +664,7 @@ class BoomServices:
 
 
     def create_boom_of_materials(product_id, items):
-        from .models import ProductMaterialDetail, Material, SizeSeries
-
-        
-        try:
-            if items:
-            
-                boom = []
-                for item in items:
-                    
-                    material = Material.query.filter_by(code=item['code']).first()
-                    material_id = material.id
-                    serie = SizeSeries.query.filter_by(name=item['serie']).first()
-                    new_product_material = ProductMaterialDetail(product_id=product_id,
-                                                                 material_id = material_id,
-                                                                 serie_id = serie.id,
-                                                                 unit = material.unit,
-                                                                 quantity = item['qty']
-                                                                 )
-                    boom.append(new_product_material)
-                
-                db.session.add_all(boom)
-                
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.warning(f'Error al guardar boom:{e}')
-            raise ValueError(f'Ocurrio un error e:{e}')
-        
-
-class ImageServices:
-    """
-    Service class for handling image-related operations.
-    """
-    @staticmethod
-    def get_images_from_db(product_id):
-        """
-        Obtiene las rutas de las imágenes asociadas a un producto.
-        :param product_id: ID del producto.
-        :return: Lista de rutas de las imágenes.
-        """
-        try:
-            product = ProductServices.get_product(product_id)   
-            images = product.images
-            paths = [image.image_path for image in images]
-            return paths
-        except Exception as e:
-            current_app.logger.warning(f"Error obteniendo imagees: {str(e)}")
-            return []
+        pass
         
     @staticmethod
     def allowed_file(filename):
@@ -576,23 +684,7 @@ class ImageServices:
         :param image: Archivo subido (werkzeug.datastructures.FileStorage).
         :param product_code: Código único del producto.
         """
-        if ImageServices.allowed_file(image.filename):
-            try:
-                filename = secure_filename(image.filename)
-                relative_path = os.path.join('static','media','products', product_code, filename)
-                file_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], product_code, filename)
-                dir_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], product_code)
-                if not os.path.exists(dir_path):
-                    os.makedirs(dir_path, exist_ok=True)
-                    print('path created')
-                image.save(file_path)
-                print('rp: ', relative_path)
-                return relative_path
-            except Exception as e:
-                current_app.logger.warning(f'Error guardando imagen en el servidor: {e}')
-                raise
-        else:
-            raise ValueError(f'Archivo {image.filename} No tiene una extension adecuada.')
+        pass
 
     @staticmethod
     def upload_and_save_images(images, product_code, product_id):
@@ -605,13 +697,7 @@ class ImageServices:
         :return: List of relative paths of the saved files.
         :raises ValueError: If any file has an unsupported extension.
         """
-        image_paths = []
-        try:
-            image_paths = [ImageServices.save_image_at_server(image, product_code) for image in images]
-            ImageServices.save_product_images_at_db(product_id, image_paths)
-            return image_paths
-        except Exception as e:
-            current_app.logger.warning(f'Error uploading images for product {product_id}: {e}')
+        pass
            
 
     @staticmethod
@@ -621,20 +707,7 @@ class ImageServices:
         :param product_id: ID del producto.
         image_paths: Lista de rutas de las imágenes.
         """
-        try:
-            for path in image_paths:
-                new_image = ProductImages(product_id=product_id, image_path=path)
-                db.session.add(new_image)
-            
-        except Exception as e:  
-            db.session.rollback()
-            current_app.logger.warning(f'Error saving product images at db: {str(e)}')
-            # Eliminar las imágenes subidas al servidor si ocurrió un error en la base de datos
-            for path in image_paths:
-                #full_path = os.path.join(current_app.config['UPLOAD_FOLDERS']['products'], path)
-                if os.path.exists(path):
-                    os.remove(path)
-            raise ValueError(f'Error al guardar imagenes en la base de datos. e:{e}')
+        pass
            
 
 
@@ -663,17 +736,7 @@ class ImageServices:
         :param product_id: ID del producto.
         :return: True si las imágenes fueron eliminadas exitosamente, False en caso contrario.
         """
-        try:
-            images = ProductImages.query.filter_by(product_id=product_id).all()
-            for image in images:
-                if ImageServices.delete_uploaded_image(image.image_path):
-                    db.session.delete(image)
-            db.session.commit()
-            return True
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error eliminando imagenes: {str(e)}")
-            return False
+        pass
       
         
 

@@ -8,7 +8,7 @@ def validate_payment_method_data(data):
 
 
 
-def validate_payment_method_patch_data(data):
+def validate_payment_method_patch_data(data, instance):
     if not data:
         raise ValidationError("No se enviaron datos.")
 

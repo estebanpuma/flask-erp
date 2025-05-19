@@ -3,8 +3,8 @@ from flask import Blueprint
 from .resources import PaymentMethodCreateResource, PaymentMethodGetResource, PaymentMethodUpdateResource, PaymentMethodDeleteResource
 from .resources import PaymentPlanCreateResource, PaymentPlanGetResource
 
-payments_api_bp = Blueprint('payments_api_bp', __name__, url_prefix='/api/v1')
-payments_api = Api(payments_api_bp)
+payments_api_v1_bp = Blueprint('payments_api_bp', __name__, url_prefix='/api/v1')
+payments_api = Api(payments_api_v1_bp)
 
 
 payments_api.add_resource(PaymentMethodGetResource, '/payment_methods', '/payment_methods/<int:resource_id>')

@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash
 
-from .forms import ClientForm
+
 from .services import CRMServices
 
 from . import crm_bp
@@ -48,19 +48,9 @@ def add_client():
     prev_url = url_for('crm.view_clients')
     data=None
 
-    form = ClientForm()
-
-    if form.validate_on_submit():
-
-        new_client = CRMServices.create_client(ruc_or_ci = form.ruc_or_ci.data,
-                                               client_type = form.client_type.data,
-                                               name = form.name.data,
-                                               city = form.city.data,
-                                               address = form.address.data,
-                                               phone = form.phone.data,
-                                               email = form.email.data)
+    form = None
         
-        return redirect(url_for('crm.view_clients'))
+        
 
     return render_template('crm/add_client.html',
                            title = title,

@@ -14,7 +14,17 @@ province_fields = {
     'cantons':fields.Nested(canton_fields)
 }
 
+province_name_fields = {
+    'id':fields.Integer,
+    'name':fields.String,
+    'population':fields.Integer,
+}
 
+client_category_fields = {
+    'id': fields.Integer,
+    'name': fields.String,
+    'description': fields.String,
+}
 # Define los campos que serán serializados
 client_fields = {
     'id': fields.Integer,
@@ -25,7 +35,7 @@ client_fields = {
     'city': fields.String,
     'address': fields.String,
     'phone': fields.String,
-    'province':fields.Nested(province_fields),
+    'province': fields.Nested(province_name_fields),
     'canton':fields.Nested(canton_fields)
 }
 

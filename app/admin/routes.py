@@ -1,8 +1,7 @@
 from flask import render_template, redirect, url_for, current_app, flash, request
 from flask_login import login_required
 
-from ..common.utils import update_user_form_choices
-from .forms import SignupForm, RoleForm, JobForm, AssignRolesForm, SelectRolesForm
+
 from .services import AdminServices
 from . import admin_bp
 
@@ -57,42 +56,13 @@ def edit_user(user_id):
 def add_user():
     title = 'Nuevo Usuario'
     prev_url = url_for('admin.view_users')
-    form = SignupForm()
-    job_form = JobForm(prefix='job')
-    if request.method == 'post':
-        print('********form/********')
-        print(request.form)
-    if 'job-submit' in request.form and job_form.validate_on_submit():
-        try: 
-            new_job = AdminServices.create_job(job_form.code.data, job_form.name.data, job_form.description.data)
-            current_app.logger.info(f'New job: {new_job.name} CREATED!')
-            from .models import Job
-            update_user_form_choices(form.job, Job)
-            flash('Cargo creado exitosamente', 'success')
-        except Exception as e:
-            current_app.logger.warning(f'Error al crear cargo: {e}')
-            flash('Ocurrio un error', 'danger')
-
-    if 'submit' in request.form and form.validate_on_submit():
-        try:
-            new_user = AdminServices.create_user(username=form.username.data,
-                                                 ci=form.ci.data,
-                                                 password=form.password.data,
-                                                 email=form.email.data,
-                                                 job_code=form.job.data
-                                                 )
-            current_app.logger.info(f'New user: {new_user.username} CREATED!')
-            return redirect(url_for('admin.view_users'))
-        except Exception as e:
-            current_app.logger.warning(f'Error a crear usuario: {e}')
-            flash('Ocurrio un error', 'danger')
-
+    form = None
         
 
     return render_template('admin/add_user.html',
                            title = title,
                            form = form,
-                           job_form = job_form,
+                           job_form = None,
                            prev_url = prev_url)
 
 
@@ -129,18 +99,7 @@ def view_role(role_id):
 def add_role():
     title = 'Nuevo rol'
     prev_url = url_for('admin.view_roles')
-    form = RoleForm()
-    if form.validate_on_submit():
-        name = form.name.data
-        description = form.description.data
-        #role = Role(name=name, description=description)
-
-        #if role.save():
-           ## flash("Cargo guardado exitosamente", 'success')
-        #else:
-            #flash("Hubo un problema al intentar guardar", 'danger')
-        
-        return redirect(url_for('admin.view_roles'))
+    form = None
 
     return render_template('admin/add_role.html',
                            title = title,
@@ -174,7 +133,7 @@ def assign_roles(user_id):
     from .models import Role
     roles = Role.query.all()  # Consulta para obtener todos los roles
 
-    form = AssignRolesForm()
+    form = None
     user_roles = [{ 'name': role.name, 'code':role.code} for role in user.roles]
     
 
@@ -239,7 +198,7 @@ def edit_job(job_id):
     title = 'Editar cargo'
     prev_url = url_for('admin.view_job', job_id=job_id)
     job= AdminServices.get_job(job_id)
-    job_form = JobForm(obj=job)
+    job_form = None
 
     if job_form.validate_on_submit():
         code = job_form.code.data
@@ -259,7 +218,7 @@ def edit_job(job_id):
 def add_job():
     title = 'Nuevo cargo'
     prev_url = url_for('admin.view_jobs')
-    job_form = JobForm()
+    job_form = None
     if job_form.validate_on_submit():
         code = job_form.code.data
         name = job_form.name.data
