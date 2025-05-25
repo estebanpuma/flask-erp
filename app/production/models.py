@@ -1,152 +1,132 @@
 from app.common.models import BaseModel, SoftDeleteMixin
 
+from ..core.enums import OrderStatus
+
 from app import db
 
+from ..core.origin_factory import OriginFactory
 
-# Tabla de asociación entre ordernes de produccion y requerimientos de produccion
-production_order_requirement = db.Table('production_order_requirement',
-    db.Column('production_order_id', db.Integer, db.ForeignKey('production_orders.id', ondelete='CASCADE', onupdate='CASCADE'), 
-              primary_key=True),
-    db.Column('production_requirement_id', db.Integer, db.ForeignKey('production_requirements.id', ondelete='CASCADE', onupdate='CASCADE'),
-               primary_key=True)
-)
-
-
-class ProductionOrder(BaseModel, SoftDeleteMixin):
-
-    __tablename__ = 'production_orders'
-
-    code = db.Column(db.String(50), nullable = False)
-    responsible_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    status = db.Column(db.String(20), default='Programada')
-    scheduled_start_date = db.Column(db.DateTime)
-    scheduled_end_date = db.Column(db.DateTime)
-    actual_start_date = db.Column(db.DateTime, nullable=True)
-    actual_end_date = db.Column(db.DateTime, nullable=True)
-    #priority = db.Column(db.String(20), default='Media') Validar con logica del negocio del cliente
-    notes = db.Column(db.String(500))
-
-    production_requirements = db.relationship('ProductionRequirement', 
-                                              secondary='production_order_requirement', 
-                                              back_populates='production_order', 
-                                              )
-    
-    consolidated_items = db.relationship('ConsolidatedProductionItem',
-                                        back_populates='production_order',
-                                        cascade='all, delete-orphan'
-                                    )
-    
-    #status
-    ORDER_STATUS = ['Programada', 'En progreso', 'Completada', 'Cancelada']
-    #PRIORITY_LEVEL = ['Baja', 'Media', 'Alta']
-
-    def set_order_status(self, status):
-        if status not in self.ORDER_STATUS:
-            raise ValueError(f'{status}, no es un estado valido')
-        self.status = status
-    
-
-class ConsolidatedProductionItem(db.Model):
-    __tablename__ = 'consolidated_production_items'
+class ProductionOrder(db.Model):
+    __tablename__ = "production_orders"
 
     id = db.Column(db.Integer, primary_key=True)
-    production_order_id = db.Column(db.Integer, db.ForeignKey('production_orders.id', ondelete='CASCADE'), nullable=False)
-    model_id = db.Column(db.Integer)
-    model_code = db.Column(db.String(50), nullable=False)
-    series_id = db.Column(db.Integer)
-    series = db.Column(db.String(20), nullable=True)
-    size = db.Column(db.Integer, nullable=True)
-    total_quantity = db.Column(db.Integer, nullable=False, default=0)
+    production_request_id = db.Column(db.Integer, db.ForeignKey("production_requests.id"), nullable=False)
+    status = db.Column(db.String(50), default=OrderStatus.DRAFT.value) 
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    total_man_hours = db.Column(db.Float)
 
-    # Relación con la orden de producción
-    production_order = db.relationship('ProductionOrder', back_populates='consolidated_items')
+    created_at = db.Column(db.Date)
 
-    
-class ProductionRequirement(BaseModel, SoftDeleteMixin): 
-
-    __tablename__ = 'production_requirements'
-    
-    type = db.Column(db.String(50))
-    status = db.Column(db.String(20), default='Pendiente')
-    production_order = db.relationship('ProductionOrder', 
-                                       secondary='production_order_requirement', 
-                                       back_populates='production_requirements')
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'requirement',  # Identidad para la clase base
-        'polymorphic_on': type  # Campo que se usará para distinguir subclases
-    }
-
-    REQUIREMENT_STATUS = ['Programada', 'En progreso', 'Completada', 'Pendiente', 'Cancelada']
-
-    def set_production_requiement_status(self, status):
-        if status not in self.REQUIREMENT_STATUS:
-            raise ValueError(f'{status}, no es parte de los estados permitidos')
-    
-
-class SaleProductionRequirement(ProductionRequirement): #request
-
-    __tablename__ = 'sale_production_requirement'
-    id = db.Column(db.Integer, db.ForeignKey('production_requirements.id'), primary_key=True)
-    sale_order_id = db.Column(db.Integer, db.ForeignKey('sale_orders.id'), nullable=False)
-
-    __mapper_args__ = {'polymorphic_identity': 'sales_requirement'}
+    production_request = db.relationship("ProductionRequest", backref="production_orders")
+    lines = db.relationship("ProductionOrderLine", backref="production_order", cascade="all, delete-orphan")
 
 
-class StockProductionRequirement(ProductionRequirement):
-
-    __tablename__ = 'stock_product_requirement'
-    id = db.Column(db.Integer, db.ForeignKey('production_requirements.id'), primary_key=True)
-    stock_order_id = db.Column(db.Integer, db.ForeignKey('stock_orders.id', ondelete='CASCADE'), nullable=False)
-    # Relación bidireccional entre StockProductionBatch y StockOrderProductList
-    stock_order = db.relationship('StockOrder', back_populates='stock_production_requirement')
-    #parámetro cascade='all, delete-orphan' para que, si un StockProductionBatch es eliminado, sus elementos relacionados en StockOrderProductList también lo sean.
-
-    __mapper_args__ = {'polymorphic_identity': 'stock_requirement'}
-
-
-class StockOrder(BaseModel):
-
-    __tablename__ = 'stock_orders'
-    id = db.Column(db.Integer, primary_key=True)
-    stock_order_code = db.Column(db.String(50), nullable=False, unique=True)
-    request_date = db.Column(db.Date, nullable=False)
-    delivery_date = db.Column(db.Date, nullable=False)
-    responsible_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    status = db.Column(db.String(50), default='Pendiente')
-    notes = db.Column(db.String(), nullable=True)
-
-    responsible = db.relationship('User')
-    
-    stock_order_product_list = db.relationship('StockOrderProductList', 
-                                               back_populates='stock_order', 
-                                               cascade='all, delete-orphan')
-    stock_production_requirement = db.relationship('StockProductionRequirement',
-                                                    back_populates='stock_order',
-                                                    cascade='all, delete-orphan')
-    
-    
-
-class StockOrderProductList(BaseModel):
-    
-    __tablename__ = 'stock_order_product_list'
+class ProductionOrderLine(db.Model):
+    __tablename__ = "production_order_lines"
 
     id = db.Column(db.Integer, primary_key=True)
-    stock_order_id = db.Column(db.Integer, db.ForeignKey('stock_orders.id', ondelete='CASCADE'), 
-                               nullable=False,
-                               )
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
-    product_code = db.Column(db.String(50))
-    product_serie = db.Column(db.String(20), nullable=False)
-    product_size = db.Column(db.Integer, nullable=False)
-    product_qty = db.Column(db.Integer, nullable=False)
-    notes = db.Column(db.Text, nullable=True)
+    production_order_id = db.Column(db.Integer, db.ForeignKey("production_orders.id"), nullable=False)
+    product_variant_id = db.Column(db.Integer, db.ForeignKey("product_variants.id"), nullable=False)
+    size_id = db.Column(db.Integer, db.ForeignKey("sizes.id"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    estimated_hours = db.Column(db.Float)
 
-    stock_order = db.relationship('StockOrder', back_populates='stock_order_product_list')
-
+    product_variant = db.relationship("ProductVariant")
+    size = db.relationship("Size")
+    checkpoints = db.relationship("ProductionCheckpoint", backref="order_line", cascade="all, delete-orphan")
+    materials = db.relationship("ProductionMaterialDetail", backref="order_line", cascade="all, delete-orphan")
 
 
+class ProductionCheckpoint(db.Model):
+    __tablename__ = "production_checkpoints"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_line_id = db.Column(db.Integer, db.ForeignKey("production_order_lines.id"), nullable=False)
+    stage = db.Column(db.String(20))  # corte, aparado, armado, terminado
+    completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime)
+
+
+class ProductionMaterialDetail(db.Model):
+    __tablename__ = "production_material_details"
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_line_id = db.Column(db.Integer, db.ForeignKey("production_order_lines.id"), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
+    quantity_needed = db.Column(db.Float)
+    waste_percentage = db.Column(db.Float, default=5.0)  # Porcentaje de desperdicio
+    quantity_reserved = db.Column(db.Float, default=0.0)
+    quantity_delivered = db.Column(db.Float, default=0.0)
+
+    material = db.relationship("Material")
+
+
+class ProductionMaterialSummary(BaseModel):
+    __tablename__ = "production_material_summaries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    production_order_id = db.Column(db.Integer, db.ForeignKey("production_orders.id"), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
+    total_quantity_needed = db.Column(db.Float, nullable=False)
+    quantity_reserved = db.Column(db.Float, default=0.0)
+    quantity_pending = db.Column(db.Float, default=0.0)  # lo que falta reservar (útil para sugerir compras)
+
+    material = db.relationship("Material")
+    production_order = db.relationship("ProductionOrder", backref="material_summaries")
+
+
+class ManHourEstimate(db.Model):
+    __tablename__ = "man_hour_estimates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    hours_per_unit = db.Column(db.Float, nullable=False)
+
+    product = db.relationship("Product")
+
+
+class ProductionRework(db.Model):
+    __tablename__ = "production_reworks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    checkpoint_id = db.Column(db.Integer, db.ForeignKey("production_checkpoints.id"), nullable=False)
+    reason = db.Column(db.String(255))
+    additional_hours = db.Column(db.Float)
+    additional_materials = db.Column(db.Boolean, default=False)
+
+    checkpoint = db.relationship("ProductionCheckpoint")
+    rework_materials = db.relationship("ProductionMaterialDetailForRework", backref="rework", cascade="all, delete-orphan")
+
+
+class ProductionMaterialDetailForRework(db.Model):
+    __tablename__ = "production_material_detail_for_reworks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    rework_id = db.Column(db.Integer, db.ForeignKey("production_reworks.id"), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey("materials.id"), nullable=False)
+    quantity_used = db.Column(db.Float, nullable=False)
+
+    material = db.relationship("Material")
 
 
 
+class ProductionRequest(BaseModel):
+    __tablename__ = "production_requests"
+
+    id = db.Column(db.Integer, primary_key=True)
+    origin_type = db.Column(db.String(50))  # 'sale_order', 'rd_order', 'stock_order', etc.
+    origin_id = db.Column(db.Integer)       # ID dinámico según el tipo
+    purpose = db.Column(db.String(100))
+    title = db.Column(db.String(100))
+    notes = db.Column(db.Text)
+    status = db.Column(db.String(20), default="pending")
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+
+    created_by = db.relationship("User")
+
+    @property
+    def origin_obj(self):
+        return OriginFactory.get_origin(self.origin_type, self.origin_id)
 

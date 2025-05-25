@@ -13,6 +13,11 @@ from .resources import (
     ProductVariantPostResource,
     ProductVariantPatchResource,
     ProductVariantDeleteResource,
+    ProductDesignDeleteResource,
+    ProductDesignGetResource,
+    ProductDesignPostResource,
+    ProductDesignPatchResource,
+    VariantMaterialsGetResource
 )
 
 from .resources import ProductVariantImagePostResource, ProductVariantImageDeleteResource, ProductVariantImageGetResource
@@ -31,6 +36,14 @@ products_api.add_resource(ProductPostResource, '/products')
 products_api.add_resource(ProductPatchResource, '/products/<int:resource_id>')
 products_api.add_resource(ProductDeleteResource, '/products/<int:resource_id>')
 
+#*******************************ProductDesigns****************************************
+#*****************************************************************************
+
+products_api.add_resource(ProductDesignGetResource, '/product-designs', '/product-designs/<int:resource_id>')
+products_api.add_resource(ProductDesignPostResource, '/product-designs')
+products_api.add_resource(ProductDesignPatchResource, '/product-designs/<int:resource_id>')
+products_api.add_resource(ProductDesignDeleteResource, '/product-designs/<int:resource_id>')
+
 
 #***************************ProductVAriant***************************************
 #*******************************************************************************/*
@@ -47,6 +60,7 @@ products_api.add_resource(ProductVariantMaterialListResource, "/variant-material
 products_api.add_resource(ProductVariantMaterialPostResource, "/variant-materials")
 products_api.add_resource(ProductVariantMaterialPatchResource, "/variant-materials/<int:resource_id>")
 products_api.add_resource(ProductVariantMaterialDeleteResource, "/variant-materials/<int:resource_id>")
+products_api.add_resource(VariantMaterialsGetResource, "/variant/<int:resource_id>/materials")
 
 
 #*******************************VarianImages***********************************

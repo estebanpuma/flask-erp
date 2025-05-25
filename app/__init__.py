@@ -69,6 +69,9 @@ def create_app(config):
 
     from .payments.api import payments_api_v1_bp
     app.register_blueprint(payments_api_v1_bp)
+
+    from .production.api import production_api_bp
+    app.register_blueprint(production_api_bp)
     
     
 

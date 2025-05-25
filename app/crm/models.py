@@ -25,16 +25,22 @@ class Client(BaseModel):
     __tablename__ = 'clients'
 
     id = db.Column(db.Integer, primary_key=True)
+    #info general
     name = db.Column(db.String(200), nullable=False)
-    province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=True)
-    canton_id = db.Column(db.Integer, db.ForeignKey('cantons.id'), nullable=True)
-    address = db.Column(db.String(200), nullable=True)
+    ruc_or_ci = db.Column(db.String(13), nullable=False, unique=True)
     email = db.Column(db.String(120), nullable=True, unique=False)
     phone = db.Column(db.String(20), nullable=False)
-    ruc_or_ci = db.Column(db.String(13), nullable=False, unique=True)
-    is_special_taxpayer = db.Column(db.Boolean, default=False)
+    address = db.Column(db.String(200), nullable=False)
+    #ubicacion
+    province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=False)
+    canton_id = db.Column(db.Integer, db.ForeignKey('cantons.id'), nullable=False)
+    #clasificacion
     client_type = db.Column(db.String(20), nullable=False)
     client_category_id = db.Column(db.Integer, db.ForeignKey('client_categories.id', ondelete='RESTRICT'), nullable=True)
+    
+    
+    is_special_taxpayer = db.Column(db.Boolean, default=False)
+    
 
     client_category = db.relationship('ClientCategory', backref='clients')
     contacts = db.relationship('Contact', back_populates='client', lazy=True, cascade="all, delete-orphan")
@@ -52,7 +58,7 @@ class Contact(BaseModel):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), nullable=False, unique=True)
+    email = db.Column(db.String(120), nullable=True)
     phone = db.Column(db.String(20), nullable=True)
     position = db.Column(db.String(100), nullable=True)
     notes = db.Column(db.Text, nullable=True)  

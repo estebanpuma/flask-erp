@@ -69,3 +69,12 @@ class InventoryMovementItem(BaseModel):
     
     movement = db.relationship('InventoryMovement', back_populates='items')
 
+
+class StockOrder(db.Model):
+    __tablename__ = "stock_orders"
+
+    id = db.Column(db.Integer, primary_key=True)
+    reason = db.Column(db.String(100))  # Ej: 'reposición por demanda estacional'
+    triggered_by = db.Column(db.String(50))  # automático / manual
+    triggered_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)

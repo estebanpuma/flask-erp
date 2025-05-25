@@ -1,8 +1,8 @@
 from flask_restful import Resource, marshal_with, abort, request
 from werkzeug.exceptions import HTTPException
-from ..core.resources import BasePostResource, BasePatchResource, BaseDeleteResource, BaseGetResource, BasePutResource
-from .services import CRMServices, ClientCategoryService, ProvinceService, CantonService
-from .schemas import client_fields, province_fields, canton_fields, client_category_fields
+from ..core.resources import BasePostResource, BasePatchResource, BaseDeleteResource, BaseGetResource, BasePutResource, BulkUploadBaseResource
+from .services import CRMServices, ClientCategoryService, ProvinceService, CantonService, ClientBulkUploadService, ContactService
+from .schemas import client_fields, province_fields, canton_fields, client_category_fields, contact_fields
 from .validations import validate_client_data, validate_client_partial_data
 
 from .models import Client
@@ -44,6 +44,13 @@ class ClientDeleteResource(BaseDeleteResource):
     Elimina un cliente (cuidado con las relaciones)
     """
     service_delete = staticmethod(CRMServices.delete_obj)
+
+
+#***************************Client Bulk ********************************
+#*********************************************************************
+class ClientBulkUploadResource(BulkUploadBaseResource):
+    import_service = ClientBulkUploadService
+    row_handler = staticmethod(ClientBulkUploadService.handle_row)
     
 
 #**************************ClientCategory**********************************
@@ -80,7 +87,7 @@ class CantonGetResource(BaseGetResource):
 
 
 class CantonPatchResource(BasePatchResource):
-    service_get = staticmethod(CantonService.get_obj)
+    schema_get = staticmethod(CantonService.get_obj)
     service_patch = staticmethod(CantonService.patch_obj)
     output_fields = canton_fields
 
@@ -94,3 +101,25 @@ class ProvincePatchResource(BasePatchResource):
     service_get = staticmethod(ProvinceService.get_obj)
     service_patch = staticmethod(ProvinceService.patch_obj)
     output_fields = province_fields
+
+
+#**************************Contacts***********************************
+#***************************************************************
+
+class ContactGetResource(BaseGetResource):
+    schema_get = staticmethod(ContactService.get_obj)
+    schema_list = staticmethod(lambda: ContactService.get_obj_list(request.args.to_dict()))
+    output_fields = contact_fields
+
+class ContactPostResource(BasePostResource):
+    service_create = staticmethod(ContactService.create_obj)
+    output_fields = contact_fields
+
+class ContactPatchResource(BasePatchResource):
+    service_get = staticmethod(ContactService.get_obj)
+    service_patch = staticmethod(ContactService.patch_obj)
+    output_fields = contact_fields
+
+class ContactDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(ContactService.get_obj)
+    service_delete = staticmethod(ContactService.delete_obj)

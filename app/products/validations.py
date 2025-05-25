@@ -90,8 +90,8 @@ def validate_size_series_update(data, instance):
 
 def validate_size_series_create(data):
     errors = {}
-    from .services import SeriesServices
-    if SeriesServices.get_all_series(data.get('name')) is not None:
+    from .services import SeriesService
+    if SeriesService._get_series_by_name(data.get('name')):
         raise ValidationError('Ya existe una serie con ese nombre')
     if not data.get('name'):
         errors['name'] = 'El nombre es obligatorio'

@@ -39,5 +39,14 @@ client_fields = {
     'canton':fields.Nested(canton_fields)
 }
 
-
+contact_fields = {
+    "id": fields.Integer,
+    "name": fields.String,
+    "email": fields.String,
+    "phone": fields.String,
+    "position": fields.String,
+    "notes": fields.String,
+    "birth_date": fields.String,
+    "client_id": fields.Integer
+}
 

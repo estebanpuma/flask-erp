@@ -7,7 +7,6 @@ import pandas as pd
 # utils/excel_import_service.py
 
 import pandas as pd
-from io import BytesIO
 from ..core.exceptions import ValidationError
 
 
@@ -46,6 +45,7 @@ class ExcelImportService:
             from app import db
             if any(r.get("status") == "ok" for r in results):
                 db.session.commit()
+                
         return results
 
 

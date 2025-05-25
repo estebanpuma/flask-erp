@@ -1,153 +1,100 @@
 from flask import request, jsonify, current_app
 
-from flask_restful import Resource, marshal_with, abort 
-
-from .services import ProductionServices, StockOrderServices, ProductionRequestServices
+from flask_restful import Resource, marshal_with, abort, marshal
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from .schemas import stock_order_simple_fields, stock_order_product_list_fields, stock_order_with_products_fields, production_order_fields
-from .schemas import consolidated_items_fields
+from .services import (
+    ProductionOrderService,
+    ProductionCheckpointService,
+    ProductionReworkService,
+    ProductionRequestService,
+    ProductionMaterialSummaryService,
+    ProductionMaterialExplosionService
+)
+
+from .schemas import (
+    production_checkpoint_fields, 
+    production_material_detail_fields,
+    production_material_detail_for_rework_fields,
+    production_material_summary_fields,
+    production_order_fields,
+    production_order_line_fields,
+    production_request_fields,
+    production_rework_fields
+)
+
+from ..core.resources import BaseDeleteResource, BaseGetResource, BasePatchResource, BasePostResource
+
+from ..core.utils import success_response, error_response
 
 
-class StockProductionOrderResource(Resource):
+class ProductionRequestPostResource(BasePostResource):
+    service_create = staticmethod(ProductionRequestService.create_obj)
+    output_fields = production_request_fields
 
-    @marshal_with(stock_order_with_products_fields)
-    def get(self, stock_order_id=None):
-        try:    
-            if stock_order_id:
-                spo = StockOrderServices.get_stock_order(stock_order_id)
-                return spo, 200 if spo else 404
-            
-            spos = StockOrderServices.get_all_stock_orders()
-            return spos, 200
-            
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error obteninendo StockOrder(s): {e}')
-            abort(500, message="Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
+class ProductionRequestGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionRequestService.get_obj)
+    schema_list = staticmethod( lambda: ProductionRequestService.get_obj_list(request.args.to_dict()))
+    output_fields = production_request_fields
 
 
-class ProductionRequestResource(Resource):
-    def get(self, production_request_id=None):
 
-        q = request.args.get('ids')
-        if q:
-            print(q)
+class ProductionOrderPostResource(BasePostResource):
+    service_create = staticmethod(ProductionOrderService.create_obj)
+    output_fields = production_order_fields
+    
+class ProductionOrderGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionOrderService.get_obj)
+    schema_list = staticmethod( lambda: ProductionOrderService.get_obj_list(request.args.to_dict()))
+    output_fields = production_order_fields
 
+class ProductionOrderDeleteResource(BaseDeleteResource):
+    service_delete = staticmethod(ProductionOrderService.delete_obj)
+    service_get = staticmethod(ProductionOrderService.get_obj)
+
+
+
+class ProductionMaterialSummaryGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionMaterialSummaryService.get_obj)
+    schema_list = staticmethod( lambda: ProductionMaterialSummaryService.get_obj_list(request.args.to_dict()))
+    output_fields = production_material_summary_fields
+
+class ProductionMaterialDetailsGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionMaterialExplosionService.get_obj)
+    schema_list = staticmethod( lambda: ProductionMaterialExplosionService.get_obj_list(request.args.to_dict()))
+    output_fields = production_material_detail_fields
+
+
+
+class ProductionReworkPostResource(BasePostResource):
+    service_create = staticmethod(ProductionReworkService.create_obj)
+    output_fields = production_rework_fields
+
+class ProductionReworkGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionReworkService.get_obj)
+    schema_list = staticmethod( lambda: ProductionReworkService.get_obj_list(request.args.to_dict()))
+    output_fields = production_rework_fields
+
+
+
+class ProductionCheckPointGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionCheckpointService.get_obj)
+    schema_list = staticmethod( lambda: ProductionCheckpointService.get_obj_list(request.args.to_dict()))
+    output_fields = production_checkpoint_fields
+
+
+class ProductionCheckpointPostResource(Resource):
+    def post(self):
         try:
-            if production_request_id:
-                pr = ProductionRequestServices.get_production_request(production_request_id)
-                return pr, 200 if pr else 404
-            
-            prs = ProductionRequestServices.get_all_production_requests()
-            return prs ,200
-        
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error obteniendo ProducionRequest(s): {e}')
-            abort(500, message="Internal server error")
+            data = request.get_json()
+            order_line_id = data.get("order_line_id")
+            stage = data.get("stage")
+            if not order_line_id or not stage:
+                return error_response("'order_line_id' y 'stage' son requeridos", 400)
+
+            checkpoint = ProductionCheckpointService.complete_checkpoint(order_line_id, stage)
+            return success_response(marshal(checkpoint, production_checkpoint_fields))
         except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-        
+            return error_response(f"Error al completar checkpoint: {str(e)}")
 
-class ProductionOrderResource(Resource):
-
-    @marshal_with(production_order_fields)
-    def get(self, production_order_id=None):
-        
-        try:
-            if production_order_id:
-                po = ProductionServices.get_production_order(production_order_id)
-                if po:
-                    return po, 200
-                abort(404, message="Production order not found")
-            po = ProductionServices.get_all_production_orders()
-            if po:
-                return po, 200
-            abort(404, message="Production order not found")
-
-        
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error obteniendo ProducionOrder(s): {e}')
-            abort(500, message="Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-
-
-class OrderProductionDetail(Resource):
-
-    def get(self, order_id):
-        try:
-            order_detail = ProductionServices.get_consolidated_items(order_id)
-            return order_detail, 200 if order_detail else abort(404, message="Production order detail not found")
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error obteniendo ProducionOrderDetails(s): {e}')
-            abort(500, message="Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-
-
-class nextStockOrderCodeResource(Resource):
-
-    def get(self):
-
-        try:
-            next_code = StockOrderServices.get_next_so_code()
-            return next_code, 200 if next_code else abort(500, message=f'Error stockOrder')
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error next so code(s): {e}')
-            abort(500, message=f"Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-
-
-class generateProductionOrderCodeResource(Resource):
-
-    def get(self):
-
-        try:
-            next_code = ProductionServices.generate_production_order_code()
-            return next_code, 200 if next_code else abort(404, message=f'No encontrado')
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error next so code(s): {e}')
-            abort(500, message="Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-
-
-class ConsolidatedOrdersItemsResource(Resource):
-
-    @marshal_with(consolidated_items_fields)
-    def get(self, order_id):
-        print('esta es la entrada al recurso a ver si se puede')
-        print(f'el id: {order_id}')
-        try:
-            items = ProductionServices.get_consolidated_items(order_id)
-            return items, 200 if items else abort(404, message=f'No encontrado')
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error next so code(s): {e}')
-            abort(500, message="Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-
-
-class OrderMaterialsResource(Resource):
-    def get(self, order_id):
-        try:
-            materials = ProductionServices.get_consolidated_order_materials(order_id)
-            return materials if materials else abort(404, message='nones')
-        except SQLAlchemyError as e:
-            current_app.logger.warning(f'Error (s): {e}')
-            abort(500, message="Internal server error")
-        except Exception as e:
-            current_app.logger.warning(f'Unexpected error: {e}')
-            abort(500, message=f"Unexpected error occurred {e}")
-        

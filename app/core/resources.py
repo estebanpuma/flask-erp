@@ -5,7 +5,7 @@ from flask import request, abort, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.exceptions import HTTPException
 from .error_handlers import *
-
+from sqlalchemy.exc import IntegrityError
 from .utils import success_response, error_response, validation_error_response
 from ..common.utils import ExcelImportService
 
@@ -93,16 +93,26 @@ class BasePostResource(Resource):
 
         except HTTPException as e:
             raise e
+        except IntegrityError as e:
+            return error_response(f"Error de integridad: {str(e)}")
         except Exception as e:
             return error_response(f"Error inesperado: {str(e)}")
+        
 
 
 class BaseDeleteResource(Resource):
     service_delete = None #servicio que elimina un elemento
+    service_get = None
 
     def delete(self, resource_id):
         try:
-            deleted = self.service_delete(resource_id)
+            if self.service_get is None:
+                # Llamar directamente al borrado si no se requiere instancia
+                self.service_delete(resource_id)
+            else:
+                # Obtener instancia y luego borrar
+                instance = self.service_get(resource_id)
+                deleted = self.service_delete(instance)
             if deleted:
                 return success_response({"message": "Recurso eliminado correctamente"}, 200)
             else:
@@ -162,6 +172,9 @@ class BasePatchResource(Resource):
         except Exception as e:
             current_app.logger.warning(f"Error inesperado: {e}")
             return error_response(f"Error inesperado: {str(e)}", 500)
+        except ConflictError as e:
+            return error_response(f"Error de conflicto de datos: {str(e)}", 500)
+        
         
 
 

@@ -110,3 +110,11 @@ def view_cities():
     return render_template('crm/view_cities.html',
                            title = title,
                            prev_url = prev_url)
+
+
+
+
+
+@crm_bp.route("/test/upload-materials")
+def upload_materials_form():
+    return render_template("upload_clients_bulk.html")

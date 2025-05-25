@@ -1,68 +1,76 @@
 from flask_restful import fields, reqparse
 
-
-stock_order_product_list_fields = {
-    'id': fields.Integer,
-    'stock_order_id': fields.Integer,
-    'product_id': fields.String,
-    'product_size': fields.Integer,
-    'product_qty': fields.Integer,
-    'notes': fields.String
+production_request_fields = {
+    "id": fields.Integer,
+    "origin_type": fields.String,
+    "origin_id": fields.Integer,
+    "purpose": fields.String,
+    "title": fields.String,
+    "notes": fields.String,
+    "status": fields.String,
+    "created_by_user_id": fields.Integer,
+    "created_at": fields.DateTime,
 }
 
-
-stock_order_with_products_fields = {
-    'id': fields.Integer,
-    'stock_order_code': fields.String,
-    'request_date': fields.String,
-    'delivery_date':fields.String,
-    'responsible_id': fields.Integer,
-    'status': fields.String,
-    'notes': fields.String,
-    'stock_order_product_list': fields.List(fields.Nested(stock_order_product_list_fields)) 
- 
+production_order_line_fields = {
+    "id": fields.Integer,
+    "production_order_id": fields.Integer,
+    "product_variant_id": fields.Integer,
+    "size_id": fields.Integer,
+    "quantity": fields.Integer,
+    "estimated_hours": fields.Float,
 }
 
-stock_order_simple_fields = {
-    'id': fields.Integer,
-    'stock_order_code': fields.String,
-    'request_date': fields.String,
-    'delivery_date':fields.String,
-    'responsible_id': fields.Integer,
-    'status': fields.String,
-    'notes': fields.String,
- 
+production_order_fields = {
+    "id": fields.Integer,
+    "production_request_id": fields.Integer,
+    "status": fields.String,
+    "start_date": fields.String,
+    "end_date": fields.String,
+    "total_man_hours": fields.Float,
+    "created_at": fields.DateTime,
+    "lines": fields.List(fields.Nested(production_order_line_fields))
 }
 
-
-production_requirement_fields={
-    'id':fields.Integer,
-    'order_number': fields.Integer,
-    'type': fields.String
-
+production_material_detail_fields = {
+    "id": fields.Integer,
+    "order_line_id": fields.Integer,
+    "material_id": fields.Integer,
+    "quantity_needed": fields.Float,
+    "waste_percentage": fields.Float,
+    "quantity_reserved": fields.Float,
+    "quantity_delivered": fields.Float,
 }
 
-
-production_order_fields ={
-    'id': fields.Integer,
-    'code': fields.String,
-    'scheduled_start_date': fields.String,
-    'scheduled_end_date': fields.String,
-    'actual_start_date': fields.String,
-    'actual_end_date': fields.String,
-    'responsible_id': fields.Integer,
-    'status': fields.String,
-    'notes': fields.String,
-    'production_requirements': fields.List(fields.Nested(production_requirement_fields))
-
+production_material_summary_fields = {
+    "id": fields.Integer,
+    "production_order_id": fields.Integer,
+    "material_id": fields.Integer,
+    "total_quantity_needed": fields.Float,
+    "quantity_reserved": fields.Float,
+    "quantity_pending": fields.Float,
 }
 
+production_checkpoint_fields = {
+    "id": fields.Integer,
+    "order_line_id": fields.Integer,
+    "stage": fields.String,
+    "completed": fields.Boolean,
+    "completed_at": fields.DateTime,
+}
 
-consolidated_items_fields = {
-    'id': fields.Integer,
-    'production_order_id': fields.Integer,
-    'model_code': fields.String,
-    'series': fields.String,
-    'size': fields.Integer,
-    'total_quantity': fields.Integer
+production_rework_fields = {
+    "id": fields.Integer,
+    "checkpoint_id": fields.Integer,
+    "reason": fields.String,
+    "additional_hours": fields.Float,
+    "additional_materials": fields.Boolean,
+    "created_at": fields.DateTime,
+}
+
+production_material_detail_for_rework_fields = {
+    "id": fields.Integer,
+    "rework_id": fields.Integer,
+    "material_id": fields.Integer,
+    "quantity_used": fields.Float,
 }
