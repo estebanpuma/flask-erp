@@ -8,7 +8,7 @@ from .error_handlers import *
 from sqlalchemy.exc import IntegrityError
 from .utils import success_response, error_response, validation_error_response
 from ..common.utils import ExcelImportService
-
+import psycopg2
 
 class HealthCheckResource(Resource):
     """
@@ -89,14 +89,22 @@ class BasePostResource(Resource):
             if not instance:
                 return error_response("No se pudo crear el recurso", 400)
 
+            if self.output_fields is None:
+                return success_response(instance, 201)
             return success_response(marshal(instance, self.output_fields), 201)
+            
 
         except HTTPException as e:
             raise e
         except IntegrityError as e:
-            return error_response(f"Error de integridad: {str(e)}")
+            constraint = str(e)
+            if isinstance(e.orig, psycopg2.errors.UniqueViolation):
+                constraint = e.orig.diag.constraint_name 
+            return error_response(f"Error de integridad: {str(constraint)}")
         except Exception as e:
             return error_response(f"Error inesperado: {str(e)}")
+        except ValidationError as e:
+            return error_response(f'Error de validacion: {str(e)}')
         
 
 
@@ -106,13 +114,19 @@ class BaseDeleteResource(Resource):
 
     def delete(self, resource_id):
         try:
+            if not self.service_get or not self.service_delete:
+                raise AppError("Faltan servicios obligatorios en el recurso DELETE.")
+            
             if self.service_get is None:
                 # Llamar directamente al borrado si no se requiere instancia
                 self.service_delete(resource_id)
             else:
                 # Obtener instancia y luego borrar
+                
                 instance = self.service_get(resource_id)
+                print(instance)
                 deleted = self.service_delete(instance)
+
             if deleted:
                 return success_response({"message": "Recurso eliminado correctamente"}, 200)
             else:

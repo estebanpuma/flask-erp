@@ -2,40 +2,55 @@ from flask_restful import Resource, request, marshal_with, marshal_with_field, m
 
 from ..core.resources import BaseGetResource, BasePostResource, BasePatchResource, BaseDeleteResource
 
-from .services import SaleOrderService
+from .services import SalesOrderService
 
-from .schemas import sale_order_fields, sale_order_line_fields
+from .schemas import sale_order_fields, sale_order_line_fields, preview_order_fields
 
 from ..core.utils import *
 from ..core.exceptions import AppError
 
 
 class SaleOrderPostResource(BasePostResource):
-    service_create = staticmethod(SaleOrderService.create_obj)
-    output_fields = sale_order_fields
-
-class SaleOrderPatchResource(BasePatchResource):
-    service_get = staticmethod(SaleOrderService.get_obj)
-    service_patch = staticmethod(SaleOrderService.patch_obj)
+    service_create = staticmethod(SalesOrderService.create_obj)
     output_fields = sale_order_fields
 
 class SaleOrderGetResource(BaseGetResource):
-    schema_get = staticmethod(SaleOrderService.get_obj)
-    schema_list = staticmethod(lambda: SaleOrderService.get_obj_list(request.args.to_dict()))
+    schema_get = staticmethod(SalesOrderService.get_obj)
+    schema_list = staticmethod(lambda: SalesOrderService.get_obj_list(request.args.to_dict()))
+    output_fields = sale_order_fields
+
+class SaleOrderDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(SalesOrderService.get_obj)
+    service_delete = staticmethod(SalesOrderService.delete_obj)
+
+class SaleOrderPatchResource(BasePatchResource):
+    service_get = staticmethod(SalesOrderService.get_obj)
+    service_patch = staticmethod(SalesOrderService.patch_obj)
+    output_fields = sale_order_fields
+
+class SaleOrderPreviewResource(BasePostResource):
+    service_create = staticmethod(SalesOrderService.preview_order)
+    
+
+"""
+
+
+class SaleOrderGetResource(BaseGetResource):
+    schema_get = staticmethod(SalesOrderService.get_obj)
+    schema_list = staticmethod(lambda: SalesOrderService.get_obj_list(request.args.to_dict()))
     output_fields = sale_order_fields
 
 
 class SaleOrderDeleteResource(BaseDeleteResource):
-    service_get = staticmethod(SaleOrderService.get_obj)
-    service_delete = staticmethod(SaleOrderService.delete_obj)
-
+    service_get = staticmethod(SalesOrderService.get_obj)
+    service_delete = staticmethod(SalesOrderService.delete_obj)
 
 class SaleOrderCancelResource(Resource):
     def patch(self, resource_id):
         try:
             data = request.get_json()
             reason = data.get("reason", "")
-            order = SaleOrderService.cancel_obj(resource_id, reason)
+            order = SalesOrderService.cancel_obj(resource_id, reason)
             return success_response(marshal(order, sale_order_fields, "Orden cancelada correctamente."))
         except AppError as e:
             return validation_error_response(str(e))
@@ -71,3 +86,4 @@ class SaleOrderLinePatchResource(Resource):
             return validation_error_response(str(e))
         
         
+"""

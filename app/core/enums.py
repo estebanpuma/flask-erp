@@ -2,7 +2,6 @@ from enum import Enum
 
 class OrderStatus(Enum):
     DRAFT = 'Borrador'
-    PENDING = 'Pendiente'
     APPROVED = 'Aprobada'
     CANCELED = 'Cancelada'
     DELIVERED = 'Entregada'
@@ -13,3 +12,9 @@ class SizeCategory(Enum):
     MAN = 'Hombre'
     WOMAN = 'Mujer'
     KID = 'Infantil'
+
+
+class PaymentStatus(Enum):
+    UNPAID = 'Sin pago'
+    PARTIAL = 'Parcialmente pagada'
+    PAID = 'Pagada'

@@ -2,7 +2,7 @@ from app import db
 
 from ..common import BaseModel
 
-from ..core.enums import OrderStatus
+from ..core.enums import OrderStatus, PaymentStatus
 
 from datetime import datetime,date
 
@@ -16,7 +16,8 @@ class SaleOrder(BaseModel):
     delivery_date = db.Column(db.Date)
     actual_delivery_date = db.Column(db.Date)  # Para comparar cumplimiento vs promesa
 
-    status = db.Column(db.String(20), nullable=False, default=OrderStatus.DRAFT.value)
+    payment_status = db.Column(db.String(20), nullable=True, default=OrderStatus.DRAFT.value)
+    status = db.Column(db.String(20), nullable=False, default=PaymentStatus.UNPAID.value)
     delivery_address = db.Column(db.String(200))
 
     subtotal = db.Column(db.Float, default=0.0)
@@ -30,8 +31,12 @@ class SaleOrder(BaseModel):
     salesperson = db.relationship('Salesperson', back_populates='sale_orders', lazy='joined')
     client = db.relationship('Client', back_populates='orders', lazy='joined')
 
+    amount_paid = db.Column(db.Float, default=0.0)  # Pagos reales recibidos
+    amount_due = db.Column(db.Float, default=0.0)   # Lo que falta por cobrar
+
     lines = db.relationship('SaleOrderLine', back_populates='order', cascade='all, delete-orphan', lazy='joined')
-    payment_plans = db.relationship('PaymentPlan', back_populates='sale_order')
+    agreements = db.relationship('PaymentAgreement', back_populates='sale_order', cascade='all, delete-orphan')
+    transactions = db.relationship('PaymentTransaction', back_populates='sale_order', cascade='all, delete-orphan')
 
     canceled_reason = db.Column(db.String(200))
     notes = db.Column(db.String(250), nullable=True)
@@ -70,3 +75,21 @@ class SaleOrderLine(BaseModel):
 
     
 
+
+
+class SaleOrderPreview:
+    def __init__(self, lines, discount=0.0, tax=0.0):
+        self.lines = lines
+        self.discount = discount
+        self.tax = tax
+
+class SaleOrderPreviewLine:
+    def __init__(self, variant_id, quantity, price_unit, discount=0.0):
+        self.variant_id = variant_id
+        self.quantity = quantity
+        self.price_unit = price_unit
+        self.discount = discount
+
+    @property
+    def subtotal(self):
+        return (self.price_unit - self.discount) * self.quantity

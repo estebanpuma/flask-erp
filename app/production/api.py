@@ -4,6 +4,8 @@ from flask_restful import Api
 
 from . import production_bp
 
+"""
+
 from .resources import (
     ProductionRequestPostResource,
     ProductionRequestGetResource
@@ -26,11 +28,13 @@ from . resources import (
     ProductionMaterialSummaryGetResource, 
     
 )
+"""
 
 production_api_bp = Blueprint('production_api', __name__, url_prefix='/api/v1')
 
 production_api = Api(production_api_bp)
 
+"""
 
 production_api.add_resource(ProductionRequestPostResource, '/production-requests')
 production_api.add_resource(ProductionRequestGetResource, '/production-requests', '/production-requests/<int:resource_id>')
@@ -47,3 +51,5 @@ production_api.add_resource(ProductionMaterialDetailsGetResource, '/production-m
 
 production_api.add_resource(ProductionCheckPointGetResource, '/production-checkpoints', '/production-checkpoints/<int:resource_id>')
 production_api.add_resource(ProductionCheckpointPostResource, '/production-checkpoints')
+
+"""

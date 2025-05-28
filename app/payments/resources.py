@@ -1,8 +1,8 @@
 from flask_restful import Resource, marshal_with, abort, request, marshal
 
 from ..core.resources import BaseGetResource, BasePatchResource, BaseDeleteResource, BasePostResource
-from .services import PaymentPlanService, PaymentMethodService, InstallmentService, PaymentTransactionService
-from .schemas import payment_method_fields, payment_plan_fields, installment_fields, transaction_fields
+from .services import PaymentMethodService, PaymentTransactionService, PaymentAgreementService
+from .schemas import payment_method_fields, transaction_fields, agreement_fields
 
 from ..core.utils import error_response, success_response, validation_error_response
 from ..core.exceptions import AppError
@@ -34,7 +34,6 @@ class PaymentMethodUpdateResource(BasePatchResource):
     service_patch = staticmethod(PaymentMethodService.patch_obj)
     output_fields = payment_method_fields
 
-
 class PaymentMethodDeleteResource(BaseDeleteResource):
     """
     DELETE /payment_methods/<id>
@@ -43,54 +42,81 @@ class PaymentMethodDeleteResource(BaseDeleteResource):
     service_get = staticmethod(PaymentMethodService.get_obj)
     service_delete = staticmethod(PaymentMethodService.delete_obj)
 
-
-
-
-#************************PaymentPlan*******************************
-#**********************************************************
-
-class PaymentPlanCreateResource(BasePostResource):
+#/*************************Transactions*************************
+class PaymentTransactionCreateResource(BasePostResource):
     """
-    POST /payment_plans
-    Crea un plan de pago vinculado a una orden.
+    Crea un nuevo pago.
     """
-    service_create = staticmethod(PaymentPlanService.create_obj)
-    output_fields = payment_plan_fields
-
-
-class PaymentPlanGetResource(BaseGetResource):
-    """
-    GET
-    Obtine el o los planes de pago vinculado a una orden
-    """
-    schema_get = staticmethod(PaymentPlanService.get_obj)      #servicio para obtener un elemento
-    schema_list = staticmethod(lambda: PaymentPlanService.get_obj_list(request.args.to_dict()))      #servicio para obtener una lista de elementos
-    output_fields = payment_plan_fields    #qué campos devolver(marshal)
-
-
-class PaymentPlanPatchResource(BasePatchResource):
-    service_get = staticmethod(PaymentPlanService.get_obj)
-    service_patch = staticmethod(PaymentMethodService.patch_obj)
-    output_fields = payment_plan_fields
-        
-
-class PaymentPlanDeleteResource(BaseDeleteResource):
-    service_delete = staticmethod(PaymentPlanService.delete_obj)
-    service_get = staticmethod(PaymentPlanService.get_obj)
-
-
-#*****************************Installments************************************************
-
-class PaymentTransactionPostResource(BasePostResource):
     service_create = staticmethod(PaymentTransactionService.create_obj)
     output_fields = transaction_fields
 
 class PaymentTransactionGetResource(BaseGetResource):
-    schema_get = staticmethod(PaymentTransactionService.get_obj)
-    schema_list = staticmethod(lambda: PaymentTransactionService.get_obj_list(request.args.to_dict()))
+    '''
+    Obtiene los los pagos
+    '''
+    schema_get = staticmethod(PaymentTransactionService.get_obj)      #servicio para obtener un elemento
+    schema_list = staticmethod(lambda: PaymentTransactionService.get_obj_list(request.args.to_dict()))      #servicio para obtener una lista de elementos
+    output_fields = transaction_fields    #qué campos devolver(marshal)
+
+class SalesPaymentTransactionGetResource(BaseGetResource):
+    """Pagos por orden de venta"""
+    schema_get = staticmethod(PaymentTransactionService.get_sale_payments)
     output_fields = transaction_fields
 
-class InstallmentGetResource(Resource):
-    @marshal_with(installment_fields)
-    def get(self, id):
-        return InstallmentService.get_obj(id)
+class PaymentTransactionUpdateResource(BasePatchResource):
+    """
+    PATCH /payment_methods/<id>
+    Actualiza un pago existente.
+    """
+    service_get = staticmethod(PaymentTransactionService.get_obj)
+    service_patch = staticmethod(PaymentTransactionService.patch_obj)
+    output_fields = transaction_fields
+
+class PaymentTransactionDeleteResource(BaseDeleteResource):
+    """
+    DELETE /payment_methods/<id>
+    Elimina un pago.
+    """
+    service_get = staticmethod(PaymentTransactionService.get_obj)
+    service_delete = staticmethod(PaymentTransactionService.delete_obj)
+
+
+
+
+#/*************************Agreements*************************
+class PaymentAgreementCreateResource(BasePostResource):
+    """
+    Crea un nuevo pago.
+    """
+    service_create = staticmethod(PaymentAgreementService.create_obj)
+    output_fields = agreement_fields
+
+class PaymentAgreementGetResource(BaseGetResource):
+    '''
+    Obtiene los los pagos
+    '''
+    schema_get = staticmethod(PaymentAgreementService.get_obj)      #servicio para obtener un elemento
+    schema_list = staticmethod(lambda: PaymentAgreementService.get_obj_list(request.args.to_dict()))      #servicio para obtener una lista de elementos
+    output_fields = agreement_fields    #qué campos devolver(marshal)
+
+class SalesPaymentAgreementGetResource(BaseGetResource):
+    """Pagos por orden de venta"""
+    schema_get = staticmethod(PaymentAgreementService.get_sale_agreements)
+    output_fields = agreement_fields
+
+class PaymentAgreementUpdateResource(BasePatchResource):
+    """
+    PATCH /payment_methods/<id>
+    Actualiza un pago existente.
+    """
+    service_get = staticmethod(PaymentAgreementService.get_obj)
+    service_patch = staticmethod(PaymentAgreementService.patch_obj)
+    output_fields = agreement_fields
+
+class PaymentAgreementDeleteResource(BaseDeleteResource):
+    """
+    DELETE /payment_methods/<id>
+    Elimina un pago.
+    """
+    service_get = staticmethod(PaymentAgreementService.get_obj)
+    service_delete = staticmethod(PaymentAgreementService.delete_obj)

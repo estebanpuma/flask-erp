@@ -4,22 +4,44 @@ from ..core.enums import OrderStatus
 
 from app import db
 
+from datetime import datetime
+
 from ..core.origin_factory import OriginFactory
+
+
+
+# Tabla intermedia para relación muchos a muchos
+production_order_requests = db.Table(
+    "production_order_requests",
+    db.Column("production_order_id", db.Integer, db.ForeignKey("production_orders.id")),
+    db.Column("production_request_id", db.Integer, db.ForeignKey("production_requests.id"))
+)
 
 class ProductionOrder(db.Model):
     __tablename__ = "production_orders"
 
     id = db.Column(db.Integer, primary_key=True)
-    production_request_id = db.Column(db.Integer, db.ForeignKey("production_requests.id"), nullable=False)
     status = db.Column(db.String(50), default=OrderStatus.DRAFT.value) 
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
-    total_man_hours = db.Column(db.Float)
 
-    created_at = db.Column(db.Date)
+    created_at = db.Column(db.Date, default = datetime.now)
 
-    production_request = db.relationship("ProductionRequest", backref="production_orders")
+    # Planificación global de mano de obra
+    workers_assigned = db.Column(db.Integer, default=1)   # Total trabajadores en la orden
+    hours_per_shift = db.Column(db.Float, default=8.0)    # Horas normales por trabajador
+    overtime_hours = db.Column(db.Float, default=0.0)     # Horas extra por trabajador
+
     lines = db.relationship("ProductionOrderLine", backref="production_order", cascade="all, delete-orphan")
+    material_summaries = db.relationship("ProductionMaterialSummary", backref="production_order", cascade="all, delete-orphan")
+    events = db.relationship("ProductionEvent", backref="production_order", cascade="all, delete-orphan")
+    plan_change_logs = db.relationship("PlanChangeLog", backref="production_order", cascade="all, delete-orphan")
+
+    production_requests = db.relationship(
+        "ProductionRequest",
+        secondary=production_order_requests,
+        backref="production_orders"
+    )
 
 
 class ProductionOrderLine(db.Model):
@@ -27,13 +49,20 @@ class ProductionOrderLine(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     production_order_id = db.Column(db.Integer, db.ForeignKey("production_orders.id"), nullable=False)
+    production_request_id = db.Column(db.Integer, db.ForeignKey("production_requests.id"), nullable=False)  # Trazabilidad del pedido
     product_variant_id = db.Column(db.Integer, db.ForeignKey("product_variants.id"), nullable=False)
-    size_id = db.Column(db.Integer, db.ForeignKey("sizes.id"), nullable=False)
+    
     quantity = db.Column(db.Integer, nullable=False)
     estimated_hours = db.Column(db.Float)
 
+    # Planificación de mano de obra a nivel de línea
+    workers_assigned = db.Column(db.Integer, default=1)
+    hours_per_shift = db.Column(db.Float, default=8.0)
+    overtime_hours = db.Column(db.Float, default=0.0)
+
     product_variant = db.relationship("ProductVariant")
-    size = db.relationship("Size")
+    production_request = db.relationship('ProductionRequest')
+   
     checkpoints = db.relationship("ProductionCheckpoint", backref="order_line", cascade="all, delete-orphan")
     materials = db.relationship("ProductionMaterialDetail", backref="order_line", cascade="all, delete-orphan")
 
@@ -73,17 +102,22 @@ class ProductionMaterialSummary(BaseModel):
     quantity_pending = db.Column(db.Float, default=0.0)  # lo que falta reservar (útil para sugerir compras)
 
     material = db.relationship("Material")
-    production_order = db.relationship("ProductionOrder", backref="material_summaries")
+    #production_order = db.relationship("ProductionOrder", backref="material_summaries")
 
 
 class ManHourEstimate(db.Model):
     __tablename__ = "man_hour_estimates"
 
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    product_variant_id = db.Column(db.Integer, db.ForeignKey("product_variants.id"), nullable=False)
     hours_per_unit = db.Column(db.Float, nullable=False)
 
-    product = db.relationship("Product")
+    valid_from = db.Column(db.Date, nullable=False, default=datetime.now)
+    valid_to = db.Column(db.Date, nullable=True)  # Null = vigente
+
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    variant = db.relationship("ProductVariant")
 
 
 class ProductionRework(db.Model):
@@ -130,3 +164,28 @@ class ProductionRequest(BaseModel):
     def origin_obj(self):
         return OriginFactory.get_origin(self.origin_type, self.origin_id)
 
+
+
+class PlanChangeLog(db.Model):
+    __tablename__ = "plan_change_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    production_order_id = db.Column(db.Integer, db.ForeignKey("production_orders.id"), nullable=False)
+    field_changed = db.Column(db.String(50))  # Ej: 'start_date', 'workers_assigned'
+    old_value = db.Column(db.String(100))
+    new_value = db.Column(db.String(100))
+    changed_by_user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User")
+    #production_order = db.relationship("ProductionOrder", backref="plan_change_logs")
+
+
+class ProductionEvent(db.Model):
+    __tablename__ = "production_events"
+
+    id = db.Column(db.Integer, primary_key=True)
+    production_order_id = db.Column(db.Integer, db.ForeignKey("production_orders.id"), nullable=False)
+    event_type = db.Column(db.String(50))  # Ej: 'material_shortage', 'machine_breakdown'
+    description = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

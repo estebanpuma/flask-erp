@@ -62,3 +62,8 @@ def get_today():
 
 
 
+def validate_foreign_key(model, obj_id, field_name="ID"):
+    instance = model.query.get(obj_id)
+    if not instance:
+        raise ValidationError(f"{field_name} {obj_id} no existe.")
+    return instance

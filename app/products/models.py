@@ -89,9 +89,16 @@ class ProductVariant(BaseModel):
     barcode = db.Column(db.String(50), unique=True)
     stock = db.Column(db.Float, default=0)
 
+    standar_time = db.Column(db.Float, nullable=True, default=0.0)
+
+    current_price = db.Column(db.Float, default=0.0)
+
     design = db.relationship('ProductDesign', back_populates='variants')
     size = db.relationship('Size')
     materials = db.relationship('ProductVariantMaterialDetail', back_populates='variant', cascade='all, delete-orphan')
+    
+
+
 
     __table_args__ = (
         db.UniqueConstraint('design_id', 'size_id', 'code', name='uq_product_variant_code'),
@@ -136,14 +143,14 @@ class ProductPriceHistory(BaseModel):
     __tablename__ = 'product_price_history'
 
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_variants.id'), nullable=False)
     price = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(3), nullable=False, default='USD')
     start_date = db.Column(db.Date, nullable=False, default=datetime.today)
     end_date = db.Column(db.Date)
     is_actual_price = db.Column(db.Boolean, default=False)
 
-    product = db.relationship('Product', backref='price_history')
+    variant = db.relationship('ProductVariant', backref='price_history')
 
 
 class Color(BaseModel):

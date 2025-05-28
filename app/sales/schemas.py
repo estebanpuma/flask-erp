@@ -4,6 +4,11 @@ from flask_restful import fields
 
 from flask_restful import fields
 
+preview_order_fields = {
+    "subtotal": fields.Float,
+    "total": fields.Float
+}
+
 sale_order_line_fields = {
     "id": fields.Integer,
     "variant_id": fields.Integer,
@@ -26,5 +31,8 @@ sale_order_fields = {
     "discount": fields.Float,
     "tax": fields.Float,
     "total": fields.Float,
+    "payment_status": fields.String,
+    "amount_paid": fields.Float,
+    "amount_due":fields.Float,
     "lines": fields.List(fields.Nested(sale_order_line_fields)),
 }
