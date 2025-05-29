@@ -42,6 +42,8 @@ class ProductionOrder(db.Model):
         secondary=production_order_requests,
         backref="production_orders"
     )
+    product_lots = db.relationship('ProductLot', back_populates='production_order', lazy='dynamic')
+
 
 
 class ProductionOrderLine(db.Model):

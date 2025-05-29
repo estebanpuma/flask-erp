@@ -96,6 +96,9 @@ class ProductVariant(BaseModel):
     design = db.relationship('ProductDesign', back_populates='variants')
     size = db.relationship('Size')
     materials = db.relationship('ProductVariantMaterialDetail', back_populates='variant', cascade='all, delete-orphan')
+    lots = db.relationship('ProductLot', back_populates='product_variant', lazy='dynamic')
+    product_stocks = db.relationship('ProductStock', back_populates='product_variant')
+
     
 
 

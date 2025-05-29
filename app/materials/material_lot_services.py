@@ -1,6 +1,7 @@
 # services/material_lot_service.py
 from app import db
-from .models import MaterialLot, Material, Supplier
+from .models import MaterialLot, Material, InventoryMovement
+from ..suppliers.models import Supplier
 from ..inventory.models import Warehouse
 from .dto.material_lot_dto import MaterialLotCreateDTO, MaterialLotUpdateDTO
 from ..core.exceptions import NotFoundError, ValidationError
@@ -41,6 +42,17 @@ class MaterialLotService:
             received_date=dto.received_date or date.today()
         )
         db.session.add(lot)
+
+        # Crear automáticamente el movimiento de entrada (IN)
+        movement = InventoryMovement(
+            movement_type='IN',
+            lot=lot,
+            quantity=dto.quantity,
+            date=lot.received_date,
+            note='Ingreso inicial al crear lote'
+        )
+        db.session.add(movement)
+
         return lot
 
     @staticmethod

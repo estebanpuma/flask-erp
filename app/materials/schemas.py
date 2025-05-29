@@ -13,7 +13,5 @@ material_output_fields = {
     'name': fields.String,
     'detail': fields.String,
     'unit': fields.String,
-    'stock': fields.Float,
-    'material_group_id': fields.Integer,
-    'current_price': fields.Float
+    'group_id': fields.Integer,
 }

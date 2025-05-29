@@ -124,8 +124,7 @@ class MaterialServices:
             name=data['name'].strip(),
             detail=data.get('detail'),
             unit=data['unit'],
-            stock=data.get('stock', 0),
-            material_group_id=data.get('material_group_id')
+            group_id=data.get('material_group_id')
         )
 
         db.session.add(material)

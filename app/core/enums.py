@@ -18,3 +18,7 @@ class PaymentStatus(Enum):
     UNPAID = 'Sin pago'
     PARTIAL = 'Parcialmente pagada'
     PAID = 'Pagada'
+
+
+class ProductStock(Enum):
+    IN_STOCK = 'En stock'

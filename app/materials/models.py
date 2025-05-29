@@ -81,14 +81,73 @@ class InventoryMovement(BaseModel):
         return f"<InventoryMovement {self.movement_type} - {self.quantity} ({self.lot.material.code})>"
 
 
-class Supplier(BaseModel):
-    __tablename__ = 'suppliers'
+
+    
+
+class ProductLot(db.Model):
+    __tablename__ = 'product_lots'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    ruc_or_ci = db.Column(db.String(20), unique=True, nullable=False)
-    contact_info = db.Column(db.String(255))
-    material_lots = db.relationship('MaterialLot', back_populates='supplier', lazy='dynamic')
+    lot_number = db.Column(db.String(50), nullable=False)  # Ej: LOTE-2025-001
+    product_variant_id = db.Column(db.Integer, db.ForeignKey('product_variants.id'), nullable=False)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=False)
+
+    quantity = db.Column(db.Float, nullable=False)
+    unit_cost = db.Column(db.Float, nullable=False)  # Coste promedio unitario
+    production_order_id = db.Column(db.Integer, db.ForeignKey('production_orders.id'), nullable=False)
+
+    # Estado logístico (nunca in_process!)
+    status = db.Column(db.String(20), nullable=False, default='in_stock')  
+    # Ejemplos: in_stock, delivered, rejected, returned
+
+    received_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relaciones
+    product_variant = db.relationship('ProductVariant', back_populates='lots')
+    warehouse = db.relationship('Warehouse', back_populates='product_lots')
+    production_order = db.relationship('ProductionOrder', back_populates='product_lots')
+    movements = db.relationship('ProductLotMovement', back_populates='product_lot', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f"<Supplier {self.name}>"
+        return f"<ProductLot {self.lot_number} - {self.product_variant.code} - {self.quantity}>"
+
+
+class ProductLotMovement(db.Model):
+    __tablename__ = 'product_lot_movements'
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_lot_id = db.Column(db.Integer, db.ForeignKey('product_lots.id'), nullable=False)
+    movement_type = db.Column(db.String(20), nullable=False)  # IN, OUT, ADJUST
+    quantity = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    note = db.Column(db.String(255))
+
+    # Origen genérico (puede ser SaleOrder, StockOrder, ProductionOrder, etc.)
+    source_type = db.Column(db.String(50), nullable=True)  # Ej: 'SaleOrder', 'StockOrder', 'ProductionOrder'
+    source_id = db.Column(db.Integer, nullable=True)       # ID real de ese origen
+
+    product_lot = db.relationship('ProductLot', back_populates='movements')
+
+    def __repr__(self):
+        return f"<ProductLotMovement {self.movement_type} - {self.quantity} - Lot {self.product_lot.lot_number}>"
+
+
+class ProductStock(db.Model):
+    __tablename__ = 'product_stocks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    product_variant_id = db.Column(db.Integer, db.ForeignKey('product_variants.id'), nullable=False)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=False)
+    quantity = db.Column(db.Float, nullable=False, default=0.0)
+
+    __table_args__ = (
+        db.UniqueConstraint('product_variant_id', 'warehouse_id', name='uq_product_stock_variant_warehouse'),
+    )
+
+    product_variant = db.relationship('ProductVariant', back_populates='product_stocks')
+    warehouse = db.relationship('Warehouse', back_populates='product_stocks')
+
+    def __repr__(self):
+        return f"<ProductStock {self.product_variant_id} in Warehouse {self.warehouse_id}: {self.quantity}>"
+    
+

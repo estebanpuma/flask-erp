@@ -19,6 +19,8 @@ class Warehouse(BaseModel, SoftDeleteMixin):
 
     # Relación con lotes
     lots = db.relationship('MaterialLot', back_populates='warehouse', lazy='dynamic')
+    product_lots = db.relationship('ProductLot', back_populates='warehouse', lazy='dynamic')
+    product_stocks = db.relationship('ProductStock', back_populates='warehouse')
 
     def __repr__(self):
         return f"<Warehouse {self.name}>"

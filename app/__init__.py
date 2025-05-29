@@ -61,6 +61,9 @@ def create_app(config):
     from .sales.api import sales_api_bp
     app.register_blueprint(sales_api_bp)
 
+    from .suppliers.api import suppliers_api_bp
+    app.register_blueprint(suppliers_api_bp)
+
     from .products.api import products_api_bp
     app.register_blueprint(products_api_bp)
 
