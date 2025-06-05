@@ -6,6 +6,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from .services import (
     ProductionOrderService,
+    ProductionMaterialService,
+    ProductionOrderLineService
 )
 
 from .production_request_services import ProductionRequestServices
@@ -26,6 +28,14 @@ from ..core.resources import BaseDeleteResource, BaseGetResource, BasePatchResou
 from ..core.utils import success_response, error_response
 
 
+#ProductionRequests
+class ProductionRequestGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionRequestServices.get_obj)
+    schema_list = staticmethod( lambda: ProductionRequestServices.get_obj_list(request.args.to_dict()))
+    output_fields = production_request_fields
+
+
+#ProductionOrders
 class ProductionOrderPostResource(BasePostResource):
     service_create = staticmethod(ProductionOrderService.create_obj)
     output_fields = production_order_fields
@@ -39,37 +49,28 @@ class ProductionOrderDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(ProductionOrderService.delete_obj)
     service_get = staticmethod(ProductionOrderService.get_obj)
 
-class ProductionRequestGetResource(BaseGetResource):
-    schema_get = staticmethod(ProductionRequestServices.get_obj)
-    schema_list = staticmethod( lambda: ProductionRequestServices.get_obj_list(request.args.to_dict()))
-    output_fields = production_request_fields
 
-"""
+#ProductionOrderLines
+class ProductionLineGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionOrderLineService.get_obj)
+    schema_list = staticmethod(lambda: ProductionOrderLineService.get_obj_list(request.args.to_dict()))
+    output_fields = production_order_line_fields
 
-class ProductionRequestPostResource(BasePostResource):
-    service_create = staticmethod(ProductionRequestService.create_obj)
-    output_fields = production_request_fields
-
-
+class ProductionOrderLineGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionOrderLineService.get_obj_list_by_order)
+    output_fields = production_order_line_fields
 
 
-
-
-
-
-
-
-
+#ProductionOrderMaterials
 class ProductionMaterialSummaryGetResource(BaseGetResource):
-    schema_get = staticmethod(ProductionMaterialSummaryService.get_obj)
-    schema_list = staticmethod( lambda: ProductionMaterialSummaryService.get_obj_list(request.args.to_dict()))
+    schema_get = staticmethod(ProductionMaterialService.get_material_summary)
     output_fields = production_material_summary_fields
 
 class ProductionMaterialDetailsGetResource(BaseGetResource):
-    schema_get = staticmethod(ProductionMaterialExplosionService.get_obj)
-    schema_list = staticmethod( lambda: ProductionMaterialExplosionService.get_obj_list(request.args.to_dict()))
+    schema_get = staticmethod(ProductionMaterialService.get_line_materials)
     output_fields = production_material_detail_fields
 
+"""
 
 
 class ProductionReworkPostResource(BasePostResource):

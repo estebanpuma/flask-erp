@@ -30,14 +30,15 @@ class ProductionOrderEntity:
     @property
     def total_man_hours(self) -> float:
         """Suma de horas-hombre necesarias de todas las líneas."""
-        return sum(line_entity.estimated_man_hours for line_entity in self.line_entities)
+
+        return sum(line_entity.estimated_man_hours() for line_entity in self.line_entities)
 
     @property
-    def production_duration_days(self) -> int:
+    def get_production_duration_days(self) -> int:
         """Duración estimada de la orden, en días."""
         if not self.model.workers_assigned:
             return None
-        return ceil(self.total_man_hours / (self.model.workers_assigned * (self.model.overtime_hours + 8)))
+        return ceil(self.total_man_hours / (self.model.workers_assigned * (self.model.total_overtime_hours + 8)))
 
     @property
     def line_entities(self):
@@ -66,17 +67,20 @@ class ProductionOrderEntity:
     def update_plan(self, workers_assigned: int, overtime_hours: float):
         """Actualiza la planificación global de la orden."""
         self.model.workers_assigned = workers_assigned
-        self.model.overtime_hours = overtime_hours
+        self.model.total_overtime_hours = overtime_hours
 
 
 class ProductionOrderLineEntity:
     def __init__(self, model: ProductionOrderLine):
         self.model = model
 
-    @property
-    def estimated_man_hours(self) -> float:
+    
+    def estimated_man_hours(self, standar_time:float=None) -> float:
         """Horas hombre totales para esta línea."""
-        standard_hour = self.model.product_variant.standar_time or 0
+        if standar_time is None:
+            standard_hour = self.model.product_variant.standar_time if self.model.product_variant else 0
+            return self.model.quantity * float(standard_hour)
+        standard_hour = standar_time  
         return self.model.quantity * standard_hour
 
     @property

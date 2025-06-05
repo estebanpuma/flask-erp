@@ -47,6 +47,11 @@ class ProductionOrder(db.Model):
     )
     product_lots = db.relationship('ProductLot', back_populates='production_order', lazy='dynamic')
 
+    @property
+    def get_production_duration_days(self):
+        from .entities import ProductionOrderEntity
+        days = ProductionOrderEntity(self).get_production_duration_days
+        return days
 
 
 class ProductionOrderLine(db.Model):
@@ -69,6 +74,9 @@ class ProductionOrderLine(db.Model):
    
     checkpoints = db.relationship("ProductionCheckpoint", backref="order_line", cascade="all, delete-orphan")
     materials = db.relationship("ProductionMaterialDetail", backref="order_line", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return super().__repr__()
 
 
 class ProductionLineWorkLog(BaseModel):

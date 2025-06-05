@@ -8,11 +8,11 @@ class ProductionOrderLineDTO(BaseModel):
     
 
 class ProductionOrderCreateDTO(BaseModel):
-    production_request_ids: List[int]
+    production_request_ids: List[int] = Field(min_length=1, description='Debe ingresar un requerimiento de produccion')
     start_date: date
     end_date: Optional[date] = None
     workers_available: int = Field(..., gt=0)
-    lines: List[ProductionOrderLineDTO]
+    total_overtime_hours: Optional[int] = Field(0, ge=0)
 
     class Config:
         from_attributes = True
@@ -21,8 +21,6 @@ class ProductionOrderCreateDTO(BaseModel):
     def check_dates_and_lines(self):
         if self.end_date < self.start_date:
             raise ValueError("La fecha de fin no puede ser anterior a la fecha de inicio.")
-        if not self.lines:
-            raise ValueError("La orden debe tener al menos una línea.")
         return self
 
 

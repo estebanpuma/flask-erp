@@ -1,4 +1,4 @@
-from flask_restful import fields, reqparse
+from flask_restful import fields, reqparse, MethodView
 
 production_request_fields = {
     "id": fields.Integer,
@@ -18,18 +18,23 @@ production_order_line_fields = {
     "product_variant_id": fields.Integer,
     "size_id": fields.Integer,
     "quantity": fields.Integer,
-    "estimated_hours": fields.Float,
+    "estimated_man_hours": fields.Float,
+    "workers_assigned": fields.Integer,
+    "overtime_hours": fields.Float,
 }
 
 production_order_fields = {
     "id": fields.Integer,
-    "production_request_id": fields.Integer,
     "status": fields.String,
     "start_date": fields.DateTime(dt_format='iso8601'),
     "end_date": fields.DateTime(dt_format='iso8601'),
-    "total_man_hours": fields.Float,
+    "workers_assigned": fields.Integer,
+    "total_overtime_hours": fields.Float,
+    "estimated_man_hours": fields.Float,
     "created_at": fields.DateTime(dt_format='iso8601'),
-    "lines": fields.List(fields.Nested(production_order_line_fields))
+    "lines": fields.List(fields.Nested(production_order_line_fields)),
+    'get_production_duration_days': fields.Integer,
+    'production_requests':fields.List(fields.Nested(production_request_fields))
 }
 
 production_material_detail_fields = {
