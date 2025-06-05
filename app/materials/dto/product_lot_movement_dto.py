@@ -3,15 +3,23 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 
 
-class ProductLotMovementCreateDTO(BaseModel):
+class ProductLotMovementOutDTO(BaseModel):
     product_lot_id: int
-    movement_type: Literal['IN', 'OUT']
-    quantity: float = Field(..., gt=0)
+    quantity: int = Field(..., gt=0)
     note: Optional[str] = None
-    source_type: Optional[str] = None  # Ej: 'SaleOrder', 'StockOrder'
-    source_id: Optional[int] = None
+
+
+class ProductMovementTransferDTO(BaseModel):
+    product_lot_id: int
+    quantity: int = Field(..., gt=0)
+    destination_warehouse_id: int
+    note: Optional[str] = None
+
 
 class ProductLotAdjustmentDTO(BaseModel):
     product_lot_id: int
     new_quantity: float = Field(..., ge=0)
     note: Optional[str] = None
+
+
+

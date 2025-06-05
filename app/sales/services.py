@@ -75,7 +75,7 @@ class SalesOrderService:
         entity = SalesOrderEntity(order)
         order.subtotal = entity.calculate_subtotal()
         order.total = entity.calculate_total()
-
+        print(f'TOtal de la orden:{order.total}')
         order.amount_due = order.total
 
         #crear cuotas/acuerdos de pago

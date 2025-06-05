@@ -94,17 +94,31 @@ class BasePostResource(Resource):
             return success_response(marshal(instance, self.output_fields), 201)
             
 
-        except HTTPException as e:
-            raise e
+        except ValidationError as e: # ¡Primero las excepciones más específicas!
+            # Aquí capturas tu ValidationError lanzado desde el servicio.
+            # Puedes personalizar el mensaje o la estructura de la respuesta.
+            return validation_error_response(str(e)) # O e.messages si es un diccionario/lista de Marshmallow
+
         except IntegrityError as e:
-            constraint = str(e)
+            # Esta es la segunda excepción más específica que tienes, relacionada con la base de datos.
+            constraint = "desconocido" # Valor por defecto
             if isinstance(e.orig, psycopg2.errors.UniqueViolation):
-                constraint = e.orig.diag.constraint_name 
-            return error_response(f"Error de integridad: {str(constraint)}")
-        except Exception as e:
-            return error_response(f"Error inesperado: {str(e)}")
-        except ValidationError as e:
-            return error_response(f'Error de validacion: {str(e)}')
+                constraint = e.orig.diag.constraint_name if e.orig.diag.constraint_name else "violación de unicidad"
+                return error_response(f"El recurso ya existe o viola una restricción de unicidad: {constraint}", 409)
+            elif isinstance(e.orig, psycopg2.errors.ForeignKeyViolation):
+                 constraint = e.orig.diag.constraint_name if e.orig.diag.constraint_name else "violación de clave foránea"
+                 return error_response(f"Error de referencia: No se pudo crear el recurso debido a una restricción de clave foránea: {constraint}", 400)
+            return error_response(f"Error de integridad en la base de datos: {str(e)}", 400)
+
+        except HTTPException as e:
+            # Las excepciones de Flask/Werkzeug (como Abort) también son más específicas que Exception.
+            # Puedes optar por relanzarlas para que sean manejadas por un manejador de errores global de Flask.
+            raise e
+
+        except Exception as e: # ¡Finalmente, la excepción más general!
+            # Este es el último recurso para cualquier error no esperado.
+            return error_response(f"Ha ocurrido un error interno inesperado: {str(e)}", 500)
+
         
 
 

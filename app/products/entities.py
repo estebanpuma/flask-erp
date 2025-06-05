@@ -87,8 +87,7 @@ class ProductDesignEntity:
             raise ValidationError("serie_ids debe ser una lista con al menos un valor.")
         if not self.color_ids:
             raise ValidationError("Debe tener al menos un color.")
-        if not isinstance(self.color_codes, list) or not self.color_codes:
-            raise ValidationError("color_codes debe ser una lista con al menos un valor.")
+        
 
     def to_model(self):
         '''Retorna un modelo del producto'''

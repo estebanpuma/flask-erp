@@ -25,10 +25,10 @@ production_order_fields = {
     "id": fields.Integer,
     "production_request_id": fields.Integer,
     "status": fields.String,
-    "start_date": fields.String,
-    "end_date": fields.String,
+    "start_date": fields.DateTime(dt_format='iso8601'),
+    "end_date": fields.DateTime(dt_format='iso8601'),
     "total_man_hours": fields.Float,
-    "created_at": fields.DateTime,
+    "created_at": fields.DateTime(dt_format='iso8601'),
     "lines": fields.List(fields.Nested(production_order_line_fields))
 }
 

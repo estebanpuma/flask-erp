@@ -1,7 +1,7 @@
 # services/material_service.py
 from flask import current_app
 from app import db
-from .models import Material, MaterialGroup
+from .models import Material, MaterialGroup, MaterialStock, MaterialLot
 from .dto.material_dto import MaterialCreateDTO, MaterialUpdateDTO
 from ..core.exceptions import NotFoundError, ValidationError
 from ..core.filters import apply_filters
@@ -25,7 +25,7 @@ class MaterialService:
         material = Material(
             code=dto.code.strip().upper(),
             name=dto.name.strip(),
-            description=dto.description,
+            detail=dto.detail,
             unit=dto.unit,
             group_id=dto.group_id
         )
@@ -58,8 +58,8 @@ class MaterialService:
 
         if dto.name:
             material.name = dto.name.strip()
-        if dto.description is not None:
-            material.description = dto.description
+        if dto.detail is not None:
+            material.detail = dto.detail
         if dto.unit is not None:
             material.unit = dto.unit
         if dto.group_id is not None:
@@ -95,3 +95,102 @@ class MaterialService:
         except Exception as e:
             db.session.rollback()
             current_app.logger.warning("No se pudo eliminar el material")
+
+
+class MaterialStockService:
+
+    @staticmethod
+    def update_stock(material_id: int, warehouse_id: int):
+        """
+        Actualiza el stock consolidado de un material en una bodega:
+        - quantity_physical: suma de cantidades físicas reales en todos los lotes
+        - quantity_available: quantity_physical - sum(quantity_committed en lotes)
+        """
+
+        # Sumar cantidad física real en todos los lotes
+        physical_quantity = db.session.query(
+            db.func.coalesce(db.func.sum(MaterialLot.quantity), 0.0)
+        ).filter(
+            MaterialLot.material_id == material_id,
+            MaterialLot.warehouse_id == warehouse_id
+        ).scalar()
+
+        # Sumar reservas (quantity_committed) de todos los lotes
+        reserved_quantity = db.session.query(
+            db.func.coalesce(db.func.sum(MaterialLot.quantity_committed), 0.0)
+        ).filter(
+            MaterialLot.material_id == material_id,
+            MaterialLot.warehouse_id == warehouse_id
+        ).scalar()
+
+        # Calcular cantidad disponible
+        available_quantity = physical_quantity - reserved_quantity
+
+        # Obtener o crear el registro de stock consolidado
+        stock = db.session.query(MaterialStock).filter_by(
+            material_id=material_id,
+            warehouse_id=warehouse_id
+        ).first()
+
+        if not stock:
+            stock = MaterialStock(
+                material_id=material_id,
+                warehouse_id=warehouse_id
+            )
+            db.session.add(stock)
+
+        # Actualizar cantidades
+        stock.quantity = physical_quantity
+        stock.quantity_available = available_quantity
+
+        # No hacemos commit aquí ➜ lo hace el servicio padre
+        return stock
+    
+
+    @staticmethod
+    def get_total_stock(material_id: int) -> float:
+        # Sumar la cantidad total de todas las bodegas para este material
+        total_stock = (
+            db.session.query(db.func.sum(MaterialStock.quantity))
+            .filter_by(material_id=material_id)
+            .scalar()
+        ) or 0.0
+
+
+        return total_stock
+    
+
+    @staticmethod
+    def get_obj_list(filters=None):
+        return apply_filters(MaterialStock, filters)
+
+
+    @staticmethod
+    def get_warehouse_stock(warehouse_id:int, material_id:int)->MaterialStock:
+        from ..inventory.models import Warehouse
+        warehouse = Warehouse.query.get(warehouse_id)
+        if not warehouse:
+            raise ValidationError('No existe una bodega con el id seleccionado')
+        material = Material.query.get(material_id)
+        if not material:
+            raise ValidationError('No existe un material con el id seleccionado')
+        
+        stock = MaterialStock.query.filter(MaterialStock.material_id==material_id, 
+                                           MaterialStock.warehouse_id==warehouse_id).all()
+        
+        return stock
+    
+    @staticmethod
+    def get_total_stocks_by_material():
+        materials = MaterialService.get_obj_list()
+        materials_stock = []
+        for material in materials:
+            stock = MaterialStockService.get_total_stock(material.id)
+            m_stock = {'id': material.id,
+                       'code': material.code,
+                       'name': material.name,
+                       'stock': stock
+                       }
+            materials_stock.append(m_stock)
+
+        return materials_stock

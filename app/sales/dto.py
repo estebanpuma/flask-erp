@@ -11,7 +11,6 @@ from ..core.enums import OrderStatus
 class PaymentAgreementCreateDTO(BaseModel):
     amount: float
     expected_date: date
-    method_id: int
     notes: Optional[str]
 
 class SaleOrderLineDTO(BaseModel):

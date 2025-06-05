@@ -23,3 +23,10 @@ product_lot_movement_fields = {
     'source_type': fields.String,
     'source_id': fields.Integer,
 }
+
+product_stock_fields = {
+    'id': fields.Integer,
+    'product_variant_id': fields.Integer,
+    'warehouse_id': fields.Integer,
+    'quantity': fields.Float,
+}

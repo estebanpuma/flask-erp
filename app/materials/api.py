@@ -12,7 +12,10 @@ from .resources import (
     MaterialGroupDeleteResource,
     MaterialGroupGetResource,
     MaterialGroupPatchResource,
-    MaterialGroupPostResource
+    MaterialGroupPostResource,
+
+    MaterialTotalStockResource,
+    MaterialStockGetResource,
 )
 
 from .material_lot_resources import (
@@ -21,20 +24,22 @@ from .material_lot_resources import (
     MaterialLotPatchResource,
     MaterialLotPostResource,
 
-    InventoryMovementAdjustResource,
+    InventoryMovementAdjustPostResource,
     InventoryMovementGetResource,
-    InventoryMovementPostResource,
+    InventoryMovementOutPostResource,
+    InventoryMovementTransferPostResource
 )
 
 from .product_lot_resources import (
     ProductlLotDeleteResource,
-    ProductLotAdjustResource,
     ProductLotGetResource,
     ProductLotPatchResource,
     ProductLotPostResource,
 
-    ProductLotMovementGetResource,
-    ProductLotMovementPostResource,
+    ProductLotMovementOutPostResource,
+    ProductLotMovementTransferPostResource,
+    ProductLotAdjustPostResource,
+    ProductLotMovementGetResource
 )
 
 
@@ -60,19 +65,25 @@ materials_api.add_resource(MaterialLotGetResource, '/material-lots', '/material-
 materials_api.add_resource(MaterialLotPatchResource, '/material-lots/<int:resource_id>')
 materials_api.add_resource(MaterialLotDeleteResource, '/material-lots/<int:resource_id>')
 
+materials_api.add_resource(MaterialTotalStockResource, '/material-stocks/<int:material_id>')
+materials_api.add_resource(MaterialStockGetResource, '/material-stocks')
 
-materials_api.add_resource(InventoryMovementPostResource, '/material-movements')
-materials_api.add_resource(InventoryMovementGetResource, '/material-movements', '/material-movements/<int:resource_id>')
-materials_api.add_resource(InventoryMovementAdjustResource, '/material-adjusts')
+materials_api.add_resource(InventoryMovementOutPostResource, '/inventory-movements/out')
+materials_api.add_resource(InventoryMovementGetResource, '/inventory-movements', '/inventory-movements/<int:resource_id>')
+materials_api.add_resource(InventoryMovementAdjustPostResource, '/inventory-movements/adjust')
+materials_api.add_resource(InventoryMovementTransferPostResource, '/inventory-movements/transfer')
 
 
 materials_api.add_resource(ProductLotPostResource, '/product-lots')
 materials_api.add_resource(ProductLotGetResource, '/product-lots', '/product-lots/<int:resource_id>')
 materials_api.add_resource(ProductLotPatchResource, '/product-lots/<int:resource_id>')
 materials_api.add_resource(ProductlLotDeleteResource, '/product-lots/<int:resource_id>')
-materials_api.add_resource(ProductLotAdjustResource, '/product-adjusts')
 
 
-materials_api.add_resource(ProductLotMovementPostResource, '/product-lot-movements')
+materials_api.add_resource(ProductLotMovementOutPostResource, '/product-lot-movements/out')
+materials_api.add_resource(ProductLotAdjustPostResource, '/product-lot-movements/adjust')
+materials_api.add_resource(ProductLotMovementTransferPostResource, '/product-lot-movements/transfer')
+
 materials_api.add_resource(ProductLotMovementGetResource, '/product-lot-movements', '/product-lot-movements/<int:resource_id>')
+
 

@@ -1,10 +1,14 @@
 from flask import request
 
+from flask_restful import Resource
+
 from ..core.resources import BaseGetResource, BasePatchResource, BaseDeleteResource, BasePostResource, BulkUploadBaseResource
 
 from .services import MaterialGroupServices, MaterialServices, MaterialExcelImportService
 
-from .schemas import material_output_fields, material_group_output_fields
+from .material_services import MaterialStockService, MaterialService
+
+from .schemas import material_output_fields, material_group_output_fields, material_stock_fields
 
 from .validations import validate_material_group_data, validate_material_group_patch_data
 from .validations import validate_material_data, validate_material_patch_data
@@ -36,28 +40,41 @@ class MaterialGroupDeleteResource(BaseDeleteResource):
 
     # material_resources.py
 class MaterialGetResource(BaseGetResource):
-    schema_get = staticmethod(MaterialServices.get)
-    schema_list = staticmethod( lambda: MaterialServices.get_list(request.args.to_dict()))
+    schema_get = staticmethod(MaterialService.get_obj)
+    schema_list = staticmethod( lambda: MaterialService.get_obj_list(request.args.to_dict()))
     output_fields = material_output_fields
 
 
 class MaterialPostResource(BasePostResource):
-    schema = staticmethod(validate_material_data)
-    service_create = staticmethod(MaterialServices.create)
+    service_create = staticmethod(MaterialService.create_obj)
     output_fields = material_output_fields
 
 
 class MaterialPatchResource(BasePatchResource):
-    service_get = staticmethod(MaterialServices.get)
-    schema_validate_partial = staticmethod(validate_material_patch_data)
-    service_patch = staticmethod(MaterialServices.update)
+    service_get = staticmethod(MaterialService.get_obj)
+    service_patch = staticmethod(MaterialService.patch_obj)
     output_fields = material_output_fields
 
 
 class MaterialDeleteResource(BaseDeleteResource):
-    service_delete = staticmethod(MaterialServices.delete)
+    service_delete = staticmethod(MaterialService.delete_obj)
 
 
 class MaterialBulkUploadResource(BulkUploadBaseResource):
     import_service = MaterialExcelImportService
     row_handler = staticmethod(MaterialExcelImportService.handle_row)
+
+
+
+class MaterialTotalStockResource(Resource):
+    def get(self, material_id):
+        total = MaterialStockService.get_total_stock(material_id)
+        return {'material_id': material_id, 'total_stock': total}, 200
+
+
+class MaterialStockGetResource(BaseGetResource):
+    schema_list = staticmethod(lambda: MaterialStockService.get_obj_list(request.args.to_dict()))
+    output_fields = material_stock_fields
+
+    
+

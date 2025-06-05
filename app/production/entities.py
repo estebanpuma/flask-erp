@@ -5,7 +5,11 @@ from datetime import date
 from .models import (
     ProductionOrder,
     ProductionOrderLine,
-    ProductionRequest
+    ProductionRequest,
+    ProductionMaterialDetail,
+    ProductionMaterialSummary,
+    ProductionRework,
+    ProductionMaterialDetailForRework
 )
 from ..products.models import ProductVariant
 
@@ -26,29 +30,42 @@ class ProductionOrderEntity:
     @property
     def total_man_hours(self) -> float:
         """Suma de horas-hombre necesarias de todas las líneas."""
-        return sum(line_entity.man_hours_needed for line_entity in self.line_entities)
-
-    @property
-    def total_hours_per_worker(self) -> float:
-        """Horas totales que trabaja cada trabajador (normales + extra)."""
-        return (self.model.hours_per_shift or 0) + (self.model.overtime_hours or 0)
+        return sum(line_entity.estimated_man_hours for line_entity in self.line_entities)
 
     @property
     def production_duration_days(self) -> int:
         """Duración estimada de la orden, en días."""
-        if not self.model.workers_assigned or not self.total_hours_per_worker:
+        if not self.model.workers_assigned:
             return None
-        return ceil(self.total_man_hours / (self.model.workers_assigned * self.total_hours_per_worker))
+        return ceil(self.total_man_hours / (self.model.workers_assigned * (self.model.overtime_hours + 8)))
 
     @property
     def line_entities(self):
         """Retorna entidades de línea para acceder a su lógica."""
         return [ProductionOrderLineEntity(line) for line in self.model.lines or []]
+    
+    @property
+    def calculate_material_summary(self):
+        """
+        Calcula la lista total de materiales por orden de produccion
+        devuelve un dict con la lista completa (bom)
+        """
+        summary = {}
+        for line in self.model.lines:
+            for material in line.materials:
+                mat_id = material.material_id
+                qty = material.quantity_needed
 
-    def update_plan(self, workers_assigned: int, hours_per_shift: float, overtime_hours: float):
+                if mat_id in summary:
+                    summary[mat_id] += qty
+                else:
+                    summary[mat_id] = qty
+        return summary  
+
+
+    def update_plan(self, workers_assigned: int, overtime_hours: float):
         """Actualiza la planificación global de la orden."""
         self.model.workers_assigned = workers_assigned
-        self.model.hours_per_shift = hours_per_shift
         self.model.overtime_hours = overtime_hours
 
 
@@ -57,25 +74,104 @@ class ProductionOrderLineEntity:
         self.model = model
 
     @property
-    def man_hours_needed(self) -> float:
+    def estimated_man_hours(self) -> float:
         """Horas hombre totales para esta línea."""
-        standard_hour = self.model.product_variant.standard_man_hour or 0
+        standard_hour = self.model.product_variant.standar_time or 0
         return self.model.quantity * standard_hour
-
-    @property
-    def total_hours_per_worker(self) -> float:
-        """Horas totales por trabajador (normales + extras)."""
-        return (self.model.hours_per_shift or 0) + (self.model.overtime_hours or 0)
 
     @property
     def production_duration_days(self) -> int:
         """Duración estimada de la línea, en días."""
-        if not self.model.workers_assigned or not self.total_hours_per_worker:
+        if not self.model.workers_assigned:
             return None
-        return ceil(self.man_hours_needed / (self.model.workers_assigned * self.total_hours_per_worker))
-
-    def update_plan(self, workers_assigned: int, hours_per_shift: float, overtime_hours: float):
+        return ceil(self.estimated_man_hours / (self.model.workers_assigned * ()))
+    
+    
+    def update_plan(self, workers_assigned: int, overtime_hours: float):
         """Actualiza la planificación de esta línea."""
         self.model.workers_assigned = workers_assigned
-        self.model.hours_per_shift = hours_per_shift
         self.model.overtime_hours = overtime_hours
+
+   
+
+
+
+class ProductionMaterialDetailEntity:
+    def __init__(self, model: ProductionMaterialDetail):
+        self.model = model
+
+    @property
+    def total_quantity_needed(self) -> float:
+        """
+        Cantidad total considerando el porcentaje de desperdicio.
+        """
+        waste_factor = (1 + (self.model.waste_percentage or 0) / 100.0)
+        return (self.model.quantity_needed or 0) * waste_factor
+
+    def update_reserved(self, quantity_reserved: float):
+        """
+        Actualiza la cantidad reservada.
+        """
+        self.model.quantity_reserved = quantity_reserved
+
+    def update_delivered(self, quantity_delivered: float):
+        """
+        Actualiza la cantidad entregada real.
+        """
+        self.model.quantity_delivered = quantity_delivered
+
+
+class ProductionMaterialSummaryEntity:
+    def __init__(self, model: ProductionMaterialSummary):
+        self.model = model
+        
+
+    @property
+    def pending_quantity(self) -> float:
+        """
+        Calcula la cantidad pendiente de reservar.
+        """
+        return (self.model.total_quantity_needed or 0) - (self.model.quantity_reserved or 0)
+
+    def update_reserved(self, quantity_reserved: float):
+        self.model.quantity_reserved = quantity_reserved
+
+    def update_pending(self, quantity_pending: float):
+        self.model.quantity_pending = quantity_pending
+
+
+
+class ProductionReworkEntity:
+    def __init__(self, model: ProductionRework):
+        self.model = model
+
+    @property
+    def additional_man_hours(self) -> float:
+        """
+        Horas hombre adicionales por reproceso.
+        """
+        return self.model.additional_hours or 0.0
+
+    @property
+    def has_additional_materials(self) -> bool:
+        return self.model.additional_materials or False
+
+    @property
+    def rework_materials(self):
+        """
+        Devuelve las entidades de materiales asociados al reproceso.
+        """
+        return [ProductionMaterialDetailForReworkEntity(m) for m in self.model.rework_materials or []]
+
+
+class ProductionMaterialDetailForReworkEntity:
+    def __init__(self, model: ProductionMaterialDetailForRework):
+        self.model = model
+
+    @property
+    def material_used(self) -> float:
+        """
+        Cantidad usada de material para el reproceso.
+        """
+        return self.model.quantity_used or 0.0
+

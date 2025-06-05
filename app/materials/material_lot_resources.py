@@ -40,12 +40,17 @@ class InventoryMovementGetResource(BaseGetResource):
     output_fields = inventory_movement_fields
 
 
-class InventoryMovementPostResource(BasePostResource):
-    service_create = staticmethod(InventoryMovementService.create_obj)
+class InventoryMovementOutPostResource(BasePostResource):
+    service_create = staticmethod(InventoryMovementService.create_obj_out)
     output_fields = inventory_movement_fields
 
 
-class InventoryMovementAdjustResource(BasePostResource):
+class InventoryMovementTransferPostResource(BasePostResource):
+    service_create = staticmethod(InventoryMovementService.create_obj_transfer)
+    output_fields = inventory_movement_fields
+
+
+class InventoryMovementAdjustPostResource(BasePostResource):
     service_create = staticmethod(InventoryMovementService.adjust_obj)
     output_fields = inventory_movement_fields
 

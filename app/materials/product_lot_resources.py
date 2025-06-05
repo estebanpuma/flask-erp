@@ -31,15 +31,21 @@ class ProductlLotDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(ProductLotService.delete_obj)
 
 
-class ProductLotAdjustResource(BasePostResource):
-    service_create = staticmethod(ProductLotService.adjust_obj)
-    output_fields = product_lot_fields
+
 
 
 #*****************ProductLotMovementsj************
 
-class ProductLotMovementPostResource(BasePostResource):
-    service_create = staticmethod(ProductLotMovementService.create_obj)
+class ProductLotAdjustPostResource(BasePostResource):
+    service_create = staticmethod(ProductLotService.adjust_obj)
+    output_fields = product_lot_movement_fields
+
+class ProductLotMovementOutPostResource(BasePostResource):
+    service_create = staticmethod(ProductLotMovementService.create_out_obj)
+    output_fields = product_lot_movement_fields
+
+class ProductLotMovementTransferPostResource(BasePostResource):
+    service_create = staticmethod(ProductLotMovementService.create_transfer_obj)
     output_fields = product_lot_movement_fields
 
 class ProductLotMovementGetResource(BaseGetResource):

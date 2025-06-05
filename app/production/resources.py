@@ -6,12 +6,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from .services import (
     ProductionOrderService,
-    ProductionCheckpointService,
-    ProductionReworkService,
-    ProductionRequestService,
-    ProductionMaterialSummaryService,
-    ProductionMaterialExplosionService
 )
+
+from .production_request_services import ProductionRequestServices
 
 from .schemas import (
     production_checkpoint_fields, 
@@ -29,17 +26,6 @@ from ..core.resources import BaseDeleteResource, BaseGetResource, BasePatchResou
 from ..core.utils import success_response, error_response
 
 
-class ProductionRequestPostResource(BasePostResource):
-    service_create = staticmethod(ProductionRequestService.create_obj)
-    output_fields = production_request_fields
-
-class ProductionRequestGetResource(BaseGetResource):
-    schema_get = staticmethod(ProductionRequestService.get_obj)
-    schema_list = staticmethod( lambda: ProductionRequestService.get_obj_list(request.args.to_dict()))
-    output_fields = production_request_fields
-
-
-
 class ProductionOrderPostResource(BasePostResource):
     service_create = staticmethod(ProductionOrderService.create_obj)
     output_fields = production_order_fields
@@ -52,6 +38,25 @@ class ProductionOrderGetResource(BaseGetResource):
 class ProductionOrderDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(ProductionOrderService.delete_obj)
     service_get = staticmethod(ProductionOrderService.get_obj)
+
+class ProductionRequestGetResource(BaseGetResource):
+    schema_get = staticmethod(ProductionRequestServices.get_obj)
+    schema_list = staticmethod( lambda: ProductionRequestServices.get_obj_list(request.args.to_dict()))
+    output_fields = production_request_fields
+
+"""
+
+class ProductionRequestPostResource(BasePostResource):
+    service_create = staticmethod(ProductionRequestService.create_obj)
+    output_fields = production_request_fields
+
+
+
+
+
+
+
+
 
 
 
@@ -98,3 +103,4 @@ class ProductionCheckpointPostResource(Resource):
         except Exception as e:
             return error_response(f"Error al completar checkpoint: {str(e)}")
 
+"""

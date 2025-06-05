@@ -1,6 +1,6 @@
 from app import db
 from .models import ProductStock, ProductLot
-from ..core.enums import ProductStock
+from ..core.enums import ProductLotStatusEnum
 from ..core.filters import apply_filters
 
 class ProductStockService:
@@ -24,7 +24,7 @@ class ProductStockService:
         # Calcular el stock consolidado sumando los ProductLot con status 'in_stock'
         stock_sum = (
             db.session.query(db.func.sum(ProductLot.quantity))
-            .filter_by(product_variant_id=product_variant_id, warehouse_id=warehouse_id, status=ProductStock.IN_STOCK.value)
+            .filter_by(product_variant_id=product_variant_id, warehouse_id=warehouse_id, status=ProductLotStatusEnum.IN_STOCK.value)
             .scalar()
         ) or 0.0
 

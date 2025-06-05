@@ -12,9 +12,13 @@ class MaterialLotCreateDTO(BaseModel):
     quantity: float = Field(..., gt=0)
     unit_cost: float = Field(..., ge=0)
     received_date: Optional[date] = None
+    note: Optional[str] = None
 
 
 class MaterialLotUpdateDTO(BaseModel):
-    quantity: Optional[float] = Field(None, gt=0)
     unit_cost: Optional[float] = Field(None, ge=0)
-    warehouse_id: Optional[int] = None
+    received_date: Optional[date] = None
+    lot_number: str = Field(..., min_length=1, max_length=50, strip_whitespace=True)
+    note: Optional[date] = None
+
+

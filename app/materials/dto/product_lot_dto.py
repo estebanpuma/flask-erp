@@ -1,7 +1,8 @@
 # dto/product_lot_dto.py
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import date
+
 
 
 class ProductLotCreateDTO(BaseModel):

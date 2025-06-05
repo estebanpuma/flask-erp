@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from app import db
 
-from app.common.models import BaseModel
+from app.common.models import BaseModel, SoftDeleteMixin
 
 
 class User(UserMixin, BaseModel):
@@ -131,3 +131,19 @@ class Job(db.Model):
 
 
     
+
+
+class Worker(BaseModel, SoftDeleteMixin):
+
+    __tablename__ = 'workers'
+
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    ci = db.Column(db.String(10), unique=True, nullable=False)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    worker_type = db.Column(db.String(), nullable=False)#planta/rotativo/contratista
+    job_title = db.Column(db.String(), nullable=False)
+    hour_rate_normal = db.Column(db.Float)
+    hour_rate_overtime = db.Column(db.Float)
+
+

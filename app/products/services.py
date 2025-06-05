@@ -171,6 +171,7 @@ class DesignService:
         }).to_model()
 
         db.session.add(design)
+        print(f'hasta aqui los designs: {design}')
         design.colors.extend(colors)
         db.session.flush()
         
@@ -205,6 +206,7 @@ class DesignService:
                 missing = set(color_ids) - {c.id for c in colors}
                 raise ValidationError(f"Colores no encontrados: {missing}")
 
+            print(f'Colores en buldesing; {colors}')
             # Crear diseño (sin commit)
             design = ProductDesignEntity({
                 "product_id": product_id,
@@ -213,9 +215,9 @@ class DesignService:
                 "color_codes": [c.code for c in colors],
                 "series_ids": design_data["series_ids"]
             }).to_model()
-            
-            design.colors.append(colors)
-            
+            print(f'desig en bulk desig : {design}')
+            design.colors.extend(colors)
+            print(f'design.colors: {design.colors}')
             designs.append(design)
 
             designs_and_materials.append({'design':design, 'materials':design_data['materials'], "series_ids": design_data["series_ids"]})

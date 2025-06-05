@@ -34,6 +34,7 @@ class Material(BaseModel):
     product_material_details = db.relationship('ProductVariantMaterialDetail', back_populates='material')
     # Relación con lotes
     lots = db.relationship('MaterialLot', back_populates='material', cascade='all, delete-orphan', lazy='dynamic')
+    material_stocks = db.relationship('MaterialStock', back_populates='material')
 
 
     def __repr__(self):
@@ -53,6 +54,7 @@ class MaterialLot(BaseModel):
     quantity = db.Column(db.Float, nullable=False)# Stock físico disponible
     unit_cost = db.Column(db.Float, nullable=False)
     received_date = db.Column(db.Date, nullable=False, default=datetime.today())
+    note = db.Column(db.String(), nullable=True)
 
    
     # Relaciones
@@ -63,6 +65,28 @@ class MaterialLot(BaseModel):
 
     def __repr__(self):
         return f"<MaterialLot {self.lot_number} - {self.material.code} - {self.warehouse.name}>"
+    
+
+
+class MaterialStock(db.Model):
+    __tablename__ = 'material_stocks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    material_id = db.Column(db.Integer, db.ForeignKey('materials.id'), nullable=False)
+    warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=False)
+    quantity = db.Column(db.Float, nullable=False, default=0.0)
+    quantity_available = db.Column(db.Float, default=0.0)
+
+    __table_args__ = (
+        db.UniqueConstraint('material_id', 'warehouse_id', name='uq_material_stock_warehouse'),
+    )
+
+    material = db.relationship('Material', back_populates='material_stocks')
+    warehouse = db.relationship('Warehouse', back_populates='material_stocks')
+
+    def __repr__(self):
+        return f"<MaterialStock {self.material_id} in Warehouse {self.warehouse_id}: {self.quantity}>"
+
 
 
 class InventoryMovement(BaseModel):
@@ -75,7 +99,14 @@ class InventoryMovement(BaseModel):
     date = db.Column(db.DateTime, default=datetime.today())
     note = db.Column(db.String(255))
 
+    # Origen y destino
+    origin_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=True)
+    destination_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=True)
+
     lot = db.relationship('MaterialLot', back_populates='movements')
+    origin_warehouse = db.relationship('Warehouse', foreign_keys=[origin_warehouse_id])
+    destination_warehouse = db.relationship('Warehouse', foreign_keys=[destination_warehouse_id])
+
 
     def __repr__(self):
         return f"<InventoryMovement {self.movement_type} - {self.quantity} ({self.lot.material.code})>"
@@ -100,7 +131,7 @@ class ProductLot(db.Model):
     status = db.Column(db.String(20), nullable=False, default='in_stock')  
     # Ejemplos: in_stock, delivered, rejected, returned
 
-    received_date = db.Column(db.DateTime, default=datetime.utcnow)
+    received_date = db.Column(db.DateTime, default=datetime.today())
 
     # Relaciones
     product_variant = db.relationship('ProductVariant', back_populates='lots')
@@ -119,14 +150,16 @@ class ProductLotMovement(db.Model):
     product_lot_id = db.Column(db.Integer, db.ForeignKey('product_lots.id'), nullable=False)
     movement_type = db.Column(db.String(20), nullable=False)  # IN, OUT, ADJUST
     quantity = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+    date = db.Column(db.DateTime, default=datetime.today)
     note = db.Column(db.String(255))
 
-    # Origen genérico (puede ser SaleOrder, StockOrder, ProductionOrder, etc.)
-    source_type = db.Column(db.String(50), nullable=True)  # Ej: 'SaleOrder', 'StockOrder', 'ProductionOrder'
-    source_id = db.Column(db.Integer, nullable=True)       # ID real de ese origen
+    # Origen y destino físico
+    origin_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=True)
+    destination_warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=True)
 
     product_lot = db.relationship('ProductLot', back_populates='movements')
+    origin_warehouse = db.relationship('Warehouse', foreign_keys=[origin_warehouse_id])
+    destination_warehouse = db.relationship('Warehouse', foreign_keys=[destination_warehouse_id])
 
     def __repr__(self):
         return f"<ProductLotMovement {self.movement_type} - {self.quantity} - Lot {self.product_lot.lot_number}>"
@@ -151,3 +184,21 @@ class ProductStock(db.Model):
         return f"<ProductStock {self.product_variant_id} in Warehouse {self.warehouse_id}: {self.quantity}>"
     
 
+
+# models/inventory_adjustment.py aun no implementado
+from app import db
+from datetime import datetime
+
+class InventoryAdjustment(db.Model):
+    __tablename__ = 'inventory_adjustments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    inventory_movement_id = db.Column(db.Integer, db.ForeignKey('inventory_movements.id'), nullable=False)
+    reason = db.Column(db.String(255), nullable=True)
+    quantity_adjusted = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    movement = db.relationship('InventoryMovement', backref='adjustment', uselist=False)
+
+    def __repr__(self):
+        return f"<InventoryAdjustment {self.id} - Qty: {self.quantity_adjusted}>"
