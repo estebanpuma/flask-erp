@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Materiales | Guifer{% endblock %}
+
+{% block content %}
+<div x-data="materialsTable()" x-init="fetchMaterials()" class="mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>📦 Materiales</h3>
+        <button class="btn btn-dark" @click="openCreateModal()">+ Nuevo</button>
+    </div>
+
+    <template x-if="error">
+        <div class="alert alert-danger" x-text="error"></div>
+    </template>
+
+    <template x-if="loading">
+        <p>Cargando materiales...</p>
+    </template>
+
+    <template x-if="!loading && materials.length === 0">
+        <p>No hay materiales registrados.</p>
+    </template>
+
+    <template x-if="materials.length > 0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Código</th>
+                        <th>Grupo</th>
+                        <th>Unidad</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="material in materials" :key="material.id">
+                        <tr>
+                            <td x-text="material.name"></td>
+                            <td x-text="material.code"></td>
+                            <td x-text="material.group_name"></td>
+                            <td x-text="material.unit"></td>
+                            <td x-text="material.stock"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+</div>
+
+<script  src = "{{ url_for('static', filename='js/materials.js') }}">
+</script>
+
+{% endblock %}

@@ -2,8 +2,6 @@ from flask import Blueprint
 
 from flask_restful import Api
 
-from . import production_bp
-
 from .resources import (
     ProductionRequestGetResource,
 

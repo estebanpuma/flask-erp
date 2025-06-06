@@ -17,7 +17,7 @@ migrate = Migrate()
 
 def create_app(config):
     print(config)
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='web_app/static', template_folder='web_app/templates')
     app.config.from_object(config)
     
     jwt = JWTManager(app)
@@ -79,44 +79,14 @@ def create_app(config):
     
 
     #routes blueprints
-    from .admin import admin_bp
-    app.register_blueprint(admin_bp)
-
-    from .auth import auth_bp
-    app.register_blueprint(auth_bp)
-
     from .common import common_bp
     app.register_blueprint(common_bp)
 
-    from .crm import crm_bp
-    app.register_blueprint(crm_bp)
 
-    from .finance import finance_bp
-    app.register_blueprint(finance_bp)
+    #frontend blueprints
+    from .web_app import init_web_app
+    init_web_app(app)
 
-    from .inventory import inventory_bp
-    app.register_blueprint(inventory_bp)
-
-    from .pricing import pricing_bp
-    app.register_blueprint(pricing_bp)
-
-    from .materials import materials_bp
-    app.register_blueprint(materials_bp)
-
-    from .production import production_bp
-    app.register_blueprint(production_bp)
-
-    from .products import products_bp
-    app.register_blueprint(products_bp)
-
-    from .payments import payments_bp
-    app.register_blueprint(payments_bp)
-
-    from .public import public_bp
-    app.register_blueprint(public_bp)
-
-    from .sales import sales_bp
-    app.register_blueprint(sales_bp)
 
     with app.app_context():
         from .admin.services import AdminServices 

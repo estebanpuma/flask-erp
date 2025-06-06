@@ -1,0 +1,44 @@
+<nav class="navbar bg-body-tertiary shadow-sm" data-bs-theme="dark">
+    <div class="container-fluid col-lg-11">
+      <a class="navbar-brand fw-bold" href="/">GUIFER</a>
+  
+      <ul class="nav justify-content-end text-white">
+        <li class="nav-item">
+          <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#addMenu" aria-controls="addMenu">
+            <i class="bi bi-plus-circle-dotted fs-4"></i>
+          </button>
+          {% include 'shared/__addMenu.html' %}
+        </li>
+  
+        <li class="nav-item">
+          <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#userNotificationsMenu" aria-controls="userNotificationsMenu">
+            <i class="bi bi-bell fs-4"></i>
+          </button>
+          <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="userNotificationsMenu" aria-labelledby="userNotificationsMenuLabel">
+            <div class="offcanvas-header">
+              <h5 class="offcanvas-title">Notificaciones</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+            </div>
+            <div class="offcanvas-body">No hay notificaciones</div>
+          </div>
+        </li>
+  
+        <li class="nav-item">
+          <button class="btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#userMenu" aria-controls="userMenu">
+            <i class="bi bi-list fs-4"></i>
+          </button>
+          <div class="offcanvas offcanvas-end bg-body-tertiary" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="userMenu" aria-labelledby="userMenuLabel">
+            <div class="offcanvas-header">
+              <h5 class="offcanvas-title">Menú</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+            </div>
+            <div class="offcanvas-body">
+              <p><strong>Usuario:</strong> admin@guifer.com</p>
+              <a href="/logout" class="btn btn-sm btn-outline-light">Cerrar sesión</a>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  

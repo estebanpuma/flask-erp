@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Inicio | Guifer{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- 🔹 KPIs -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h5 class="card-title">Ventas del mes</h5>
+          <h2 class="text-success fw-bold">$12,450</h2>
+          <p class="text-muted small">Actualizado hoy</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h5 class="card-title">Órdenes activas</h5>
+          <h2 class="fw-bold">16</h2>
+          <p class="text-muted small">En proceso de producción</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm text-center">
+        <div class="card-body">
+          <h5 class="card-title">Materiales críticos</h5>
+          <h2 class="text-danger fw-bold">4</h2>
+          <p class="text-muted small">Requieren compra</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 🔹 Frase motivadora del día -->
+    <div class="row mt-5">
+        <div class="col-md-10 mx-auto">
+        <div class="card shadow-sm bg-light border-start border-5 border-dark">
+            <div class="card-body text-center">
+            <blockquote class="blockquote mb-0 fs-5 fst-italic">
+                {{ daily_quote|safe }}
+            </blockquote>
+            </div>
+        </div>
+        </div>
+    </div>
+
+  
+
+</div>
+{% endblock %}

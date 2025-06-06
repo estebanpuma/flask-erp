@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" x-data>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Guifer ERP{% endblock %}</title>
+
+    <!-- ✅ Bootstrap CSS (local) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}">
+
+    <!-- ✅ Bootstrap Icons (opcional) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='icons/bootstrap/font/bootstrap-icons.min.css') }}">
+
+    <!-- ✅ Estilos personalizados -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <!-- ✅ Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
+
+    <!-- ✅ Alpine.js (local o CDN) -->
+    <script defer src="{{ url_for('static', filename='js/alpine/alpine.min.js') }}"></script>
+    <!-- ✅ Hook para scripts específicos -->
+    {% block scripts %}{% endblock %}
+</head>
+<body class="bg-light text-dark">
+
+    <!-- ✅ Navbar -->
+    {% include 'shared/__navbar.html' %}
+
+    <!-- ✅ Contenido principal -->
+    {% if login %}
+        {% block login %}{% endblock %}
+    {% else %}
+        <main class="container-fluid py-3">
+            <div class="row">
+                <aside class="d-none d-md-block col-md-3">
+                    {% include 'shared/__nav.html' %}
+                </aside>
+
+                <section class="col-md-6 mx-auto">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            <div>
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+                </section>
+
+                <aside class="d-none d-md-block col-md-3"></aside>
+            </div>
+        </main>
+    {% endif %}
+    <!-- ✅ Footer -->
+    {% include 'shared/__footer.html' %}
+
+    <!-- ✅ Bootstrap JS (bundle con Popper) -->
+    <script src="{{ url_for('static', filename='js/bootstrap/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- ✅ JS personalizado opcional -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

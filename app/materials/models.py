@@ -40,6 +40,19 @@ class Material(BaseModel):
     def __repr__(self):
         return f'<Material(name={self.name})>'
     
+    
+    @property
+    def get_material_total_stock(self):
+    
+        # Sumar la cantidad total de todas las bodegas para este material
+        total_stock = (
+            db.session.query(db.func.sum(MaterialStock.quantity))
+            .filter_by(material_id=self.id)
+            .scalar()
+        ) or 0.0
+        return total_stock
+
+    
 
 class MaterialLot(BaseModel):
     __tablename__ = 'material_lots'

@@ -22,8 +22,6 @@ from .resources import (
 
 from .resources import ProductVariantImagePostResource, ProductVariantImageDeleteResource, ProductVariantImageGetResource
 
-from . import products_bp
-
 products_api_bp = Blueprint('products_api', __name__, url_prefix='/api/v1')
 
 products_api = Api(products_api_bp)

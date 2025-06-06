@@ -1,8 +1,3 @@
-from flask import Blueprint
+from . import api
 
-materials_bp = Blueprint('materials', __name__, template_folder='templates')
-
-from . import routes, api
-
-from .models import *
 
