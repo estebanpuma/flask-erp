@@ -1,0 +1,29 @@
+<form @submit.prevent="submitForm">
+
+    <h1 class="text-muted" x-text="form.code"></h1>
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="name" x-model="form.name">
+    <label for="name">Nombre del puesto</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <textarea class="form-control" style="height: 100px" x-model="form.description" id="description"></textarea>
+    <label for="description">Descripción</label>
+  </div>
+
+  <div class="form-check form-switch mb-4">
+    <input class="form-check-input" type="checkbox" id="is_active" x-model="form.is_active">
+    <label class="form-check-label" for="is_active">Activo</label>
+  </div>
+
+  <div class="d-grid">
+    <button type="submit" class="btn btn-dark" :disabled="loading">
+      <span x-show="!loading">Guardar cambios</span>
+      <span x-show="loading">Guardando...</span>
+    </button>
+  </div>
+
+  <template x-if="message">
+    <div class="alert mt-3" :class="{'alert-success': success, 'alert-danger': !success}" x-text="message"></div>
+  </template>
+</form>

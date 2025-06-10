@@ -10,6 +10,11 @@ material_lot_fields = {
     'unit_cost': fields.Float,
     'supplier_id': fields.Integer,
     'received_date': fields.DateTime(dt_format='iso8601'),
+    'warehouse':fields.String(attribute='warehouse.name'),
+    'lot_unit': fields.String(attribute='material.unit'),
+    'material_name': fields.String(attribute='material.name'),
+    'material_code': fields.String(attribute='material.code'),
+    'supplier_name': fields.String(attribute='supplier.name')
 }
 
 

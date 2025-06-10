@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Crear puesto{% endblock %}
+
+{% block content %}
+<div class="container mt-4" x-data="jobCreatePage()" >
+
+  <!-- Encabezado reutilizable -->
+  <div x-data="{ href: '/workers/jobs', title: '➕ Crear puesto de trabajo' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  {% include 'jobs/_jobForm_create.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/jobs.js') }}"></script>
+{% endblock %}

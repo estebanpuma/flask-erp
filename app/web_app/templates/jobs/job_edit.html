@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Editar puesto{% endblock %}
+
+{% block content %}
+<div class="container mt-4 pb-5" x-data="jobEditPage({{ job_id }})" >
+
+  <!-- Encabezado reutilizable -->
+  <div x-data="{ href: '/workers/jobs', title: '✏️ Editar puesto' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  {% include 'jobs/_jobForm_edit.html' %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/jobs.js') }}"></script>
+{% endblock %}

@@ -9,6 +9,8 @@ from .resources import (
     MaterialPatchResource,
     MaterialPostResource,
 
+    MaterialSearchResource,
+
     MaterialGroupDeleteResource,
     MaterialGroupGetResource,
     MaterialGroupPatchResource,
@@ -23,6 +25,8 @@ from .material_lot_resources import (
     MaterialLotGetResource,
     MaterialLotPatchResource,
     MaterialLotPostResource,
+
+    MaterialLotGetByMaterialResource,
 
     InventoryMovementAdjustPostResource,
     InventoryMovementGetResource,
@@ -47,10 +51,11 @@ materials_api_bp = Blueprint('materials_api_bp', __name__, url_prefix='/api/v1')
 
 
 materials_api = Api(materials_api_bp)
-materials_api.add_resource(MaterialGroupPostResource, '/material_groups')
-materials_api.add_resource(MaterialGroupGetResource, '/material_groups', '/material_groups/<int:resource_id>')
-materials_api.add_resource(MaterialGroupPatchResource, '/material_groups/<int:resource_id>')
-materials_api.add_resource(MaterialGroupDeleteResource, '/material_groups/<int:resource_id>')
+
+materials_api.add_resource(MaterialGroupPostResource, '/material-groups')
+materials_api.add_resource(MaterialGroupGetResource, '/material-groups', '/material-groups/<int:resource_id>')
+materials_api.add_resource(MaterialGroupPatchResource, '/material-groups/<int:resource_id>')
+materials_api.add_resource(MaterialGroupDeleteResource, '/material-groups/<int:resource_id>')
 
 
 materials_api.add_resource(MaterialPostResource, '/materials')
@@ -59,11 +64,15 @@ materials_api.add_resource(MaterialPatchResource, '/materials/<int:resource_id>'
 materials_api.add_resource(MaterialDeleteResource, '/materials/<int:resource_id>')
 materials_api.add_resource(MaterialBulkUploadResource, "/materials/upload-excel")
 
+materials_api.add_resource(MaterialSearchResource, '/materials/search')
 
 materials_api.add_resource(MaterialLotPostResource, '/material-lots')
 materials_api.add_resource(MaterialLotGetResource, '/material-lots', '/material-lots/<int:resource_id>')
 materials_api.add_resource(MaterialLotPatchResource, '/material-lots/<int:resource_id>')
 materials_api.add_resource(MaterialLotDeleteResource, '/material-lots/<int:resource_id>')
+
+materials_api.add_resource(MaterialLotGetByMaterialResource, '/materials/<int:resource_id>/lots')
+
 
 materials_api.add_resource(MaterialTotalStockResource, '/material-stocks/<int:material_id>')
 materials_api.add_resource(MaterialStockGetResource, '/material-stocks')

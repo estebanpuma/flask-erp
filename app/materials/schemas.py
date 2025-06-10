@@ -7,9 +7,6 @@ material_group_output_fields = {
     'description': fields.String,
 }
 
-material_total_stock = {
-    'get_material_total_stock': fields.Float
-}
 
 material_output_fields = {
     'id': fields.Integer,
@@ -27,4 +24,12 @@ material_stock_fields = {
     'warehouse_id': fields.Integer,
     'quantity': fields.Float,
     'quantity_available': fields.Float
+}
+
+material_search_fields = {
+    'id': fields.Integer,
+    'code': fields.String,
+    'name': fields.String,
+    'detail': fields.String,
+    'unit': fields.String,
 }

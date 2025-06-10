@@ -1,0 +1,142 @@
+<div x-data="lotForm({{ material_id | default('null') }})" x-init="init()" x-ref="materialLotForm" class="card p-4 shadow-sm">
+
+ 
+  <!--  Proveedor-->
+<div class="mb-3" x-data="{ showDropdown: false }">
+  <label for="supplierSearch" class="form-label fw-semibold">Proveedor</label>
+
+  <div class="input-group">
+    <!-- Icono lupa -->
+    <span class="input-group-text bg-white border-end-0">
+      <i class="bi bi-search text-muted"></i>
+    </span>
+
+    <!-- Campo de búsqueda -->
+     
+    <input 
+      type="text"
+      class="form-control border-start-0"
+      id="supplierSearch"
+      placeholder="Buscar por nombre o RUC"
+      x-model="supplierQuery"
+      @input.debounce.200ms="filterSuppliers(); showDropdown = true"
+      @focus="showDropdown = true"
+      @click.outside="showDropdown = false"
+    >
+
+    <!-- Botón para abrir el offcanvas desde el formulario principal -->
+    <div class="mb-3">
+        <button class="btn btn-outline-dark" type="button" data-bs-toggle="offcanvas" data-bs-target="#newSupplierOffcanvas" aria-controls="newSupplierOffcanvas">
+            <i class="bi bi-person-plus"></i>
+        </button>
+    </div>
+
+   </div> 
+  <!-- Offcanvas para crear nuevo proveedor -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="newSupplierOffcanvas" aria-labelledby="newSupplierOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="newSupplierOffcanvasLabel">Nuevo proveedor</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+        {% include 'suppliers/_supplierForm.html' %}
+    </div>
+  </div>
+
+
+  <!-- Dropdown -->
+  <ul 
+    class="list-group shadow-sm mt-1 position-absolute w-100 z-3"
+    style="max-height: 200px; overflow-y: auto;"
+    x-show="showDropdown && filteredSuppliers.length"
+  >
+    <template x-for="s in filteredSuppliers" :key="s.id">
+      <li 
+        class="list-group-item list-group-item-action"
+        @click="
+          selectedSupplier = s;
+          supplierQuery = `${s.name} (RUC/CI:${s.ruc_or_ci})`;
+          form.supplier_id = s.id;
+          showDropdown = false
+        "
+        x-text="`${s.name} (RUC/CI:${s.ruc_or_ci})`"
+      ></li>
+    </template>
+  </ul>
+
+  <input type="hidden" x-model="form.supplier_id">
+</div>
+
+<div class="mt-1 text-success mb-3" x-show="form.supplier_id">
+  ✅ Proveedor seleccionado: <strong x-text="selectedSupplier?.name"></strong>
+</div>
+
+<!--Lote/fctura -->
+ <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="lot_number" placeholder="Número de lote" x-model="form.lot_number">
+    <label for="lot_number">Número de lote</label>
+  </div>
+
+  <!-- Buscador por código (solo si no hay material_id predefinido) -->
+  <div x-show="!locked">
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="material_code_search" placeholder="Buscar material por código" x-model="searchQuery" @input="filterMaterials">
+      <label for="material_code_search">Buscar material por código</label>
+    </div>
+  </div>
+
+  <!-- Selector de material -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="material_id" x-model="form.material_id" :disabled="locked" @change="updateUnit">
+      <option value="">Seleccionar material</option>
+      <template x-for="m in filteredMaterials" :key="m.id">
+        <option :value="m.id" x-text="m.name + ' (' + m.code + ')' " :selected="m.id==form.material_id"></option>
+      </template>
+    </select>
+    <label for="material_id">Material</label>
+  </div>
+
+    <!-- Cantidad + unidad -->
+  <div class="mb-3 d-flex align-items-center">
+    <div class="form-floating flex-grow-1">
+      <input type="number" class="form-control" id="quantity" placeholder="Cantidad" x-model="form.quantity">
+      <label for="quantity">Cantidad</label>
+    </div>
+    <span class="ms-3 text-muted" x-text="unit"></span>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="number" min="0" step="0.01" class="form-control" id="unit_cost"
+            placeholder="Costo unitario" x-model="form.unit_cost">
+    <label for="unit_cost">Costo unitario (USD)</label>
+    </div>
+
+  <!-- Selector de bodega -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="warehouse_id" x-model="form.warehouse_id">
+      <option value="">Seleccionar bodega</option>
+      <template x-for="w in warehouses" :key="w.id">
+        <option :value="w.id" x-text="w.name"></option>
+      </template>
+    </select>
+    <label for="warehouse_id">Bodega</label>
+  </div>
+
+  <!-- Notas -->
+  <div class="form-floating mb-3">
+    <textarea class="form-control" placeholder="Notas" id="notes" style="height: 100px" x-model="form.notes"></textarea>
+    <label for="notes">Notas</label>
+  </div>
+
+  <button class="btn btn-dark w-100" @click="submit()" :disabled="loading">
+    <span x-show="!loading">Guardar</span>
+    <span x-show="loading">Guardando...</span>
+  </button>
+
+  <div class="alert alert-success mt-4" x-show="success">✅ Guardado correctamente. Redirigiendo...</div>
+  <div class="alert alert-danger mt-4" x-text="error" x-show="error"></div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/material_lots.js') }}"></script>
+<script src="{{ url_for('static', filename='js/suppliers.js') }}"></script>

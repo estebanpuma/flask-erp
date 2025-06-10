@@ -72,7 +72,7 @@ def normalize_value(value: str):
     Normaliza el valor de entrada (puedes ampliar para tipos como booleanos, fechas, etc.).
     """
     if isinstance(value, str):
-        val = value.strip().lower()
+        val = value.strip().upper()
         if val == "true":
             return True
         if val == "false":

@@ -9,6 +9,27 @@ from ..core.filters import apply_filters
 class MaterialService:
 
     @staticmethod
+    def search_material(query:str, limit=15):
+        q = query.strip().lower()
+        clients = (
+            db.session.query(
+            Material.id,
+            Material.code,
+            Material.name,
+            Material.unit,
+            Material.detail,
+            )
+            .filter(
+                (Material.code.ilike(f'%{q}%')) |
+                (Material.name.ilike(f'%{q}%')) 
+            )
+            .order_by(Material.name.asc())
+            .limit(limit)
+            .all()
+        )
+        return clients
+
+    @staticmethod
     def create_obj(data:dict):
         with db.session.begin():
             dto = MaterialCreateDTO(**data)
@@ -53,9 +74,10 @@ class MaterialService:
         
 
     @staticmethod
-    def patch_obj(material:Material, dto: MaterialUpdateDTO) -> Material:
-        
+    def patch_obj(material:Material, data:dict) -> Material:
 
+        dto = MaterialUpdateDTO(**data)
+        
         if dto.name:
             material.name = dto.name.strip()
         if dto.detail is not None:
@@ -71,9 +93,9 @@ class MaterialService:
             return material
         except Exception as e:
             db.session.rollback()
-            current_app.logger.warning('No se puedo actualizar el material')
+            current_app.logger.warning('No se puedo actualizar el material.')
             raise
-
+            
     @staticmethod
     def delete_obj(material:Material):
         from ..products.models import ProductVariantMaterialDetail

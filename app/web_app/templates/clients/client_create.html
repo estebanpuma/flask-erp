@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}➕ Nuevo cliente | Guifer{% endblock %}
+
+{% block content %}
+<div class="col-lg-10 mx-auto mt-4">
+
+  <!-- Título con retroceso -->
+  <h2 class="mb-4">
+    <i class="bi bi-chevron-left me-2" role="button" onclick="window.history.back()"></i>
+    Crear nuevo cliente
+  </h2>
+
+  
+  <!-- Formulario flotante reutilizable -->
+  {% include 'clients/_clientForm.html' %}
+
+</div>
+
+{% endblock %}

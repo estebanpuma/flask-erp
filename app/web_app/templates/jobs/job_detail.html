@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Detalle del puesto{% endblock %}
+
+{% block content %}
+<div class="container mt-4 pb-5" x-data="jobDetailPage({{ job_id }})" >
+
+  <!-- Encabezado -->
+  <div x-data="{ href: '/workers/jobs', title: '📋 Detalle del puesto' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <!-- Botón editar -->
+  <div class="d-flex justify-content-end mb-3">
+    <a :href="`/workers/jobs/${job.id}/edit`" class="btn btn-dark px-3">
+      <i class="bi bi-pencil me-1"></i> Editar puesto
+    </a>
+  </div>
+
+  <!-- Detalles del puesto -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h1 class="text-muted" x-text="job.code"></h1>
+      <h5 x-text="job.name"></h5>
+      <p class="text-muted mb-2" x-text="job.description || 'Sin descripción'"></p>
+      <p><strong>Estado:</strong> <span class="badge rounded-pill text-bg-success" x-text="job.is_active ? 'Activo' : 'Inactivo'"></span></p>
+    </div>
+  </div>
+
+  <!-- Indicador clave -->
+  
+
+  <!-- Lista de trabajadores -->
+  <h6 class="mb-3">👷 Trabajadores asignados: <span class="badge rounded-pill text-bg-dark" x-text="job.count_workers_job"></span></h6>
+  <template x-if="workers.length === 0">
+    <p class="text-muted">No hay trabajadores asignados a este puesto.</p>
+  </template>
+
+  <div class="list-group">
+    <template x-for="w in workers" :key="w.id">
+      <a :href="`/workers/${w.id}`" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <div>
+          <strong x-text="`${w.first_name} ${w.last_name}`"></strong>
+          <p class="mb-0 text-muted" x-text="`CI: ${w.ci}`"></p>
+        </div>
+        <i class="bi bi-chevron-right"></i>
+      </a>
+    </template>
+  </div>
+
+   <!-- Lista de usuarios -->
+  <h6 class="mb-3">👷 Usuarios activos: <span class="badge rounded-pill text-bg-dark" x-text="job.count_users_job"></span></h6>
+  <template x-if="job.count_users_job === 0">
+    <p class="text-muted">No hay usuarios activos con este puesto.</p>
+  </template>
+ 
+
+</div>
+
+ 
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/jobs.js') }}"></script>
+{% endblock %}

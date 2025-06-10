@@ -1,14 +1,14 @@
 from flask import request
 
-from flask_restful import Resource
+from flask_restful import Resource, marshal
 
 from ..core.resources import BaseGetResource, BasePatchResource, BaseDeleteResource, BasePostResource, BulkUploadBaseResource
-
-from .services import MaterialGroupServices, MaterialServices, MaterialExcelImportService
+from ..core.utils import success_response
+from .services import MaterialGroupServices,  MaterialExcelImportService
 
 from .material_services import MaterialStockService, MaterialService
 
-from .schemas import material_output_fields, material_group_output_fields, material_stock_fields
+from .schemas import material_output_fields, material_group_output_fields, material_stock_fields, material_search_fields
 
 from .validations import validate_material_group_data, validate_material_group_patch_data
 from .validations import validate_material_data, validate_material_patch_data
@@ -43,6 +43,19 @@ class MaterialGetResource(BaseGetResource):
     schema_get = staticmethod(MaterialService.get_obj)
     schema_list = staticmethod( lambda: MaterialService.get_obj_list(request.args.to_dict()))
     output_fields = material_output_fields
+
+
+class MaterialSearchResource(Resource):
+    def get(self):
+        args = request.args.to_dict()
+        if 'q' in args:
+            try:
+                print(args)
+                materials = MaterialService.search_material(str(args['q']))
+                print(f'materils {materials}')
+                return success_response(marshal(materials, material_search_fields))
+            except Exception as e:
+                raise e
 
 
 class MaterialPostResource(BasePostResource):

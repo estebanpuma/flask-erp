@@ -8,6 +8,7 @@ from ..core.exceptions import NotFoundError, ValidationError
 from datetime import date
 from ..core.filters import apply_filters
 from .material_services import MaterialStock, MaterialStockService
+from sqlalchemy.orm import joinedload # Importa joinedload
 
 class MaterialLotService:
 
@@ -63,7 +64,9 @@ class MaterialLotService:
 
     @staticmethod
     def get_obj(lot_id: int) -> MaterialLot:
-        lot = db.session.get(MaterialLot, lot_id)
+        lot = db.session.query(MaterialLot).options(
+            joinedload(MaterialLot.material) # Carga anticipadamente la relación 'material'
+        ).get(lot_id) # Usamos .get() al final para buscar por PK
         if not lot:
             raise NotFoundError(f"Lote con id {lot_id} no encontrado.")
         return lot
@@ -71,6 +74,36 @@ class MaterialLotService:
     @staticmethod
     def get_obj_list(filters: dict = None):
         return apply_filters(MaterialLot, filters)
+    
+    
+    @staticmethod
+    def get_lots_by_material(material_id:int, filters=None)->list[MaterialLot]:
+        """
+        Obtiene una lista de lotes de material filtrados.
+
+        Args:
+            material_id (int): El ID del material para el que se buscan los lotes.
+            filters (dict, optional): Un diccionario de filtros adicionales.
+                                      Ej: {'gt_quantity': 0} para cantidad > 0.
+                                      Los nombres de los filtros aquí son claves para tu lógica.
+
+        Returns:
+            list[MaterialLot]: Una lista de objetos MaterialLot que cumplen con los criterios.
+        """
+        # 1. Inicia la consulta base
+        # Siempre filtramos por material_id
+        query = MaterialLot.query.options(db.joinedload(MaterialLot.material)).filter(MaterialLot.material_id == material_id)
+        # 2. Aplica filtros adicionales si se proporcionan
+        print(f'Adentro {query}')
+        if filters:
+            # Filtro para cantidad mayor que (gt = greater than)
+            if 'quantity__gt' in filters: # Usamos un nombre más explícito para la clave del filtro
+                query = query.filter(MaterialLot.quantity > filters['quantity__gt'])
+        
+        # 3. Ejecuta la consulta y devuelve los resultados
+        # .all() ejecuta la consulta y trae todos los resultados
+        lots = query.all()
+        return lots
 
     @staticmethod
     def patch_obj(lot: MaterialLot, dto: MaterialLotUpdateDTO) -> MaterialLot:

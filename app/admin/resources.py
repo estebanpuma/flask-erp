@@ -3,8 +3,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from flask import jsonify, make_response, current_app
 
-from .services import AdminServices
-from .schemas import user_fields, job_fields, role_fields
+from .services import AdminServices, WorkerService, JobService
+from .schemas import user_fields, job_fields, role_fields, worker_fields, job_workers_fields
+
+from ..core.utils import success_response, error_response, validation_error_response
 
 from ..core.resources import BaseDeleteResource, BaseGetResource, BasePatchResource, BasePostResource, BasePutResource
 
@@ -123,3 +125,51 @@ class RoleResource(Resource):
         except Exception as e:
             current_app.logger.error(f'Unexpected error: {e}')
             abort(500, message="Unexpected error occurred")
+
+
+
+
+
+
+
+
+class WorkerGetResource(BaseGetResource):
+    schema_get = staticmethod(WorkerService.get_obj)       #servicio para obtener un elemento
+    schema_list = staticmethod(WorkerService.get_obj_list)      #servicio para obtener una lista de elementos
+    output_fields = worker_fields    #qué campos devolver(marshal)
+
+class WorkerPostResource(BasePostResource):
+    service_create = staticmethod(WorkerService.create_obj)   
+    output_fields = worker_fields
+
+class WorkerSearchResource(Resource):
+    def get(self):
+        q = request.args.to_dict()
+        if 'q' in q:
+            workers = WorkerService.search_workers(str(q['q']))
+            return success_response(marshal(workers, worker_fields), 200)
+        
+
+
+#-----------------------------Jobs-------------------------------------------------
+
+class JobGetResource(BaseGetResource):
+    schema_get = staticmethod(JobService.get_obj)       #servicio para obtener un elemento
+    schema_list = staticmethod(lambda: JobService.get_obj_list(request.args.to_dict()))      #servicio para obtener una lista de elementos
+    output_fields = job_workers_fields   #qué campos devolver(marshal)
+
+class JobPostResource(BasePostResource):
+    service_create = staticmethod(JobService.create_obj)   
+    output_fields = job_fields
+
+class JobPatchResource(BasePatchResource):
+    service_get = staticmethod(JobService.get_obj)       #servicio para obtener un elemento
+    service_patch = staticmethod(JobService.patch_obj)
+    output_fields = job_fields    #qué campos devolver(marshal)
+
+class JobSearchResource(Resource):
+    def get(self):
+        q = request.args.to_dict()
+        if 'q' in q:
+            jobs = JobService.search_job(str(q['q']))
+            return success_response(marshal(jobs, job_fields), 200)

@@ -10,6 +10,7 @@ from ..core.exceptions import *
 from ..core.filters import apply_filters
 from ..core.utils import FileUploader
 
+from .dto_lines import LineCreateDTO, SublineCreateDTO, LineUpdateDTO, SublineUpdateDTO
 import os
 
 import pandas as pd
@@ -33,6 +34,9 @@ class ProductService:
     def create_product(data: dict) -> Product:
         """Crea un nuevo producto (opcionalmente con diseños)."""
         product = ProductEntity(data).to_model()
+        from ..common.services import AppSettingService
+        code = AppSettingService.get_next_product_code(product.code)
+        product.code = code
         db.session.add(product)
         db.session.flush()  # Para obtener el ID
 
@@ -489,57 +493,109 @@ class ProductVariantImageService:
 class LineService:
 
     @staticmethod
-    def get_all_lines():
-        lines = ProductLine.query.all()
-        return lines
+    def get_obj_list(filters=None):
+        return apply_filters(ProductLine, filters)
     
     @staticmethod
-    def get_line(line_id):
-        line = ProductLine.query.get_or_404(line_id)
+    def get_obj(line_id):
+        line = ProductLine.query.get(line_id)
+        if not line:
+            raise NotFoundError(f'No existe una linea con ID:{line_id}')
         return line
     
     @staticmethod
+    def create_obj(data:dict)->ProductLine:
+        with db.session.begin():
+            dto = LineCreateDTO(**data)
+            line = LineService.create_line(dto.code, dto.name, dto.description)
+            return line
+    
+    @staticmethod
     def create_line(code:str, name:str, description:str):
-        try:
-            new_line = ProductLine(code=code,
-                                   name = name,
-                                   description = description)
-            db.session.add(new_line)
-            db.session.commit()
-            return new_line
         
+        new_line = ProductLine(code=code,
+                                name = name,
+                                description = description)
+        db.session.add(new_line)
+        return new_line
+    
+    @staticmethod
+    def patch_obj(obj:ProductLine, data:dict)->ProductLine:
+        print('entra a patch obj')
+        dto = LineUpdateDTO(**data)
+        job = LineService.patch_line(obj, dto.name, dto.description)
+        return job
+
+    @staticmethod
+    def patch_line(obj:ProductLine, name:str=None, description:str=None):
+        print('entra a job')
+        if name:
+            if obj.name != name:
+                obj.name = name
+        if description:
+            obj.description = description
+
+        try:
+            db.session.commit()
         except Exception as e:
+            current_app.logger.warning(f'error: {e}')
             db.session.rollback()
-            current_app.logger.warning(f'Error guardando linea: {e}')
-            raise Exception(e)
+            raise str(e)
+    
+
         
 
 class SublineService:
 
     @staticmethod
-    def get_all_sublines():
-        sublines = ProductSubLine.query.all()
-        return sublines
+    def get_obj_list(filters=None):
+        return apply_filters(ProductSubLine, filters)
     
     @staticmethod
-    def get_subline(subline_id):
-        subline = ProductSubLine.query.get_or_404(subline_id)
+    def get_obj(subline_id):
+        subline = ProductSubLine.query.get(subline_id)
+        if not subline:
+            raise NotFoundError(f'No existe una sublinea con ID:{subline_id}')
         return subline
     
     @staticmethod
-    def create_subline(code:str, name:str, description:str=None):
+    def create_obj(data:dict)->ProductSubLine:
+        with db.session.begin():
+            dto = SublineCreateDTO(**data)
+            subline = SublineService.create_subline(dto.code, dto.name, dto.description)
+            return subline
+    
+    @staticmethod
+    def create_subline(code:str, name:str, description:str):
         
         new_subline = ProductSubLine(code=code,
                                 name = name,
                                 description = description)
         db.session.add(new_subline)
+        return new_subline
+    
+    @staticmethod
+    def patch_obj(obj:ProductSubLine, data:dict)->ProductSubLine:
+        print('entra a patch obj')
+        dto = SublineUpdateDTO(**data)
+        job = SublineService.patch_subline(obj, dto.name, dto.description)
+        return job
+
+    @staticmethod
+    def patch_subline(obj:ProductSubLine, name:str=None, description:str=None):
+        print('entra a job')
+        if name:
+            if obj.name != name:
+                obj.name = name
+        if description:
+            obj.description = description
+
         try:
             db.session.commit()
-            return new_subline
-        
         except Exception as e:
+            current_app.logger.warning(f'error: {e}')
             db.session.rollback()
-            current_app.logger.warning(f'Error guardando sublinea: {e}')
+            raise str(e)
 
 
 class ColorService:

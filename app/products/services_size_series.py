@@ -102,6 +102,8 @@ class SizeService:
     @staticmethod
     def get_sizes_by_serie(serie_id):
         serie = SizeSeriesService.get_obj(serie_id)
+        if not serie:
+            raise NotFoundError(f'La serie con el ID:{serie_id} no existe')
         sizes = serie.sizes
         return sizes
 

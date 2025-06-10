@@ -48,6 +48,9 @@ def create_app(config):
     setup_logging(app)
 
     #API V1 blueprints
+
+    from .admin.api import admin_api_bp
+    app.register_blueprint(admin_api_bp)
     
     from .crm.api import crm_api_bp
     app.register_blueprint(crm_api_bp)
@@ -75,6 +78,9 @@ def create_app(config):
 
     from .production.api import production_api_bp
     app.register_blueprint(production_api_bp)
+
+    from .inventory.api import inventory_api_bp
+    app.register_blueprint(inventory_api_bp)
     
     
 

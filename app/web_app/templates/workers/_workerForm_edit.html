@@ -1,0 +1,71 @@
+<!-- Formulario de edición del trabajador, controlado por Alpine desde fuera -->
+<form @submit.prevent="submitForm">
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="ci" x-model="form.ci" disabled>
+    <label for="ci">Cédula</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="first_name" x-model="form.first_name">
+    <label for="first_name">Nombres</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="last_name" x-model="form.last_name">
+    <label for="last_name">Apellidos</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="phone" x-model="form.phone">
+    <label for="phone">Teléfono</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <select class="form-select" id="job_id" x-model="form.job_id">
+      <option value="">Sin asignar</option>
+      <template x-for="job in jobs" :key="job.id">
+        <option :value="job.id" x-text="job.name"></option>
+      </template>
+    </select>
+    <label for="job_id">Puesto</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <select class="form-select" id="worker_type" x-model="form.worker_type">
+      <option value="FIXED">Fijo</option>
+      <option value="HOURLY">Por horas</option>
+    </select>
+    <label for="worker_type">Tipo de trabajador</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="number" step="0.01" class="form-control" id="salary" x-model="form.salary">
+    <label for="salary">Salario mensual</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="number" step="0.01" class="form-control" id="hour_rate_normal" x-model="form.hour_rate_normal">
+    <label for="hour_rate_normal">Pago por hora</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <textarea class="form-control" id="notes" x-model="form.notes" style="height: 100px"></textarea>
+    <label for="notes">Notas</label>
+  </div>
+
+  <div class="form-check form-switch mb-4">
+    <input class="form-check-input" type="checkbox" id="is_active" x-model="form.is_active">
+    <label class="form-check-label" for="is_active">Activo</label>
+  </div>
+
+  <div class="d-grid gap-2">
+    <button type="submit" class="btn btn-dark" :disabled="loading">
+      <span x-show="!loading">Guardar</span>
+      <span x-show="loading">Guardando...</span>
+    </button>
+  </div>
+
+  <template x-if="message">
+    <div class="alert mt-3" :class="{'alert-success': success, 'alert-danger': !success}" x-text="message"></div>
+  </template>
+</form>

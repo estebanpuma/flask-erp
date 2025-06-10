@@ -17,7 +17,19 @@ from .resources import (
     ProductDesignGetResource,
     ProductDesignPostResource,
     ProductDesignPatchResource,
-    VariantMaterialsGetResource
+    VariantMaterialsGetResource,
+    NextProductCodeGetResource,
+
+    LineGetResource,
+    LinePatchResource,
+    LinePostResource,
+
+    SubLineGetResource,
+    SubLinePatchResource,
+    SubLinePostResource,
+
+    SerieSizesGetReosurce
+    
 )
 
 from .resources import ProductVariantImagePostResource, ProductVariantImageDeleteResource, ProductVariantImageGetResource
@@ -26,6 +38,20 @@ products_api_bp = Blueprint('products_api', __name__, url_prefix='/api/v1')
 
 products_api = Api(products_api_bp)
 
+
+#*******************************Lines/Sublines****************************************
+#*****************************************************************************
+
+products_api.add_resource(LineGetResource, '/product-lines', '/product-lines/<int:resource_id>')
+products_api.add_resource(LinePostResource, '/product-lines')
+products_api.add_resource(LinePatchResource, '/product-lines/<int:resource_id>')
+
+products_api.add_resource(SubLineGetResource, '/product-sublines', '/product-sublines/<int:resource_id>')
+products_api.add_resource(SubLinePostResource, '/product-sublines')
+products_api.add_resource(SubLinePatchResource, '/product-sublines/<int:resource_id>')
+
+
+
 #*******************************Products****************************************
 #*****************************************************************************
 
@@ -33,6 +59,8 @@ products_api.add_resource(ProductGetResource, '/products', '/products/<int:resou
 products_api.add_resource(ProductPostResource, '/products')
 products_api.add_resource(ProductPatchResource, '/products/<int:resource_id>')
 products_api.add_resource(ProductDeleteResource, '/products/<int:resource_id>')
+
+products_api.add_resource(NextProductCodeGetResource, '/products/next-code')
 
 #*******************************ProductDesigns****************************************
 #*****************************************************************************
@@ -77,6 +105,7 @@ products_api.add_resource(SizePostResource, '/sizes')
 products_api.add_resource(SizeDeleteResource, '/sizes/<int:resource_id>')
 
 
+products_api.add_resource(SerieSizesGetReosurce, '/series/<int:resource_id>/sizes')
 #*******************************sseries****************************************
 #*****************************************************************************
 

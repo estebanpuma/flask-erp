@@ -1,0 +1,27 @@
+<form @submit.prevent="submitForm">
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="name" x-model="form.name" placeholder="Nombre del puesto">
+    <label for="name">Nombre del puesto</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="code" x-model="form.code" placeholder="Nombre del puesto">
+    <label for="code">Código del puesto</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <textarea class="form-control" id="description" x-model="form.description" style="height: 100px" placeholder="Descripción"></textarea>
+    <label for="description">Descripción</label>
+  </div>
+
+  <div class="d-grid">
+    <button type="submit" class="btn btn-dark" :disabled="loading">
+      <span x-show="!loading">Guardar</span>
+      <span x-show="loading">Guardando...</span>
+    </button>
+  </div>
+
+  <template x-if="message">
+    <div class="alert mt-3" :class="{'alert-success': success, 'alert-danger': !success}" x-text="message"></div>
+  </template>
+</form>

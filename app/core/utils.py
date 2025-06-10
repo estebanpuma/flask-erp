@@ -101,4 +101,4 @@ def validation_error_response(errors):
     """
     Devuelve un error específico de validación.
     """
-    return make_response(jsonify({"errors": errors}), 400)
+    return make_response(jsonify({"message": errors}), 400)

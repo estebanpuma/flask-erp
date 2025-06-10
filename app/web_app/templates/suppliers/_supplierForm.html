@@ -1,0 +1,32 @@
+<form x-data="supplierForm()" x-init="init()" @submit.prevent="submit">
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="supplier_name" placeholder="Nombre" x-model="form.name" required>
+    <label for="supplier_name">Nombre del proveedor</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="supplier_ruc" placeholder="RUC o CI" x-model="form.ruc_or_ci" required>
+    <label for="supplier_ruc">RUC o CI</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="email" class="form-control" id="supplier_email" placeholder="Correo" x-model="form.email">
+    <label for="supplier_email">Correo electrónico</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="tel" class="form-control" id="supplier_phone" placeholder="Teléfono" x-model="form.phone">
+    <label for="supplier_phone">Teléfono</label>
+  </div>
+
+  <button type="submit" class="btn btn-dark w-100">
+    Guardar proveedor
+  </button>
+
+  <div class="alert alert-success mt-3" x-show="success">Proveedor guardado correctamente</div>
+  <div class="alert alert-danger mt-3" x-show="error" x-text="error"></div>
+</form>
+<script  src = "{{ url_for('static', filename='js/suppliers.js') }}">
+</script>
+<script  src = "{{ url_for('static', filename='js/material_lots.js') }}">
+</script>

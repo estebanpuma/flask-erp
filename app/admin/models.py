@@ -114,7 +114,7 @@ class Role(db.Model):
     
 
 
-class Job(db.Model):
+class Job(db.Model, SoftDeleteMixin):
 
     __tablename__ = 'jobs'
 
@@ -125,9 +125,19 @@ class Job(db.Model):
 
     users = db.relationship('User', back_populates='job')
 
+    workers = db.relationship('Worker', back_populates='job')
+
+    @property
     def count_users_job(self):
-        user_job = User.query.join(Job).filter(Job.code == self.code).all()
+        user_job = User.query.join(Job).filter(Job.code == self.code,
+                                               User.is_active == True).all()
         return len(user_job)
+    
+    @property
+    def count_workers_job(self):
+        worker_job = Worker.query.join(Job).filter(Job.code == self.code,
+                                               Worker.is_active == True).all()
+        return len(worker_job)
 
 
     
@@ -142,8 +152,28 @@ class Worker(BaseModel, SoftDeleteMixin):
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     worker_type = db.Column(db.String(), nullable=False)#planta/rotativo/contratista
-    job_title = db.Column(db.String(), nullable=False)
+    salary = db.Column(db.Float(), nullable=True)
+    phone = db.Column(db.String(), nullable=True)
     hour_rate_normal = db.Column(db.Float)
-    hour_rate_overtime = db.Column(db.Float)
+    notes = db.Column(db.String(), nullable=False)
 
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=True )
+    
+    job = db.relationship('Job', back_populates='workers')
 
+    @property
+    def calculate_hour_rate(self):
+        calculated_hour_rate = self.salary / 173.2 #40 horas/semana × 4.33 semanas/mes = 173.2 horas/mes (4.33 es el promedio de semanas por mes: 52 semanas/año ÷ 12 meses)
+        self.hour_rate_normal = calculated_hour_rate
+        return calculated_hour_rate
+    
+    @property
+    def hour_rate_overtime(self, worked_week_hours:float):
+        if worked_week_hours <= 45 and worked_week_hours > 40:
+            return self.hour_rate_normal*1.25
+        
+        if worked_week_hours <= 50 and worked_week_hours > 45:
+            return self.hour_rate_normal*1.5
+        
+        if worked_week_hours > 50:
+            return self.hour_rate_normal*2

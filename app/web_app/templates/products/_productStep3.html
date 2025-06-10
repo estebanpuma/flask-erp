@@ -1,0 +1,30 @@
+<div class="card shadow-sm p-4 rounded-2xl">
+  <h5 class="mb-3">Paso 3: Serie y variantes</h5>
+
+  <!-- Serie -->
+  <div class="form-floating mb-3">
+    <select class="form-select" x-model="selectedSeriesId">
+      <option value="">Seleccione una serie</option>
+      <template x-for="s in seriesList" :key="s.id">
+        <option :value="s.id" x-text="`${s.name} (${s.start_size} - ${s.end_size})`"></option>
+      </template>
+    </select>
+    <label>Serie</label>
+  </div>
+
+  <button class="btn btn-dark" @click="generateVariants()" :disabled="!selectedSeriesId">
+    ➕ Generar variantes
+  </button>
+
+  <div class="mt-4" x-show="product.variants.length">
+    <h6>Variantes generadas:</h6>
+    <ul class="list-group">
+      <template x-for="v in product.variants" :key="v.code">
+        <li class="list-group-item d-flex justify-content-between">
+          <span x-text="v.code"></span>
+          <button class="btn btn-sm btn-outline-danger" @click="removeVariant(v.code)">🗑</button>
+        </li>
+      </template>
+    </ul>
+  </div>
+</div>

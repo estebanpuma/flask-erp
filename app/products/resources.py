@@ -6,11 +6,13 @@ from ..core.utils import success_response, error_response
 
 from ..core.resources import BasePatchResource, BaseGetResource, BasePostResource, BaseDeleteResource
 
+from ..common.services import AppSettingService
+
 from .services import ProductService, ProductVariantMaterialService, VariantService, DesignService
 
 from .services_size_series import SizeSeriesService, SizeService
 
-from .services import ColorService
+from .services import ColorService, LineService, SublineService
 
 from .schemas import line_fields, subline_fields, color_fields, size_series_fields, size_fields
 from .schemas import product_fields, product_design_fields, product_variant_material_detail_fields
@@ -46,6 +48,15 @@ class ProductDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(ProductService.delete_obj)
 
 
+
+class NextProductCodeGetResource(Resource):
+    def get(self):
+        letter = request.args.to_dict()
+        if 'letter' in letter:
+            code = AppSettingService.view_next_product_code(letter['letter'])
+            return success_response(str(code), 200)
+        
+        
 #**************************ProductDesign***********************************
 #************************************************************************
 class ProductDesignGetResource(BaseGetResource):
@@ -166,6 +177,9 @@ class SizeGetResource(BaseGetResource):
     schema_list = staticmethod( lambda: SizeService.get_obj_list(request.args.to_dict()))
     output_fields = size_fields
 
+class SerieSizesGetReosurce(BaseGetResource):
+    schema_get = staticmethod(SizeService.get_sizes_by_serie)
+    output_fields = size_fields
 
 class SizePostResource(BasePostResource):
     pass
@@ -226,3 +240,39 @@ class ColorPatchResource(BasePatchResource):
 
 class ColorDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(ColorService.delete_obj)
+
+
+
+#---------------------------------------------------------------
+#---------------------------Line---------------------------------
+
+class LineGetResource(BaseGetResource):
+    schema_get = staticmethod(LineService.get_obj)
+    schema_list = staticmethod( lambda: LineService.get_obj_list(request.args.to_dict()))
+    output_fields = line_fields
+
+class LinePostResource(BasePostResource):
+    service_create = staticmethod(LineService.create_obj)
+    output_fields = line_fields
+
+class LinePatchResource(BasePatchResource):
+    service_get = staticmethod(LineService.get_obj)
+    service_patch = staticmethod(LineService.patch_obj)
+    output_fields = line_fields
+
+#---------------------------------------------------------------
+#---------------------------SubLine---------------------------------
+
+class SubLineGetResource(BaseGetResource):
+    schema_get = staticmethod(SublineService.get_obj)
+    schema_list = staticmethod( lambda: SublineService.get_obj_list(request.args.to_dict()))
+    output_fields = subline_fields
+
+class SubLinePostResource(BasePostResource):
+    service_create = staticmethod(SublineService.create_obj)
+    output_fields = subline_fields
+
+class SubLinePatchResource(BasePatchResource):
+    service_get = staticmethod(SublineService.get_obj)
+    service_patch = staticmethod(SublineService.patch_obj)
+    output_fields = subline_fields

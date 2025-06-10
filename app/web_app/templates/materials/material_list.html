@@ -6,7 +6,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>📦 Materiales</h3>
-        <button class="btn btn-dark" @click="openCreateModal()">+ Nuevo</button>
+        <button class="btn btn-dark" @click="window.location.href='/materials/create'">+ Nuevo</button>
     </div>
 
     <template x-if="error">
@@ -23,13 +23,12 @@
 
     <template x-if="materials.length > 0">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover table-sm align-middle">
+            <table class="table table-hover table-sm align-middle">
                 <thead class="table-dark">
                     <tr>
                         <th>Nombre</th>
                         <th>Código</th>
                         <th>Grupo</th>
-                        <th>Unidad</th>
                         <th>Stock</th>
                     </tr>
                 </thead>
@@ -39,8 +38,13 @@
                             <td x-text="material.name"></td>
                             <td x-text="material.code"></td>
                             <td x-text="material.group_name"></td>
-                            <td x-text="material.unit"></td>
-                            <td x-text="material.stock"></td>
+                            <td x-text="material.stock +'('+material.unit+')'"></td>
+                            <td>
+                                <a :href="`/materials/${material.id}`" class="btn btn-sm">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+
+                            </td>
                         </tr>
                     </template>
                 </tbody>

@@ -1,0 +1,51 @@
+<div class="card shadow-sm p-4 rounded-2xl">
+  <h5 class="mb-3">Paso 1: Datos generales del producto</h5>
+
+  <!-- Letra del código -->
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control text-uppercase"
+           maxlength="2" id="code_letter" placeholder="Ej: C"
+           x-model="product.code_letter"
+           @input.debounce.300="fetchNextCode">
+    <label for="code_letter">Letra del código del producto</label>
+  </div>
+  <div>
+    <input type="hidden" name="code" id="code" x-model="product.code">
+  </div>
+
+  <!-- Código generado automáticamente (opcionalmente visible solo como texto) -->
+  <template x-if="gen_code">
+    <div class="alert alert-secondary mb-3">
+      Código generado: <strong x-text="gen_code"></strong>
+    </div>
+  </template>
+
+  <!-- Nombre del producto -->
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="name"
+           x-model="product.name" placeholder="Nombre del producto">
+    <label for="name">Nombre del producto</label>
+  </div>
+
+  <!-- Línea -->
+  <div class="form-floating mb-3">
+    <select class="form-select" x-model="product.line_id" id="line_id">
+      <option value="">Seleccione una línea</option>
+      {% for line in lines %}
+        <option value="{{ line.id }}">{{ line.name }}</option>
+      {% endfor %}
+    </select>
+    <label for="line_id">Línea</label>
+  </div>
+
+  <!-- Sub-línea -->
+  <div class="form-floating mb-3">
+    <select class="form-select" x-model="product.subline_id" id="subline_id">
+      <option value="">Seleccione una sublínea</option>
+      {% for subline in sublines %}
+        <option value="{{ subline.id }}">{{ subline.name }}</option>
+      {% endfor %}
+    </select>
+    <label for="subline_id">Sublínea</label>
+  </div>
+</div>

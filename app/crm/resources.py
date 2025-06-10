@@ -1,10 +1,10 @@
-from flask_restful import Resource, marshal_with, abort, request
+from flask_restful import Resource, marshal_with, abort, request, marshal
 from werkzeug.exceptions import HTTPException
 from ..core.resources import BasePostResource, BasePatchResource, BaseDeleteResource, BaseGetResource, BasePutResource, BulkUploadBaseResource
 from .services import CRMServices, ClientCategoryService, ProvinceService, CantonService, ClientBulkUploadService, ContactService
-from .schemas import client_fields, province_fields, canton_fields, client_category_fields, contact_fields
-from .validations import validate_client_data, validate_client_partial_data
-
+from .schemas import client_fields, province_fields, canton_fields, client_category_fields, contact_fields, client_search_fields
+from .validations import validate_client_data
+from ..core.utils import success_response
 from .models import Client
 
 from flask_restful import Resource, reqparse
@@ -33,7 +33,6 @@ class ClientPatchResource(BasePatchResource):
     """
     Actualiza algun campo o campos especificos del cliente
     """
-    schema_validate_partial = staticmethod(validate_client_partial_data)   # Validaciones opcionales
     service_get = staticmethod(CRMServices.get_obj)
     service_patch = staticmethod(CRMServices.patch_obj)             # Servicio que hará la actualización parcial
     output_fields = client_fields            
@@ -44,6 +43,14 @@ class ClientDeleteResource(BaseDeleteResource):
     Elimina un cliente (cuidado con las relaciones)
     """
     service_delete = staticmethod(CRMServices.delete_obj)
+
+class ClientSearchResource(Resource):
+    def get(self):
+        args = request.args.to_dict()
+
+        results = CRMServices.search_clients(query=args['q'])
+        if results:
+            return success_response(marshal(results, client_search_fields), 200)
 
 
 #***************************Client Bulk ********************************

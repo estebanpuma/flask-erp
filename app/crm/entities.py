@@ -8,16 +8,16 @@ from datetime import datetime
 
 class ClientEntity:
     def __init__(self, data: dict, is_update=False):
-        self.name = parse_str(data.get("name"))
-        self.ruc_or_ci = parse_ruc_or_ci(data.get("ruc_or_ci"))
-        self.phone = parse_phone(data.get("phone"))
-        self.email = parse_str(data.get("email"))
-        self.address = parse_str(data.get("address"))
-        self.client_type = parse_str(data.get("client_type"))
-        self.province_id = parse_int(data.get("province_id"))
-        self.canton_id = parse_int(data.get("canton_id"))
-        self.client_category_id = parse_int(data.get("client_category_id"))
-        self.is_special_taxpayer = parse_bool(data.get("is_special_taxpayer"))
+        self.name = parse_str(data.get("name"), field='name')
+        self.ruc_or_ci = parse_str(data.get("ruc_or_ci"), field='ruc')
+        self.phone = parse_phone(data.get("phone"), field='phone')
+        self.email = parse_str(data.get("email"), field='email')
+        self.address = parse_str(data.get("address"), field='adre')
+        self.client_type = parse_str(data.get("client_type"), field='client type')
+        self.province_id = parse_int(data.get("province_id"), field='proc')
+        self.canton_id = parse_int(data.get("canton_id"), field='monon')
+        self.client_category_id = parse_int(data.get("client_category_id"), nullable=True, field='cat_id') 
+        
         self.is_special_taxpayer = bool(data.get('is_special_taxpayer', False))
 
         self._validate(is_update)

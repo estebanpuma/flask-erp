@@ -1,0 +1,40 @@
+<div class="mb-3 position-relative" x-data="clientSearch()" x-init="reset">
+
+  <!-- Campo de búsqueda con padding izquierdo para ícono -->
+  <input type="text"
+         class="form-control ps-5"
+         id="client_search_input"
+         placeholder="Buscar cliente por nombre, CI o RUC"
+         x-model="query"
+         @input.debounce.300="searchClients"
+         @focus="showResults = true"
+         autocomplete="off">
+
+  <!-- Ícono de lupa alineado a la izquierda -->
+  <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+
+  <!-- Resultados -->
+  <div class="list-group position-absolute w-100 z-10 mt-1 shadow"
+       x-show="showResults && results.length"
+       @click.outside="showResults = false"
+       style="max-height: 260px; overflow-y: auto;">
+
+    <template x-for="client in results" :key="client.id">
+      <button type="button"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              @click="selectClient(client)">
+        <div>
+          <strong x-text="client.name"></strong><br>
+          <small class="text-muted" x-text="client.ruc_or_ci + ' • ' + client.province_name"></small>
+        </div>
+        <i class="bi bi-chevron-right text-secondary"></i>
+      </button>
+    </template>
+
+  </div>
+
+</div>
+
+
+
+<script src="{{ url_for('static', filename='js/clients_search.js') }}"></script>

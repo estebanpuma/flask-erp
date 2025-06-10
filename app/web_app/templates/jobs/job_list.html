@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Puestos de trabajo{% endblock %}
+
+{% block content %}
+<div class="container mt-4" x-data="jobListPage()" >
+
+  <!-- Encabezado reutilizable -->
+  <div x-data="{ href: '/', title: '🏢 Puestos de trabajo' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <!-- Loading -->
+  <template x-if="loading">
+    <div class="text-center my-5">
+      <div class="spinner-border" role="status"></div>
+    </div>
+  </template>
+
+  <!-- Boton agregar -->
+  <div class=" mb-3 d-flex justify-content-end">
+  <a href="/workers/jobs/create" class="btn btn-dark rounded-pill px-3 shadow-sm">
+    <i class="bi bi-plus me-2"></i> Nuevo puesto
+  </a>
+</div>
+
+  <!-- Lista de puestos -->
+  <template x-if="!loading">
+    <div class="row g-3">
+      <template x-for="job in jobs" :key="job.id">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title" x-text="job.name"></h5>
+              <p class="card-text text-muted" x-text="job.description || 'Sin descripción'"></p>
+              <span class="badge bg-secondary" x-text="`${job.count_workers_job} trabajadores`"></span>
+              <a :href="`/workers/jobs/${job.id}`" class="stretched-link"></a>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </template>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/jobs.js') }}"></script>
+{% endblock %}

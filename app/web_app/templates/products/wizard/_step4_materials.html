@@ -1,0 +1,68 @@
+<div>
+
+  <!-- Instrucción -->
+  <div class="mb-3">
+    <p>Asigna los materiales requeridos para este producto. Estas cantidades aplican a todas las tallas de la serie seleccionada.</p>
+  </div>
+
+  <!-- Buscador de material -->
+  <div class="input-group mb-3">
+    <input type="text" class="form-control" placeholder="Buscar material (código o nombre)" x-model="materialQuery" @input.debounce.300="searchMaterials">
+    <button class="btn btn-outline-secondary" type="button" @click="clearSearch"><i class="bi bi-x"></i></button>
+  </div>
+
+  <!-- Resultados -->
+  <ul class="list-group mb-4" x-show="materialResults.length > 0">
+    <template x-for="mat in materialResults" :key="mat.id">
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <strong x-text="`${mat.code}`"></strong> — <span x-text="mat.name"></span>
+        </div>
+        <button class="btn btn-sm btn-outline-dark" @click="addMaterial(mat)">Agregar</button>
+      </li>
+    </template>
+  </ul>
+
+  <!-- Materiales asignados -->
+  <h6 class="mb-2">🧾 Materiales asignados:</h6>
+  <template x-if="productData.materials.length === 0">
+    <p class="text-muted">No se ha asignado ningún material aún.</p>
+  </template>
+
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Cantidad por par</th>
+          <th>Unidad</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template x-for="mat in productData.materials" :key="mat.id">
+          <tr>
+            <td x-text="mat.code"></td>
+            <td x-text="mat.name"></td>
+            <td>
+              <input type="number" min="0" step="0.01" class="form-control form-control-sm" x-model.number="mat.quantity">
+            </td>
+            <td x-text="mat.unit"></td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger" @click="removeMaterial(mat.id)">
+                <i class="bi bi-x"></i>
+              </button>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Acciones -->
+  <div class="d-flex justify-content-between mt-4">
+    <button class="btn btn-outline-secondary" @click="prevStep">← Atrás</button>
+    <button class="btn btn-success" @click="submitFinal" :disabled="productData.materials.length === 0">Finalizar y crear producto</button>
+  </div>
+</div>

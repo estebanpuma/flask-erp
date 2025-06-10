@@ -1,0 +1,84 @@
+<form @submit.prevent="submitForm" x-data="clientForm({{client_id}})" x-init="initForm()">
+
+  <!-- CI / RUC (editable solo si es creación) -->
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="ruc_or_ci"
+           x-model="form.ruc_or_ci"
+           :disabled="client_id>0"
+           @input.debounce.500="validateRUC"
+           :class="{'is-invalid': rucError}"
+           required>
+    <label for="ruc_or_ci">Cédula o RUC</label>
+    <div class="invalid-feedback" x-text="rucError"></div>
+  </div>
+
+  <!-- Nombre -->
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="name" x-model="form.name" required>
+    <label for="name">Nombre completo o Razón Social</label>
+  </div>
+
+  <!-- Email -->
+  <div class="form-floating mb-3">
+    <input type="email" class="form-control" id="email" x-model="form.email">
+    <label for="email">Correo electrónico</label>
+  </div>
+
+  <!-- Teléfono -->
+  <div class="form-floating mb-3">
+    <input type="tel" class="form-control" id="phone" x-model="form.phone">
+    <label for="phone">Teléfono</label>
+  </div>
+
+  <!-- Dirección -->
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="address" x-model="form.address">
+    <label for="address">Dirección</label>
+  </div>
+
+  <!-- Tipo de cliente -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="client_type" x-model="form.client_type" required>
+      <option value="" disabled>Seleccione tipo</option>
+      <option value="natural">Persona natural</option>
+      <option value="juridica">Empresa</option>
+    </select>
+    <label for="client_type">Tipo de cliente</label>
+  </div>
+
+  <!-- Contribuyente especial -->
+  <div class="form-check form-switch mb-3">
+    <input class="form-check-input" type="checkbox" id="contribuyente" x-model="form.is_special_taxpayer">
+    <label class="form-check-label" for="contribuyente">¿Contribuyente especial?</label>
+  </div>
+
+  <!-- Provincia -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="province" x-model="form.province_id" @change="loadCantons" required>
+      <option value="" disabled>Seleccione provincia</option>
+      <template x-for="p in provinces" :key="p.id">
+        <option :value="p.id" x-text="p.name"></option>
+      </template>
+    </select>
+    <label for="province">Provincia</label>
+  </div>
+
+  <!-- Cantón -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="canton" x-model="form.canton_id" required>
+      <option value="" disabled>Seleccione cantón</option>
+      <template x-for="c in cantons" :key="c.id">
+        <option :value="c.id" x-text="c.name" :selected="c.id==form.canton_id"></option>
+      </template>
+    </select>
+    <label for="canton">Cantón</label>
+  </div>
+
+  <div class="d-grid mt-4">
+    <button class="btn btn-dark" type="submit" x-text="'Guardar'"></button>
+  </div>
+</form>
+
+
+
+<script src="{{ url_for('static', filename='js/clients.js') }}"></script>

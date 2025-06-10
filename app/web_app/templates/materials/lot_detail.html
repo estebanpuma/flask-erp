@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle del Lote{% endblock %}
+
+{% block content %}
+<div x-data="lotDetail({{ lot_id }})" x-init="init()" class="py-4">
+
+  <!-- Título con chevron para volver -->
+  <div class="d-flex align-items-center mb-4">
+    <a :href="`/materials/${lot.material_id}/lots`" class="me-3 text-dark">
+      <i class="bi bi-chevron-left fs-4"></i>
+    </a>
+    <h4 class="m-0">Lote <span x-text="lot.lot_number"></span></h4>
+  </div>
+
+  <!-- Información principal -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <p><strong>Codigo del material:</strong> <span x-text="lot.material_code"></span></p>
+      <p><strong>Nombre del material:</strong> <span x-text="lot.material_name"></span></p>
+      <p><strong>Cantidad:</strong> <span x-text="lot.quantity"></span></p>
+      <p><strong>Costo unitario:</strong> <span x-text="lot.unit_cost + '$'"></span></p>
+      <p><strong>Ubicacion:</strong> <span x-text="lot.warehouse"></span></p>
+      <p><strong>Fecha de ingreso:</strong> <span x-text="lot.received_date"></span></p>
+      <p><strong>Proveedor:</strong> <span x-text="lot.supplier_name"></span></p>
+      <template x-if="lot.notes">
+        <p><strong>Notas:</strong> <span x-text="lot.notes"></span></p>
+      </template>
+    </div>
+  </div>
+
+  <!-- Acciones relacionadas -->
+  <div class="d-grid gap-2">
+    <a :href="`/lots/${lot.id}/movements`" class="btn btn-outline-dark">Ver movimientos</a>
+    <template x-if="lot.supplier_id">
+      <a :href="`/suppliers/${lot.supplier_id}`" class="btn btn-outline-dark">Ver proveedor</a>
+    </template>
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/materials.js') }}"></script>
+{% endblock %}

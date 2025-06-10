@@ -32,11 +32,18 @@ client_fields = {
     'name': fields.String,
     'email': fields.String,
     'client_type': fields.String,
-    'city': fields.String,
     'address': fields.String,
     'phone': fields.String,
+    'is_special_taxpayer':fields.Boolean,
     'province': fields.Nested(province_name_fields),
     'canton':fields.Nested(canton_fields)
+}
+
+client_search_fields = {
+    'id': fields.Integer,
+    'ruc_or_ci': fields.String,
+    'name': fields.String,
+    'province_name': fields.String
 }
 
 contact_fields = {

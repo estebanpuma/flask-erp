@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Detalle de Material{% endblock %}
+{% block content %}
+
+<div x-data="materialDetail({{ material_id }})" x-init="init()" class="container py-3">
+
+  
+  <div class="d-flex align-items-center mb-4">
+    <a :href="`/materials`" class="me-3 text-dark text-decoration-none">
+      <i class="bi bi-chevron-left fs-4"></i>
+    </a>
+    <h4 class="mb-0">🧱 Detalle de material</h4>
+  </div>
+
+  <!-- Card de Información Básica -->
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title" x-text="material.name"></h5>
+      <p class="mb-1">Código: <strong x-text="material.code"></strong></p>
+      <p class="mb-1">Grupo: <span x-text="material.group_name || 'Sin grupo'"></span></p>
+      <p class="mb-1">Unidad: <span x-text="material.unit"></span></p>
+    </div>
+  </div>
+
+  <!-- Card de Stock -->
+  <div class="card mb-3 shadow-sm">
+    <div class="card-body">
+      <h6 class="card-subtitle mb-2 text-muted">📦 Información de stock</h6>
+      <p class="mb-1">Stock total: <strong x-text="material.stock + ' ' + material.unit"></strong></p>
+      <p class="mb-1">Lotes activos: <span x-text="material.active_lots_count"></span></p>
+      <p class="mb-1">Último ingreso: <span x-text="material.last_entry_date || '-'"></span></p>
+      <p class="mb-1">Último uso: <span x-text="material.last_usage_date || '-'"></span></p>
+    </div>
+  </div>
+
+  <!-- Botones -->
+  <div class="d-flex justify-content-between">
+    <a :href="`/materials/${material.id}/edit`" class="btn btn-outline-dark">✏️ Editar</a>
+    <a :href="`/materials/${material.id}/lots/create`" class="btn btn-outline-success">➕ Ingresar lote</a>
+    <a :href="`/materials/${material.id}/lots`" class="btn btn-outline-primary">🔍 Ver lotes</a>
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/materials.js') }}"></script>
+{% endblock %}

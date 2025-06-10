@@ -1,0 +1,55 @@
+<form @submit.prevent="nextStep">
+
+  <!-- Letra del código -->
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control text-uppercase"
+           maxlength="1" id="product_code_letter" placeholder="Ej: C"
+           x-model="product_code_letter"
+           @input.debounce.300="fetchNextCode">
+    <label for="product_code_letter">Letra del código del producto</label>
+  </div>
+
+  <!-- Código generado automáticamente (opcionalmente visible solo como texto) -->
+  <template x-if="productData.code">
+    <div class="alert alert-secondary mb-3">
+      Código generado: <strong x-text="productData.code"></strong>
+    </div>
+  </template>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="name" x-model="productData.name" required>
+    <label for="name">Nombre comercial</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <textarea class="form-control" id="description" x-model="productData.description" style="height: 80px"></textarea>
+    <label for="description">Descripción (opcional)</label>
+  </div>
+
+  <!-- Línea -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="line_id" x-model="productData.line_id">
+      <option value="">Selecciona una línea</option>
+      <template x-for="line in lines" :key="line.id">
+        <option :value="line.id" x-text="line.name"></option>
+      </template>
+    </select>
+    <label for="line_id">Línea</label>
+  </div>
+
+  <!-- Sub-línea -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="subline_id" x-model="productData.subline_id">
+      <option value="">(Opcional)</option>
+      <template x-for="sub in sublines" :key="sub.id">
+        <option :value="sub.id" x-text="sub.name"></option>
+      </template>
+    </select>
+    <label for="subline_id">Sub-línea</label>
+  </div>
+
+  <!-- Acciones -->
+  <div class="d-flex justify-content-end mt-4">
+    <button type="submit" class="btn btn-dark" :disabled="!isStep1Valid()">Siguiente →</button>
+  </div>
+</form>

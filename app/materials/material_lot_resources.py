@@ -31,6 +31,11 @@ class MaterialLotDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(MaterialLotService.delete_obj)
 
 
+class MaterialLotGetByMaterialResource(BaseGetResource):
+    schema_get = staticmethod(MaterialLotService.get_lots_by_material)
+    output_fields = material_lot_fields
+
+
 
 #*************inventory movement services********************'
 #*************** solo movimiento de materia prima****************

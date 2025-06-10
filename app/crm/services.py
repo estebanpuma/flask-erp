@@ -1,5 +1,5 @@
 from sqlalchemy.exc import IntegrityError
-
+from sqlalchemy.orm import joinedload # Importa joinedload
 from werkzeug.exceptions import NotFound, BadRequest
 
 from flask import current_app
@@ -111,6 +111,29 @@ class ClientCategoryService:
 class CRMServices:
 
     @staticmethod
+    def search_clients(query:str, limit=10):
+        from .models import Client, Provinces
+        q = query.strip().lower()
+        clients = (
+            db.session.query(
+            Client.id,
+            Client.name,
+            Client.ruc_or_ci,
+            Provinces.name.label('province_name'),
+            
+            )
+            .join(Provinces, Client.province_id == Provinces.id)
+            .filter(
+                (Client.name.ilike(f'%{q}%')) |
+                (Client.ruc_or_ci.ilike(f'%{q}%'))
+            )
+            .order_by(Client.name.asc())
+            .limit(limit)
+            .all()
+        )
+        return clients
+
+    @staticmethod
     def get_obj_list(filters=None):
         from .models import Client
         
@@ -119,7 +142,8 @@ class CRMServices:
     @staticmethod
     def get_obj(client_id):
         from .models import Client
-        client = Client.query.get(client_id)
+        client = Client.query.options(joinedload(Client.canton),
+                                      joinedload(Client.province)).get(client_id)
         if not client:
             raise NotFoundError('Cliente no encontrado')
         return client
@@ -131,8 +155,6 @@ class CRMServices:
         entity = ClientEntity(data)  # Valida datos
 
         CRMServices._validate_province_canton_relationship(entity.province_id, entity.canton_id)
-
-        CRMServices._check_foreign_keys(data)
 
         if Client.query.filter_by(ruc_or_ci=entity.ruc_or_ci).first():
             raise ConflictError("RUC o cédula ya registrada.")
@@ -168,15 +190,11 @@ class CRMServices:
 
     @staticmethod
     def patch_obj(instance, data: dict):
-
-        # 1. No permitir cambiar el RUC
-        if 'ruc_or_ci' in data:
-            raise ValidationError("No se puede modificar el RUC o cédula.")
+        print(f'entra a ipatch service: {instance}')
 
         # 2. Fusionar datos actuales con nuevos (defensivamente)
         merged_data = {
             'name': data.get('name', instance.name),
-            'ruc_or_ci': instance.ruc_or_ci,
             'email': data.get('email', instance.email),
             'phone': data.get('phone', instance.phone),
             'address': data.get('address', instance.address),
@@ -186,16 +204,12 @@ class CRMServices:
             'client_type': data.get('client_type', instance.client_type),
             'client_category_id': data.get('client_category_id', instance.client_category_id)
         }
-
+        print(f'pasa merger data: {merged_data}')
         # 3. Validar con entidad
-        entity = ClientEntity(merged_data, is_update=True)
-
-        # 4. Validaciones de clave foránea y consistencia entre canton/provincia
-        CRMServices._check_foreign_keys(merged_data)
-        CRMServices._validate_province_canton_relationship(entity.province_id, entity.canton_id)
+        #CRMServices._validate_province_canton_relationship(entity.province_id, entity.canton_id)
 
         # 5. Actualizar atributos
-        for key, value in data.items():
+        for key, value in merged_data.items():
             setattr(instance, key, value)
 
         # 6. Guardar cambios
@@ -237,7 +251,7 @@ class CRMServices:
         from .models import Cantons, Provinces, ClientCategory
         province_id = parse_int(data.get("province_id"))
         canton_id = parse_int(data.get("canton_id"))
-        client_category_id = parse_int(data.get("client_category_id"))
+        #client_category_id = parse_int(data.get("client_category_id"))
 
         if province_id and not Provinces.query.get(province_id):
             raise ValidationError("Provincia no encontrada.")
@@ -245,8 +259,8 @@ class CRMServices:
         if canton_id and not Cantons.query.get(canton_id):
             raise ValidationError("Cantón no encontrado.")
 
-        if client_category_id and not ClientCategory.query.get(client_category_id):
-            raise ValidationError("Categoría de cliente no encontrada.")
+        #if client_category_id and not ClientCategory.query.get(client_category_id):
+            #raise ValidationError("Categoría de cliente no encontrada.")
         
     def _validate_province_canton_relationship(province_id, canton_id):
         from .models import Cantons, Provinces

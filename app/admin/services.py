@@ -1,7 +1,12 @@
 import os
 from flask import current_app
+from sqlalchemy.orm import joinedload
 from app import db
-
+from .models import Worker, Job
+from ..core.exceptions import AppError, NotFoundError, ConflictError, ValidationError
+from ..core.filters import apply_filters
+from .dto_workers import WorkerCreateDTO, WorkerUpdateDTO
+from .dto_jobs import JobCreateDTO, JobUpdateDTO
 class AdminServices:
     
     @staticmethod
@@ -246,3 +251,207 @@ class AdminServices:
             current_app.logger.warning(f'Error updatibg roles: {str(e)}')
         
         return new_roles
+    
+
+class WorkerService:
+
+    @staticmethod
+    def get_obj(id):
+        worker = db.session.query(Worker).get(id)
+        if not worker:
+            raise NotFoundError(f'No existe un trabajador con ID:{id}')
+        return worker
+    
+    @staticmethod
+    def get_obj_list(filters=None):
+        workers = db.session.query(Worker).options(joinedload(Worker.job)).all()     
+        return workers
+    
+    @staticmethod
+    def search_workers(q:str, limit=10):
+        q = q.strip().lower()
+        query =( db.session.query(Worker)
+                .filter(
+                        (Worker.ci.ilike(f'%{q}%')) |
+                        (Worker.first_name.ilike(f'%{q}%')) |
+                        (Worker.last_name.ilike(f'%{q}%'))
+                )
+                .order_by(Worker.first_name.asc())
+                .limit(limit)
+                .all()
+        )
+
+        return query
+    
+    @staticmethod
+    def create_obj(data:dict)->Worker:
+        with db.session.begin():
+            dto = WorkerCreateDTO(**data)
+            worker = WorkerService.create_worker(first_name=dto.first_name,
+                                                 last_name=dto.last_name,
+                                                 ci=dto.ci,
+                                                 job_id=dto.job_id,
+                                                 worker_type=dto.worker_type,
+                                                 hour_rate_normal=dto.hour_rate_normal,
+                                                 salary=dto.salary,
+                                                 phone=dto.phone,
+                                                 notes=dto.notes
+                                                 )
+            return worker
+    
+    @staticmethod
+    def create_worker(first_name:str,
+                      last_name:str,
+                      ci:str,
+                      worker_type:str,
+                      hour_rate_normal:float=None,
+                      salary:float=None,
+                      job_id:int=None,
+                      phone:str= None,
+                      notes:str=None
+                      ):
+        
+        if job_id is not None:
+            job = Job.query.get(job_id)
+            if not job:
+                raise ValidationError(f'No existe un puesto de trabajo con ID: {job_id}')
+        if salary is None and hour_rate_normal is None:
+            raise ValidationError('Debe ingresar el salrio o el pago por horas')
+        
+        worker = Worker(first_name=first_name,
+                        last_name = last_name,
+                        ci = ci,
+                        phone = phone,
+                        job_id = job_id,
+                        worker_type = worker_type,
+                        hour_rate_normal = hour_rate_normal,
+                        salary = salary,
+                        notes = notes
+                        )
+        if salary is not None:
+            worker.calculate_hour_rate()
+        
+
+        db.session.add(worker)
+        return worker
+    
+
+        
+    @staticmethod
+    def patch_obj(worker: Worker, data: dict) -> Worker:
+    
+        dto = WorkerUpdateDTO(**data)
+        return WorkerService.update_worker(worker, dto)
+
+
+    @staticmethod
+    def update_worker(worker: Worker, dto) -> Worker:
+        if dto.first_name is not None:
+            worker.first_name = dto.first_name.strip()
+
+        if dto.last_name is not None:
+            worker.last_name = dto.last_name.strip()
+
+        if dto.phone is not None:
+            worker.phone = dto.phone.strip()
+
+        if dto.notes is not None:
+            worker.notes = dto.notes.strip()
+
+        if dto.worker_type is not None:
+            worker.worker_type = dto.worker_type
+
+        if dto.salary is not None:
+            worker.salary = dto.salary
+            # Recalcular tarifa horaria si se cambia el salario
+            worker.calculate_hour_rate()
+
+        if dto.hour_rate_normal is not None:
+            worker.hour_rate_normal = dto.hour_rate_normal
+
+        if dto.is_active is not None:
+            worker.is_active = dto.is_active
+
+        if dto.job_id is not None:
+            job = Job.query.get(dto.job_id)
+            if not job:
+                raise ValidationError(f'No existe un puesto de trabajo con ID: {dto.job_id}')
+            worker.job_id = dto.job_id
+
+        db.session.commit()
+        return worker
+
+            
+class JobService:
+
+    @staticmethod
+    def get_obj(id):
+        job = db.session.query(Job).options(joinedload(Job.workers)).get(id)
+        if not job:
+            raise NotFoundError(f'No existe un puesto de trabajo con ID:{id}')
+        return job
+    
+    @staticmethod
+    def get_obj_list(filters=None)->list[Job]:
+        return apply_filters(Job, filters)
+    
+    @staticmethod
+    def create_obj(data:dict)->Job:
+        with db.session.begin():
+            dto = JobCreateDTO(**data)
+            job = JobService.create_job(dto.code, dto.name, dto.description)
+            return job
+
+    @staticmethod
+    def create_job(code:str, name:str, description:str=None)->Job:
+        job = Job.query.filter(Job.code==code).first()
+        if job:
+            raise ValidationError(f'Ya existe un puesto de trabajo con el codigo:{code}. Puesto:{job.name}')
+        job = Job.query.filter(Job.name==name).first()
+        if job:
+            raise ValidationError(f'Ya existe un puesto de trabajo con el nombre:{job.name}')
+        
+        new_job = Job(code=code,
+                      name=name,
+                      description=description
+                        )
+        
+        db.session.add(new_job)
+        return new_job
+    
+    @staticmethod
+    def patch_obj(obj:Job, data:dict)->Job:
+        print('entra a patch obj')
+        dto = JobUpdateDTO(**data)
+        job = JobService.patch_job(obj, dto.name, dto.description)
+        return job
+
+    @staticmethod
+    def patch_job(obj:Job, name:str=None, description:str=None):
+        print('entra a job')
+        if name:
+            if obj.name != name:
+                obj.name = name
+        if description:
+            obj.description = description
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f'error: {e}')
+            db.session.rollback()
+            raise str(e)
+        
+    @staticmethod
+    def search_job(q:str, limit=10)->list[Job]:
+        query = (db.session.query(Job)
+                 .filter(
+                     (Job.code.ilike(f'%{q}%')) |
+                     (Job.description.ilike(f'%{q}%'))
+                 )
+                 .limit(limit)
+                 .order_by(Job.name.asc())
+                 .all()
+                )
+
+        return query

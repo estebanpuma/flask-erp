@@ -2,7 +2,7 @@
 from app import db
 from .models import Supplier
 from .dto import SupplierCreateDTO, SupplierUpdateDTO
-from ..core.exceptions import NotFoundError, ValidationError
+from ..core.exceptions import NotFoundError, ValidationError, ConflictError
 
 
 class SupplierService:
@@ -10,20 +10,24 @@ class SupplierService:
     def create_obj(data:dict)->Supplier:
         with db.session.begin():
             dto = SupplierCreateDTO(**data)
-            supplier = SupplierService.create(dto)
+            supplier = SupplierService.create_supplier(name=dto.name,
+                                                       ruc_or_ci=dto.ruc_or_ci,
+                                                       phone=dto.phone,
+                                                       email=dto.email,
+                                                       address=dto.address)
             return supplier
 
     @staticmethod
-    def create(dto: SupplierCreateDTO) -> Supplier:
-        supplier = Supplier.query.filter(Supplier.ruc_or_ci==dto.ruc_or_ci).first()
+    def create_supplier(name:str, ruc_or_ci:str, phone:str=None, email:str=None, address:str=None ) -> Supplier:
+        supplier = Supplier.query.filter(Supplier.ruc_or_ci==ruc_or_ci).first()
         if supplier:
-            raise ValidationError(f'Ya existe un proveedor registrado con el RUC:{str(dto.ruc_or_ci)}')
+            raise ConflictError(f'Ya existe un proveedor registrado con el RUC:{str(ruc_or_ci)}')
         supplier = Supplier(
-            name=dto.name,
-            ruc_or_ci=dto.ruc_or_ci,
-            phone=dto.phone,
-            email=dto.email,
-            address=dto.address
+            name=name,
+            ruc_or_ci=ruc_or_ci,
+            phone=phone,
+            email=email,
+            address=address
         )
         db.session.add(supplier)
         return supplier
@@ -49,10 +53,7 @@ class SupplierService:
     @staticmethod
     def patch_obj(supplier:Supplier, data:dict) -> Supplier:
         dto = SupplierUpdateDTO(**data)
-        if dto.name is not None:
-            supplier.name = dto.name.strip()
-        if dto.ruc_or_ci is not None:
-            supplier.ruc_or_ci = dto.ruc_or_ci.strip()
+        
         if dto.phone is not None:
             supplier.phone = dto.phone.strip()
         if dto.email is not None:

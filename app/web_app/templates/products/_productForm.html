@@ -1,0 +1,45 @@
+<div class="card shadow-sm p-4">
+
+  <!-- Nombre del producto -->
+  <div class="form-floating mb-3">
+    <input type="text" id="name" class="form-control" placeholder="Nombre" x-model="form.name">
+    <label for="name">Nombre del producto</label>
+  </div>
+
+  <!-- Código del producto -->
+  <div class="form-floating mb-3">
+    <input type="text" id="code" class="form-control" placeholder="Código" x-model="form.code">
+    <label for="code">Código único (ej. C001)</label>
+  </div>
+
+  <!-- Línea del producto -->
+  <div class="form-floating mb-3">
+    <select id="line_id" class="form-select" x-model="form.line_id">
+      <option value="">Seleccionar línea</option>
+      <template x-for="line in lines" :key="line.id">
+        <option :value="line.id" x-text="line.name"></option>
+      </template>
+    </select>
+    <label for="line_id">Línea</label>
+  </div>
+
+  <!-- Sublínea (opcional) -->
+  <div class="form-floating mb-3">
+    <select id="subline_id" class="form-select" x-model="form.subline_id">
+      <option value="">Sin sublínea</option>
+      <template x-for="subline in sublines" :key="subline.id">
+        <option :value="subline.id" x-text="subline.name"></option>
+      </template>
+    </select>
+    <label for="subline_id">Sublínea</label>
+  </div>
+
+  <!-- Botón de guardar -->
+  <button class="btn btn-dark w-100 mt-3" @click="submit()" :disabled="loading">
+    <template x-if="!loading">Guardar</template>
+    <template x-if="loading">Guardando...</template>
+  </button>
+
+  <div class="alert alert-success mt-3" x-show="success">✅ Producto guardado correctamente.</div>
+  <div class="alert alert-danger mt-3" x-text="error" x-show="error"></div>
+</div>

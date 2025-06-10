@@ -1,0 +1,47 @@
+<div x-data="materialForm({{ material_id | default('null') }})" x-init="init()" class="card p-4 shadow-sm">
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="name" placeholder="Nombre" x-model="form.name">
+    <label for="name">Nombre</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" id="code" placeholder="Código" x-model="form.code">
+    <label for="code">Código</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <select class="form-select" id="unit" x-model="form.unit">
+      <option value="">Seleccionar unidad</option>
+      <option value="dm">Decimetro(dm)</option>
+      <option value="m">Metro(m)</option>
+      <option value="kg">Kilogramo(kg)</option>
+      <option value="und">Unidad(und)</option>
+    </select>
+    <label for="unit">Unidad</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <select class="form-select" id="group_id" x-model="form.group_id">
+      <option value="">Sin grupo</option>
+      <template x-for="group in groups" :key="group.id">
+        <option :value="group.id" x-text="group.name"></option>
+      </template>
+    </select>
+    <label for="group_id">Grupo de material</label>
+  </div>
+
+  <button class="btn btn-dark w-100" @click="submit()" :disabled="loading">
+    <span x-show="!loading">
+      Guardar
+      
+    </span>
+    <span x-show="loading">Guardando...</span>
+  </button>
+
+  <div class="alert alert-success mt-4" x-show="success">✅ Guardado correctamente. Redirigiendo...</div>
+  <div class="alert alert-danger mt-4" x-text="error" x-show="error"></div>
+</div>
+
+<script  src = "{{ url_for('static', filename='js/materials.js') }}">
+</script>

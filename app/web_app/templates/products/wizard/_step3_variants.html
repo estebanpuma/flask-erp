@@ -1,0 +1,48 @@
+<div>
+
+  <!-- Instrucción -->
+  <div class="mb-3">
+    <p>Selecciona la serie de tallas en la que estará disponible este diseño. Las variantes se generarán automáticamente según las tallas de la serie seleccionada.</p>
+  </div>
+
+  <!-- Selector de serie -->
+  <div class="form-floating mb-3">
+    <select class="form-select" id="size_series_id" x-model="selectedSeriesId" @change="loadSizes">
+      <option value="">Selecciona una serie</option>
+      <template x-for="serie in sizeSeries" :key="serie.id">
+        <option :value="serie.id" x-text="serie.name+'-'+serie.category+'-'+'('+serie.start_size+'-'+serie.end_size+')'"></option>
+      </template>
+    </select>
+    <label for="size_series_id">Serie de tallas</label>
+  </div>
+
+  <!-- Vista previa de tallas seleccionadas -->
+  <div class="mb-4" x-show="sizes.length > 0">
+    <h6 class="mb-2">Tallas seleccionadas:</h6>
+    <div class="d-flex flex-wrap gap-2">
+        <template x-if="sizes">
+             <span class="badge bg-dark" >serie</span>
+        </template>
+      
+    </div>
+  </div>
+
+  <!-- Variantes generadas -->
+  <div x-show="productData.variants.length > 0">
+    <h6 class="mb-2">🧩 Variantes generadas:</h6>
+    <ul class="list-group">
+      <template x-for="variant in productData.variants" :key="variant.size_id">
+        <li class="list-group-item d-flex justify-content-between">
+          <span x-text="variant.variant_code"></span>
+          <small class="text-muted" x-text="variant.size_name"></small>
+        </li>
+      </template>
+    </ul>
+  </div>
+
+  <!-- Acciones -->
+  <div class="d-flex justify-content-between mt-4">
+    <button class="btn btn-outline-secondary" @click="prevStep">← Atrás</button>
+    <button class="btn btn-dark" @click="nextStep" :disabled="productData.variants.length === 0">Siguiente →</button>
+  </div>
+</div>

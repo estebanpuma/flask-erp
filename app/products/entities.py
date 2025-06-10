@@ -6,7 +6,7 @@ from ..common.parsers import parse_str, parse_int, parse_float
 class ProductEntity:
     '''Entidad para producto'''
     def __init__(self, data: dict):
-        self.code = parse_str(data.get("code"), field="code")
+        self.code = parse_str(data.get("code"), field="code").upper()
         self.name = parse_str(data.get("name"), field="name")
         self.description = data.get("description")
         self.line_id = parse_int(data.get("line_id"), field="line_id", nullable=True)
@@ -64,7 +64,7 @@ class ProductDesignEntity:
         self.series_ids = data.get("series_ids", [])
         #Service
         self.product_code = parse_str(data.get("product_code"), field='product_code')  # Proveído por el servicio
-        self.color_codes = data.get("color_codes")  # Proveído por el servicio
+        self.color_codes = data.get("color_codes") # Proveído por el servicio
         
         self._generate_code()
         self._validate()
@@ -108,7 +108,7 @@ class ProductVariantEntity:
         self.stock = parse_float(data.get("stock", 0), field="stock", min_value=0)
         self.materials = data.get("materials", [])
         #Service
-        self.design_code = parse_str(data.get("design_code"))  # Proveído por el servicio
+        self.design_code = parse_str(data.get("design_code")).upper()  # Proveído por el servicio
         self.size_value = parse_str(data.get("size_value"))  # Proveído por el servicio
     
         self._generate_code()
@@ -116,7 +116,7 @@ class ProductVariantEntity:
 
     def _generate_code(self):
         """Genera C001NE25 (diseño + talla)"""
-        self.code = f"{self.design_code}{self.size_value}"
+        self.code = f"{self.design_code.upper()}{self.size_value}"
 
     def _validate(self):
 

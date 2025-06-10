@@ -4,7 +4,13 @@ from flask_restful import Api
 from flask import Blueprint
 
 
-from .resources import ClientGetResource, ClientCreateResource, ClientPatchResource, ClientDeleteResource, ClientBulkUploadResource
+from .resources import (ClientGetResource, 
+                        ClientCreateResource, 
+                        ClientPatchResource, 
+                        ClientDeleteResource, 
+                        ClientBulkUploadResource,
+                        ClientSearchResource,
+                        )
 from .resources import ClientCategoryDeleteResource, ClientCategoryGetResource, ClientCategoryPatchResource, ClientCategoryPostResource
 from .resources import CantonGetResource, CantonPatchResource, ProvinceGetResource, ProvincePatchResource
 from .resources import ContactDeleteResource, ContactGetResource, ContactPatchResource, ContactPostResource
@@ -19,6 +25,8 @@ crm_api.add_resource(ClientCreateResource, '/clients')
 crm_api.add_resource(ClientGetResource, '/clients', '/clients/<int:resource_id>')
 crm_api.add_resource(ClientPatchResource, '/clients/<int:resource_id>')
 crm_api.add_resource(ClientDeleteResource, '/clients/<int:resource_id>')
+
+crm_api.add_resource(ClientSearchResource, '/clients/search')
 
 #bulkupload
 crm_api.add_resource(ClientBulkUploadResource, '/clients/upload-excel')

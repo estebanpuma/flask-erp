@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Editar trabajador{% endblock %}
+
+{% block content %}
+<div class="container mt-4" x-data="workerEditPage({{ worker_id }})" x-init="init()">
+
+  <!-- Encabezado reutilizable -->
+  <div x-data="{ href: '/workers', title: '👷 Editar trabajador' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <!-- Spinner mientras carga -->
+  <template x-if="loading">
+    <div class="text-center my-5">
+      <div class="spinner-border" role="status"></div>
+    </div>
+  </template>
+
+  <!-- Formulario cargado -->
+  <template x-if="!loading">
+    <div>
+      {% include 'workers/_workerForm_edit.html' %}
+    </div>
+  </template>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- Alpine.js si no está ya cargado globalmente -->
+  <script src="//unpkg.com/alpinejs" defer></script>
+
+  <!-- Script específico para este formulario -->
+ <script src="{{ url_for('static', filename='js/workers.js') }}"></script>
+{% endblock %}
