@@ -1,0 +1,82 @@
+<template x-if="error">
+  <div class="alert alert-danger text-center my-4" x-text="error"></div>
+</template>
+
+<template x-if="!error && loading">
+  <div class="text-center text-muted my-5">
+    <div class="spinner-border text-dark" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <div class="mt-2">Cargando información...</div>
+  </div>
+</template>
+
+<template x-if="!error && !loading">
+  <div class="card border-0 shadow rounded-4 p-3 bg-white">
+
+    <!-- Header: imagen + código/nombre/estado -->
+    <div class="d-flex align-items-center mb-4">
+      <!-- Imagen o Emoji -->
+      <div class="me-3 flex-shrink-0">
+        <template x-if="item.image_url">
+          <img :src="item.image_url"
+               alt="Imagen"
+               class="rounded-circle shadow-sm"
+               style="width: 100px; height: 100px; object-fit: cover;">
+        </template>
+        <template x-if="!item.image_url">
+          <div class="rounded-circle bg-light text-white d-flex justify-content-center align-items-center"
+               style="width: 100px; height: 100px; font-size: 2rem;">
+              <template x-if="icon">
+                    <span class="me-2" x-text="icon"></span>
+              </template>
+          </div>
+        </template>
+      </div>
+
+      <!-- Código, Nombre y Estado -->
+      <div class="flex-grow-1">
+        <div class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between">
+          <!-- Código -->
+          <div class="mb-2 mb-sm-0">
+            <div class="text-secondary small">Código</div>
+            <div class="fw-bold fs-4" x-text="item.code"></div>
+          </div>
+          <!-- Nombre -->
+           <template x-if="'name' in fields">
+            <div class="mb-2 mb-sm-0 text-sm">
+              <div class="text-secondary small">Nombre</div>
+              <h5 class="fw-semibold mb-0" x-text="item.name || '—'"></h5>
+            </div>
+           </template>
+          
+          <!-- Estado -->
+          <div>
+            <span class="badge rounded-pill px-3 py-2"
+                  :class="item.is_active ? 'bg-success' : 'bg-secondary'"
+                  x-text="item.is_active ? 'Activo' : 'Inactivo'">
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos secundarios -->
+    <div class="row">
+      <template x-for="field in fields" :key="field.label">
+        <template x-if="!['is_active','name','image_url','code'].includes(field.field)">
+          <div class="col-12 col-sm-6 col-md-4 mb-3">
+            <div class="small text-muted mb-1 d-flex align-items-start">
+              <template x-if="field.icon">
+                <span class="me-2" x-text="field.icon"></span>
+              </template>
+              <span x-text="field.label"></span>
+            </div>
+            <div class="fw-semibold text-dark" x-text="item[field.field] ?? '—'"></div>
+          </div>
+        </template>
+      </template>
+    </div>
+
+  </div>
+</template>

@@ -9,28 +9,49 @@
   <div x-data="{ href: '/products', title: '👟 Crear nuevo producto' }">
     {% include 'components/_pageHeader.html' %}
   </div>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 x-text="`Paso ${step}/4. Datos Generales`"></h4>
-  </div>
+  
 
   <!-- Paso 1: Datos básicos -->
   <template x-if="step === 1">
-    {% include 'products/wizard/_step1_basicData.html' %}
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 x-text="`Paso ${step} de 4. Datos Generales`"></h4>
+      </div>
+      {% include 'products/wizard/_step1_basicData.html' %}
+    </div>
+    
   </template>
 
   <!-- Paso 2: Diseños -->
   <template x-if="step === 2">
-    {% include 'products/wizard/_step2_designs.html' %}
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 x-text="`Paso ${step} de 4. Colores`"></h4>
+      </div>
+      {% include 'products/wizard/_step2_designs.html' %}
+    </div>
+    
   </template>
 
   <!-- Paso 3: Variantes -->
   <template x-if="step === 3">
-    {% include 'products/wizard/_step3_variants.html' %}
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 x-text="`Paso ${step} de 4. Series`"></h4>
+      </div>
+      {% include 'products/wizard/_step3_variants.html' %}
+    </div>
+    
   </template>
 
   <!-- Paso 4: Materiales -->
   <template x-if="step === 4">
-    {% include 'products/wizard/_step4_materials.html' %}
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 x-text="`Paso ${step} de 4. Materiales`"></h4>
+      </div>
+      {% include 'products/wizard/_step4_materials.html' %}
+    </div>  
   </template>
 
 </div>

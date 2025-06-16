@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Líneas de Producto{% endblock %}
+{% block content %}
+<div class="container mt-3" x-data="lineList()">
+  <div x-data="{ href: '/products/index', title: '👟 Lineas de productos' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+
+  <a href="/products/lines/create" class="btn btn-dark">
+      <i class="bi bi-plus-circle me-1"></i> Nueva Línea
+    </a>
+
+  <template x-if="lines.length === 0">
+    <p class="text-muted mt-4">No hay líneas registradas.</p>
+  </template>
+
+  <div class="list-group mt-4">
+    <template x-for="line in lines" :key="line.id">
+      <a :href="`/products/lines/${line.id}`" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="mb-1" x-text="line.name"></h6>
+          <small class="text-muted" x-text="line.description"></small>
+        </div>
+        <span class="badge bg-secondary rounded-pill" x-text="line.count_products || 0 + ' productos'"></span>
+        <i class="bi bi-chevron-right"></i>
+      </a>
+    </template>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/product_lines_sublines.js') }}"></script>
+
+{% endblock %}

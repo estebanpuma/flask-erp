@@ -1,0 +1,104 @@
+
+<div class="my-3 ">
+  <div class="input-group">
+    <!-- Ícono de lupa -->
+    <span class="input-group-text bg-white border-end-0">
+      <i class="bi bi-search"></i>
+    </span>
+    <!-- Buscador global -->
+    <input
+      type="text"
+      class="form-control border-start-0"
+      placeholder="Buscar en toda la lista…"
+      x-model="globalFilter"
+      @input="filterItems()"
+    />
+  </div>
+</div>
+
+<template x-if="error">
+  <div class="alert alert-danger" x-text="error"></div>
+</template>
+
+<!-- 2. Loading -->
+<template x-if="!error && loading">
+  <div class="text-center text-muted py-3">Cargando datos…</div>
+</template>
+
+
+
+<div class="table-responsive" style="background-color: #fff;">
+  <table class="table table-hover table-sm align-middle "
+ >
+    <thead class="table-dark">
+      <tr>
+        <template x-for="col in columns" :key="col.field">
+          <th >
+            <div  x-data="{btn: false}" >
+              <div @click="btn=!btn" class="btn d-flex align-items-start">
+                <span x-text="col.label" class="fw-bold text-white"></span>
+                <i class="bi bi-chevron-down text-white" class="fs-6"></i>
+              </div>
+              
+
+              <template x-if="col.filterable && btn===true">
+                <div>
+                  <input
+                  type="text"
+                  class="form-control form-control-sm mt-1"
+                  placeholder="Filtrar…"
+                  x-model="filters[col.field]"
+                  @input="filterItems()"
+                />
+                </div>
+                
+              </template>
+            </div>
+          </th>
+        </template>
+      </tr>
+    </thead>
+   
+
+    <tbody  x-show="!error && !loading && filteredItems.length > 0">
+      <template x-for="item in filteredItems" :key="item.id">
+        <tr role="button" @click="item.href && (window.location.href = item.href)">
+          <template x-for="col in columns" :key="col.field">
+            <td>
+              <!-- Si es la columna de estado, mostrar badge -->
+                <template x-if="col.field === 'is_active'">
+                  <span
+                    class="px-2 py-1 badge rounded-pill"
+                    :class="item.is_active
+                      ? 'bg-success text-white'
+                      : 'bg-secondary text-white'"
+                    x-text="item.is_active ? 'Activo' : 'Inactivo'"
+                  ></span>
+                </template>
+
+                <!-- Resto de columnas -->
+                <template x-if="col.field !== 'is_active'">
+                  <span x-text="
+                    (col.field.split('.').reduce((o, k) => (o && o[k] != null) ? o[k] : null, item))
+                    ?? '—'
+                  "></span>
+                </template>
+            </td>  
+          </template>      
+        </tr>
+      </template>
+    </tbody>
+  </table>
+
+</div>
+   <!-- 3. Sin resultados -->
+  <template x-if="!error && !loading && filteredItems.length === 0">
+    <div class="container">
+    <div class="alert alert-dark text-center ">
+      No hay elementos para mostrar.
+  
+    </div>
+    </div>
+
+
+  </template>

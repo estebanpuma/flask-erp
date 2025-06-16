@@ -10,3 +10,28 @@
 .zoom-container:hover .zoom-image {
     transform: scale(1.5); /* Adjust the scale value as needed */
 }
+
+
+
+
+.card .fs-6 {
+font-size: 1rem;
+}
+
+.card .text-muted {
+font-size: 0.85rem;
+}
+
+.card .fw-semibold {
+font-weight: 600;
+}
+
+@media (max-width: 576px) {
+.card .fs-6 {
+    font-size: 0.95rem;
+}
+.card .text-muted {
+    font-size: 0.8rem;
+}
+}
+

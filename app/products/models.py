@@ -14,8 +14,9 @@ class ProductLine(BaseModel, SoftDeleteMixin):
     code = db.Column(db.String(4), nullable=False, unique=True)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.String(250))
-
     products = db.relationship('Product', back_populates='line', cascade='all, delete-orphan')
+
+    collections = db.relationship('ProductCollection', back_populates='line', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<ProductLine(name={self.name})>'
@@ -30,23 +31,65 @@ class ProductSubLine(BaseModel, SoftDeleteMixin):
     description = db.Column(db.String(250))
 
     products = db.relationship('Product', back_populates='sub_line', cascade='all, delete-orphan')
+    collections = db.relationship('ProductCollection', back_populates='sub_line', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<ProductSubLine(name={self.name})>'
+    
+
+class ProductTarget(BaseModel, SoftDeleteMixin):
+    __tablename__ = 'product_targets'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(3), unique=True, nullable=False)  # Ej. H, M, U, HN, MN, UN
+    name = db.Column(db.String(50), nullable=False) 
+    description = db.Column(db.String(255))
+
+    collections = db.relationship('ProductCollection', back_populates='target', cascade='all, delete-orphan')
+    products = db.relationship('Product', back_populates='target', cascade='all, delete-orphan')
+    
+
+class ProductCollection(BaseModel, SoftDeleteMixin):
+    __tablename__ = 'product_collections'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.Integer, nullable=False) # 1, 2, 3, 4
+    aux_code = db.Column(db.String(10), nullable = True)
+
+    line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'), nullable=False)
+    subline_id = db.Column(db.Integer, db.ForeignKey('product_sub_lines.id'), nullable=True)
+    target_id = db.Column(db.Integer, db.ForeignKey('product_targets.id'), nullable=False)
+
+    description = db.Column(db.String(255))
+    image_url = db.Column(db.String(255))
+
+    line = db.relationship('ProductLine', back_populates='collections')
+    sub_line = db.relationship('ProductSubLine', back_populates='collections')
+    target = db.relationship('ProductTarget', back_populates='collections')
+
+    products = db.relationship('Product', back_populates='collection', cascade='all, delete-orphan')
+
+    
 
 
 class Product(BaseModel, SoftDeleteMixin):
     __tablename__ = 'products'
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(50), unique=True, nullable=False)  # Ej: C001
+    code = db.Column(db.String(50), unique=True, nullable=False)  # Ej: CDU101
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'), nullable=True)
-    sub_line_id = db.Column(db.Integer, db.ForeignKey('product_sub_lines.id'), nullable=True)
+    line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'), nullable=False)
+    subline_id = db.Column(db.Integer, db.ForeignKey('product_sub_lines.id'), nullable=True)
+    target_id = db.Column(db.Integer, db.ForeignKey('product_targets.id'), nullable=False)
+    collection_id = db.Column(db.Integer, db.ForeignKey('product_collections.id'), nullable=False)
 
     line = db.relationship('ProductLine', back_populates='products')
     sub_line = db.relationship('ProductSubLine', back_populates='products')
+    target = db.relationship('ProductTarget', back_populates='products')
+    collection = db.relationship('ProductCollection', back_populates='products')
+
     designs = db.relationship('ProductDesign', back_populates='product', cascade='all, delete-orphan')
 
     @property
@@ -63,7 +106,7 @@ product_design_colors = db.Table(
     db.Column('color_id', db.Integer, db.ForeignKey('colors.id'), primary_key=True)
 )
 
-class ProductDesign(BaseModel):
+class ProductDesign(BaseModel, SoftDeleteMixin):
     __tablename__ = 'product_designs'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -78,7 +121,7 @@ class ProductDesign(BaseModel):
     images = db.relationship('ProductVariantImage', back_populates='design', cascade='all, delete-orphan')
 
 
-class ProductVariant(BaseModel):
+class ProductVariant(BaseModel, SoftDeleteMixin):
     __tablename__ = 'product_variants'
 
     id = db.Column(db.Integer, primary_key=True)

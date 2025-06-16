@@ -1,0 +1,13 @@
+{% macro entry_card(href, title, desc) %}
+<div class="col-md-6 col-lg-4">
+  <a href="{{ href }}" class="card h-100 text-decoration-none border-0 shadow-sm hover-shadow transition rounded-3" style="transition: box-shadow 0.2s ease;">
+    <div class="card-body d-flex justify-content-between align-items-start">
+      <div>
+        <h5 class="mb-1">{{ title }}</h5>
+        <p class="text-muted small mb-0">{{ desc }}</p>
+      </div>
+      <div class="ms-2 text-muted fs-4">›</div>
+    </div>
+  </a>
+</div>
+{% endmacro %}

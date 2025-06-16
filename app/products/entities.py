@@ -8,10 +8,10 @@ class ProductEntity:
     def __init__(self, data: dict):
         self.code = parse_str(data.get("code"), field="code").upper()
         self.name = parse_str(data.get("name"), field="name")
-        self.description = data.get("description")
+        self.description = parse_str
         self.line_id = parse_int(data.get("line_id"), field="line_id", nullable=True)
         self.sub_line_id = parse_int(data.get("sub_line_id"), field="sub_line_id", nullable=True)
-        self.designs = []  # para adjuntar diseños si se desea construir como agregado
+        self.designs = [ProductDesignEntity]  # para adjuntar diseños si se desea construir como agregado
 
 
     def to_model(self):
@@ -66,16 +66,16 @@ class ProductDesignEntity:
         self.product_code = parse_str(data.get("product_code"), field='product_code')  # Proveído por el servicio
         self.color_codes = data.get("color_codes") # Proveído por el servicio
         
-        self._generate_code()
-        self._validate()
+        
         
 
-    def _generate_code(self):
+    def _generate_code(product_code:str, color_codes:list[str]):
         """Genera C001NE (producto + colores)"""
-        print(f'color codes: {self.color_codes}')
-        colors_codes = [c.upper() for c in self.color_codes]
+        print(f'color codes: {color_codes}')
+        colors_codes = [c.upper() for c in color_codes]
         color_part = "".join(colors_codes)
-        self.code = f"{self.product_code}{str(color_part)}"
+        code = f"{product_code}{str(color_part)}"
+        return code
 
 
     def _validate(self):

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Líneas de Producto{% endblock %}
+{% block content %}
+
+<div x-data="{ href: '/products/index', title: 'Colleciones de productos' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<a href="/products/designs/create" class="btn btn-dark">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo diseno
+</a>
+
+<div
+    x-data="genericList(
+      `/api/v1/product-designs?product_id={{product_id}}`,
+      '/products/designs',
+      [
+        { field: 'code',        label: 'Código',      filterable: true  },
+        { field: 'created_at',  label: 'Fecha de creación',      filterable: true  },
+        { field: 'is_active',   label: 'Status',      filterable: true  },
+      ]
+    )"
+    x-init="init()"
+    class="table-responsive"
+  >
+    {% include 'components/listTable.html' %}
+  </div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+

@@ -1,0 +1,17 @@
+
+<a class="d-flex align-items-center justify-content-between p-3 border-bottom text-decoration-none text-dark"
+     role="button"
+     :href="item.href || '#'"
+>
+  <div class="d-flex align-items-center gap-3">
+    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+         style="width: 40px; height: 40px; font-size: 1.25rem;">
+      <span x-text="item.icon || '📦'"></span>
+    </div>
+    <div>
+      <div class="fw-semibold" x-text="item.title || 'Sin título'"></div>
+      <div class="text-muted small" x-text="item.subtitle || ''"></div>
+    </div>
+  </div>
+  <div class="text-muted fs-5">›</div>
+</a>

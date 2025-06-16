@@ -1,17 +1,21 @@
 from app import db
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload, aliased
 from flask import current_app
 from .models import Product, ProductLine, ProductSubLine, ProductVariant, ProductVariantMaterialDetail, ProductVariantImage
-from .models import Color, SizeSeries, Size, ProductDesign
+from .models import Color, SizeSeries, Size, ProductDesign, ProductCollection, ProductTarget
 from .entities import ProductEntity, ProductDesignEntity, ProductVariantEntity, PatchProductEntity, ProductVariantMaterialEntity
 from .services_size_series import SizeSeriesService, SizeService
 from ..core.exceptions import *
 
 from ..core.filters import apply_filters
 from ..core.utils import FileUploader
+from ..common.services import ProductCodeGenerator, CollectionCodeGenerator
 
-from .dto_lines import LineCreateDTO, SublineCreateDTO, LineUpdateDTO, SublineUpdateDTO
+from .dto_lines import LineCreateDTO, SublineCreateDTO, LineUpdateDTO, SublineUpdateDTO, CollectionUpdateDTO, CollectionCreateDTO
 import os
+
+from .dto_products import ProductCreateDTO, ProductDesignCreateDTO, ProductVariantCreateDTO, ProductVariantMaterialCreateDTO
 
 import pandas as pd
 
@@ -19,31 +23,79 @@ class ProductService:
 
     @staticmethod
     def create_obj(data:dict):
-        try:
-            with db.session.begin():
-                product = ProductService.create_product(data)
-                return product
-        except Exception as e:
-            current_app.logger.warning(f'Error al crear el producto. e:{e}')    
-            raise e
-        except IntegrityError:
-            current_app.logger.warning('Error de inegridad')
-            raise ConflictError('Error de duplicados')
+        
+        with db.session.begin():
+            dto = ProductCreateDTO(data)
+            product = ProductService.create_product(target_id=dto.target_id,
+                                                    collection_id=dto.collection_id,
+                                                    name=dto.name,
+                                                    description=dto.description,
+                                                    line_id=dto.line_id,
+                                                    subline_id= dto.subline_id,
+                                                    designs=dto.designs,
+                                                    materials=dto.materials,
+                                                    variants=dto.variants
+                                                    )
+            return product
+        
 
     @staticmethod
-    def create_product(data: dict) -> Product:
-        """Crea un nuevo producto (opcionalmente con diseños)."""
-        product = ProductEntity(data).to_model()
-        from ..common.services import AppSettingService
-        code = AppSettingService.get_next_product_code(product.code)
-        product.code = code
+    def create_product( 
+                       name:str, 
+                       designs:list, 
+                       variants:list,
+                         materials:list, 
+                         line_id:int, 
+                         target_id:int, 
+                         collection_id:int, 
+                         subline_id:int=None, 
+                         description:str=None) -> Product:
+        """Crea un nuevo producto (opcionalmente con un diseño)."""
+        from ..common.services import ProductCodeGenerator
+
+        #validaciones
+        line = LineService.get_obj(line_id)
+        subline = None
+        if subline_id is not None:
+            subline = SublineService.get_obj(subline_id)
+        target = TargetService.get_obj(target_id)
+        collection = CollectionService.get_obj(collection_id)
+
+        code = ProductCodeGenerator.get_next_model_code(linea=line,
+                                                          sublinea=subline,
+                                                          tipo=target,
+                                                          coleccion=collection)
+        
+
+        product = Product(code=code,
+                          name=name,
+                          line_id=line_id,
+                          subline_id=subline_id,
+                          target_id=target_id,
+                          collection_id=collection_id,
+                          description=description)
         db.session.add(product)
         db.session.flush()  # Para obtener el ID
 
-        # Si se proporcionan diseños, los crea
-        designs_data = data.get("designs", [])
+        
+        current_app.logger.info(f' pos 0:{designs[0]}')
+        # Si se proporcionan diseños, los crea Actualmente solo uno
+        designs_data = []
+        designs_data.append(designs[0])
+
         if designs_data:
-            DesignService.bulk_create_designs(product.id, designs_data)
+            new_designs = DesignService.bulk_create_designs(product.id, designs_data)
+        
+        if variants:
+            # Crear variantes para TODOS los diseños___ Atuamente solo uno
+            
+            variants = VariantService.bulk_create_variants(
+                design_id=new_designs[0].id,
+                design_code=new_designs[0].code,
+                series_ids=variants[0].series_ids, 
+                materials=materials,
+            )
+
 
         return product
 
@@ -54,7 +106,7 @@ class ProductService:
     
     @staticmethod
     def get_obj(product_id):
-        product = Product.query.get(product_id)
+        product = db.session.query(Product).options(joinedload(Product.designs)).get(product_id)
         if not product:
             raise NotFoundError('Recurso no encontrado')
         return product
@@ -93,6 +145,24 @@ class ProductService:
             db.session.rollback()
             current_app.logger.warning(f'Error al borrar producto')
             raise
+
+    @staticmethod
+    def preview_new_code(line_id:int, target_id:int, collection_id:int, subline_id:int=None):
+        from ..common.services import ProductCodeGenerator
+
+        #validaciones
+        line = LineService.get_obj(line_id)
+        subline = None
+        if subline_id is not None:
+            subline = SublineService.get_obj(subline_id)
+        target = TargetService.get_obj(target_id)
+        collection = CollectionService.get_obj(collection_id)
+
+        code = ProductCodeGenerator.preview_model_code(linea=line,
+                                                          sublinea=subline,
+                                                          tipo=target,
+                                                          coleccion=collection)
+        return code
 
 class DesignService:
 
@@ -140,23 +210,32 @@ class DesignService:
     @staticmethod
     def create_obj(data):
         """Crea un diseño con sus variantes y materiales."""
-        try:
-            with db.session.begin():
-                design = DesignService.create_design(data)
-                return design
-        except Exception as e:
-            current_app.logger.warning(f'Error al crear el diseno e:{e}')
-            raise str(e)
+        with db.session.begin():
+            dto = ProductDesignCreateDTO(**data)
+            design = DesignService.create_design(product_id=dto.product_id,
+                                                 color_ids=dto.color_ids,
+                                                 series_ids=dto.series_ids,
+                                                 name=dto.name,
+                                                 description=dto.description,
+                                                 variants=dto.variants)
+            return design
         
     @staticmethod
-    def create_design(data:dict) -> ProductDesign:
+    def create_design(product_id:int,
+                       color_ids:list[int],
+                       series_ids:list[int],
+                       variants:list,
+                       materials:list,
+                       name:str=None, 
+                       description:str=None,
+                       ) -> ProductDesign:
         """Funcion para crear un diseño con sus variantes y materiales."""
 
-        product = Product.query.get(data['product_id'])
+        product = Product.query.get(product_id)
         if not product:
-            raise ValidationError(f'No existe el producto con id: {str(data['product_id'])}')
+            raise ValidationError(f'No existe el producto con id: {product_id}')
         
-        color_ids = data['color_ids']
+        color_ids = color_ids
         colors = []
         for color_id in color_ids:
             color = Color.query.get(color_id)
@@ -167,12 +246,12 @@ class DesignService:
 
         # Genera el diseño
         design = ProductDesignEntity({
-            "product_id": product.id,
+            "product_id": product_id,
             "color_ids": color_ids,
             "product_code": product.code,
             "color_codes": [c.code for c in colors],
-            "series_ids": data['series_ids']
-        }).to_model()
+            "series_ids": variants[0].series_ids
+        }).to_model
 
         db.session.add(design)
         print(f'hasta aqui los designs: {design}')
@@ -183,8 +262,8 @@ class DesignService:
         VariantService.bulk_create_variants(
             design_id=design.id,
             design_code=design.code,
-            series_ids=data['series_ids'],
-            materials=data['materials'],
+            series_ids=variants[0].series_ids,
+            materials=materials,
         )
      
         return design
@@ -192,7 +271,7 @@ class DesignService:
     @staticmethod
     def bulk_create_designs(product_id: int, designs_data: list) -> list[ProductDesign]:
         """
-        Crea múltiples diseños en una SOLA transacción.
+        Crea uno o múltiples diseños en una SOLA transacción.
         - Usa add_all() para inserción masiva.
         """
         product = Product.query.get(product_id)
@@ -204,41 +283,34 @@ class DesignService:
   
         for design_data in designs_data:
             # Validar colores
-            color_ids = design_data["color_ids"]
+            color_ids = design_data.color_ids
             colors = Color.query.filter(Color.id.in_(color_ids)).all()
             if len(colors) != len(color_ids):
                 missing = set(color_ids) - {c.id for c in colors}
                 raise ValidationError(f"Colores no encontrados: {missing}")
+            colors_codes = [c.code.upper() for c in colors]
+            color_part = "".join(colors_codes)
+            c_code = f"{product.code}{str(color_part)}"
 
             print(f'Colores en buldesing; {colors}')
             # Crear diseño (sin commit)
-            design = ProductDesignEntity({
-                "product_id": product_id,
-                "color_ids": color_ids,
-                "product_code": product.code,
-                "color_codes": [c.code for c in colors],
-                "series_ids": design_data["series_ids"]
-            }).to_model()
+            design = ProductDesign(
+                product_id = product_id,
+                code = c_code,
+            )
             print(f'desig en bulk desig : {design}')
             design.colors.extend(colors)
-            print(f'design.colors: {design.colors}')
+            current_app.logger.info(f'design.colors: {design.colors}')
             designs.append(design)
 
-            designs_and_materials.append({'design':design, 'materials':design_data['materials'], "series_ids": design_data["series_ids"]})
+            #designs_and_materials.append({'design':design, 'materials':design_data.materials, "series_ids": design_data["series_ids"]})
         
         db.session.add_all(designs)
 
         # Flush para obtener IDs de diseños
         db.session.flush()
 
-        # Crear variantes para TODOS los diseños
-        for design in designs_and_materials:
-            variants = VariantService.bulk_create_variants(
-                design_id=design['design'].id,
-                design_code=design['design'].code,
-                series_ids=design["series_ids"],
-                materials=design["materials"],
-            )
+        
 
         
         return designs
@@ -266,7 +338,7 @@ class VariantService:
         
 
     @staticmethod
-    def bulk_create_variants(design_id: int, design_code: str, series_ids: list, materials: dict):
+    def bulk_create_variants(design_id: int, design_code: str, series_ids: list, materials: list):
         """Crea todas las variantes para un diseño con sus materiales."""
         # Validación temprana de series (mejor performance)
         series = SizeSeries.query.filter(SizeSeries.id.in_(series_ids)).all()
@@ -278,7 +350,7 @@ class VariantService:
         
         # Creación de todas las variantes primero
         for serie in series:
-            serie_materials = materials.get(str(serie.id), [])  # Materiales específicos para esta serie
+            serie_materials = materials  # Materiales compartidos para
             
             for size in serie.sizes:
                 variant = ProductVariantEntity({
@@ -297,8 +369,8 @@ class VariantService:
                 #no incluyo variant_id porque la relacion lo hace por mi
                 for mat in serie_materials:
                     variant.materials.append(ProductVariantMaterialDetail(
-                        material_id=mat["material_id"],
-                        quantity=mat["quantity"],
+                        material_id=mat.material_id,
+                        quantity=mat.quantity,
                     ))
 
         return variants
@@ -513,7 +585,7 @@ class LineService:
     @staticmethod
     def create_line(code:str, name:str, description:str):
         
-        new_line = ProductLine(code=code,
+        new_line = ProductLine(code=code.upper(),
                                 name = name,
                                 description = description)
         db.session.add(new_line)
@@ -568,7 +640,7 @@ class SublineService:
     @staticmethod
     def create_subline(code:str, name:str, description:str):
         
-        new_subline = ProductSubLine(code=code,
+        new_subline = ProductSubLine(code=code.upper(),
                                 name = name,
                                 description = description)
         db.session.add(new_subline)
@@ -596,6 +668,218 @@ class SublineService:
             current_app.logger.warning(f'error: {e}')
             db.session.rollback()
             raise str(e)
+
+
+class TargetService:
+
+    @staticmethod
+    def get_obj_list(filters=None):
+        return apply_filters(ProductTarget, filters)
+    
+    @staticmethod
+    def get_obj(line_id):
+        line = ProductTarget.query.get(line_id)
+        if not line:
+            raise NotFoundError(f'No existe una coleccion con ID:{line_id}')
+        return line
+    
+    @staticmethod
+    def create_obj(data:dict)->ProductTarget:
+        return 'No implementado'
+        #with db.session.begin():
+           # dto = TargetCreateDTO(**data)
+           # collection = CollectionService.create_target(dto.code, dto.name, dto.description)
+           # return collection
+    
+    @staticmethod
+    def create_target(code:str, name:str, description:str):
+        
+        new_target = ProductTarget(code=str(code).upper(),
+                                name = name,
+                                description = description)
+        db.session.add(new_target)
+        return new_target
+    
+    @staticmethod
+    def patch_obj(obj:ProductTarget, data:dict)->ProductTarget:
+        return 'Not implemented'
+
+    @staticmethod
+    def patch_target(obj:ProductTarget, name:str=None, description:str=None):
+        print('entra a job')
+        if name:
+            if obj.name != name:
+                obj.name = name
+        if description:
+            obj.description = description
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f'error: {e}')
+            db.session.rollback()
+            raise str(e)
+        
+
+class CollectionService:
+
+    @staticmethod
+    def get_obj_list(filters: dict = None):
+        # 1. Base de la consulta con los eager-loads
+        query = (
+            db.session
+            .query(ProductCollection)
+            .options(
+                joinedload(ProductCollection.line),
+                joinedload(ProductCollection.sub_line),
+                joinedload(ProductCollection.target),
+            )
+        )
+
+        # 2. Aplica cada filtro si existe y no es None
+        if filters:
+            # Por cada clave, usa filter() dinámicamente
+            for field, value in filters.items():
+                if value is None or value == '':
+                    if field is 'subline_id':
+                        model_attr = getattr(ProductCollection, field, None)
+                        query = query.filter(model_attr == value)
+                    continue
+                # Atributo en el modelo
+                model_attr = getattr(ProductCollection, field, None)
+                if model_attr is not None:
+                    query = query.filter(model_attr == value)
+
+        # 3. Ejecuta y devuelve
+        return query.all()
+    
+    @staticmethod
+    def get_specific_list(filters:dict=None):
+        print(filters)
+        current_app.logger.info(filters)
+        if 'line_id' and 'target_id' and 'subline_id' in filters:
+            query = (db.session.query(ProductCollection)
+                    .filter(ProductCollection.line_id == filters['line_id'],
+                            ProductCollection.subline_id == filters['subline_id'],
+                            ProductCollection.target_id == filters['target_id'])
+                    .all()
+                    )
+            return query
+        
+        if 'line_id' and 'target_id' in filters:
+            query = (db.session.query(ProductCollection)
+                .filter(ProductCollection.line_id == filters['line_id'],
+                        ProductCollection.subline_id == None,
+                        ProductCollection.target_id == filters['target_id'])
+                .all()
+                )
+            return query
+        else:
+            return 'Proporcione datos'
+
+    @staticmethod
+    def get_obj(obj_id):
+        
+        obj = (
+            db.session.query(ProductCollection)
+            .options(
+                joinedload(ProductCollection.line),  # Carga la relación "line"
+                joinedload(ProductCollection.sub_line),  # Carga "sub_line"
+                joinedload(ProductCollection.target),  # Carga "target"
+            )
+            .get(obj_id)
+        )
+        if not obj:
+            raise NotFoundError(f'No existe una coleccion con ID:{obj_id}')
+        return obj
+    
+    @staticmethod
+    def create_obj(data:dict)->ProductCollection:
+        with db.session.begin():
+            dto = CollectionCreateDTO(**data)
+            collection = CollectionService.create_collection( 
+                                                             line_id=dto.line_id,
+                                                             subline_id=dto.subline_id,
+                                                             target_id=dto.target_id,
+                                                             name=dto.name, 
+                                                             description=dto.description)
+            return collection
+    
+    @staticmethod
+    def preview_collection_code(line_id, target_id, subline_id=None, )->int:
+        line = db.session.query(ProductLine).get(line_id)
+        subline = db.session.query(ProductSubLine).get(subline_id)
+        target = db.session.query(ProductTarget).get(target_id)
+
+        code = CollectionCodeGenerator.preview_collection_number(line, subline, target)
+        return code
+    
+    @staticmethod
+    def create_collection(line_id: int, subline_id: int, target_id: int, name: str, description: str):
+
+        line = db.session.query(ProductLine).get(line_id)
+        subline = db.session.query(ProductSubLine).get(subline_id)
+        target = db.session.query(ProductTarget).get(target_id)
+
+        code = CollectionCodeGenerator.get_next_collection_number(linea=line, sublinea=subline, tipo=target)
+
+
+        # Validación de unicidad según restricción
+        query = db.session.query(ProductCollection).filter_by(
+            line_id=line_id,
+            target_id=target_id,
+            code=code
+        )
+
+        if subline_id is None:
+            query = query.filter(ProductCollection.subline_id.is_(None))
+        else:
+            query = query.filter_by(subline_id=subline_id)
+
+        if query.first():
+            raise ConflictError(f'Ya existe una colección con código {code} para la combinación seleccionada.')
+        
+        aux_code = f'{line.code}{subline.code if subline else ''}{target.code}{code}'
+        existing = ProductCollection.query.filter(ProductCollection.aux_code==aux_code).first()
+        if existing:
+            raise ConflictError(f'Ya existe una colección con código {aux_code} para la combinación seleccionada.')
+        # Crear nueva colección
+        new_collection = ProductCollection(
+            code=code,
+            aux_code = aux_code,
+            line_id=line_id,
+            subline_id=subline_id,
+            target_id=target_id,
+            name=name,
+            description=description
+        )
+
+        db.session.add(new_collection)
+        return new_collection
+    
+    @staticmethod
+    def patch_obj(obj:ProductCollection, data:dict)->ProductCollection:
+        print('entra a patch obj')
+        dto = CollectionUpdateDTO(**data)
+        col = CollectionService.patch_line(obj, dto.name, dto.description)
+        return col
+
+    @staticmethod
+    def patch_line(obj:ProductCollection, name:str=None, description:str=None):
+        print('entra a job')
+        if name:
+            if obj.name != name:
+                obj.name = name
+        if description:
+            obj.description = description
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.warning(f'error: {e}')
+            db.session.rollback()
+            raise str(e)
+
 
 
 class ColorService:
@@ -652,7 +936,7 @@ class ColorService:
         if 'code' in data:
             if Color.query.filter_by(code=data['code']).first():
                 raise ConflictError("Ya existe un color con ese código.")
-            instance.code = data['code']
+            instance.code = data['code'].upper()
         if 'hex_value' in data:
             instance.hex_value = data['hex_value']
         if 'description' in data:

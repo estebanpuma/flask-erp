@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% from 'components/entryCard.html' import entry_card %}
+{% block content %}
+  {% set title = 'Inventario' %}
+  {% include 'components/pageHeader.html' %}
+
+  <div class="row g-3">
+
+    {{ entry_card('/materials', '📦 Materiales', 'Insumos y materia prima.') }}
+    {{ entry_card('/material-lots', '🔖 Lotes de Materiales', 'Control por proveedor y trazabilidad.') }}
+    {{ entry_card('/material-movements', '🔄 Movimientos de Material', 'Entradas, salidas y ajustes.') }}
+    {{ entry_card('/products', '👟 Productos', 'Gestión de productos y variantes.') }}
+    {{ entry_card('/product-movements', '📄 Movimientos de Producto', 'Salidas por venta o ajustes.') }}
+    {{ entry_card('/material-groups', '🧷 Grupos de Materiales', 'Clasificación de insumos.') }}
+    {{ entry_card('/inventory/indicators', '📊 Indicadores', 'Stock, rotación y cobertura.') }}
+
+  </div>
+{% endblock %}

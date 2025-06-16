@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Nuevo producto{% endblock %}
+
+{% block content %}
+<div class="container mt-4 pb-5" x-data="productWizard()" >
+
+  <!-- Título y paso -->
+   <!-- Encabezado reutilizable -->
+  <div x-data="{ href: '/products', title: '👟 Crear nuevo producto' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 x-text="`Paso ${step}/4. Datos Generales`"></h4>
+  </div>
+
+  <!-- Paso 1: Datos básicos -->
+  <template x-if="step === 1">
+    {% include 'products/wizard/_step1_basicData.html' %}
+  </template>
+
+  <!-- Paso 2: Diseños -->
+  <template x-if="step === 2">
+    {% include 'products/wizard/_step2_designs.html' %}
+  </template>
+
+  <!-- Paso 3: Variantes -->
+  <template x-if="step === 3">
+    {% include 'products/wizard/_step3_variants.html' %}
+  </template>
+
+  <!-- Paso 4: Materiales -->
+  <template x-if="step === 4">
+    {% include 'products/wizard/_step4_materials.html' %}
+  </template>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/productsForm.js') }}" ></script>
+{% endblock %}

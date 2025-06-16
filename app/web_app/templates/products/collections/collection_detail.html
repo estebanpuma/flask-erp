@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from 'components/detailCard.html' import detail_card %}
+{% block title %}Detalle de Línea{% endblock %}
+
+{% block content %}
+<div class="container mt-3" >
+
+  <div x-data="{ href: '/products/collections', title: 'Detalle de colecciones de productos' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+  <div
+    x-data="genericDetail('/api/v1/product-collections/{{ collection_id }}')"
+    x-init="init()"
+  >
+    <!-- Mensaje de error -->
+    <template x-if="error">
+      <div class="alert alert-danger" x-text="error"></div>
+    </template>
+
+    <!-- Mientras cargan los datos -->
+    <template x-if="!error && !Object.keys(item).length">
+      <div class="text-muted">Cargando...</div>
+    </template>
+
+    <!-- Una vez que llega `item`, mostramos el perfil -->
+    <template x-if="Object.keys(item).length">
+      {% set fields = [
+        ('Código', 'code'),
+        ('Aux_cod', 'aux_code'),
+        ('Nombre', 'name'),
+        ('Descripción', 'description'),
+      ] %}
+      {{ detail_card('item', fields, '📂') }}
+    </template>
+  </div>
+  
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+{% endblock %}

@@ -6,17 +6,17 @@ from ..core.utils import success_response, error_response
 
 from ..core.resources import BasePatchResource, BaseGetResource, BasePostResource, BaseDeleteResource
 
-from ..common.services import AppSettingService
+from ..common.services import ProductCodeGenerator, CollectionCodeGenerator
 
-from .services import ProductService, ProductVariantMaterialService, VariantService, DesignService
+from .services import ProductService, ProductVariantMaterialService, VariantService, DesignService, CollectionService
 
 from .services_size_series import SizeSeriesService, SizeService
 
-from .services import ColorService, LineService, SublineService
+from .services import ColorService, LineService, SublineService, TargetService
 
 from .schemas import line_fields, subline_fields, color_fields, size_series_fields, size_fields
 from .schemas import product_fields, product_design_fields, product_variant_material_detail_fields
-from .schemas import product_variant_fields
+from .schemas import product_variant_fields, collection_fields
 
 from .validations import validate_size_create, validate_size_update, validate_size_series_update
 from .validations import *
@@ -51,10 +51,13 @@ class ProductDeleteResource(BaseDeleteResource):
 
 class NextProductCodeGetResource(Resource):
     def get(self):
-        letter = request.args.to_dict()
-        if 'letter' in letter:
-            code = AppSettingService.view_next_product_code(letter['letter'])
-            return success_response(str(code), 200)
+        line_id = request.args.get('line_id', type=int)
+        subline_id = request.args.get('subline_id', type=int)
+        target_id = request.args.get('target_id', type=int)
+        collection_id = request.args.get('collection_id', type=int)
+        
+        code = ProductService.preview_new_code(line_id=line_id, target_id=target_id, collection_id=collection_id, subline_id=subline_id)
+        return success_response(str(code), 200)
         
         
 #**************************ProductDesign***********************************
@@ -276,3 +279,45 @@ class SubLinePatchResource(BasePatchResource):
     service_get = staticmethod(SublineService.get_obj)
     service_patch = staticmethod(SublineService.patch_obj)
     output_fields = subline_fields
+
+
+#--------------------------------------------------------------
+#------------------------------Target----------------------------
+class TargetGetResource(BaseGetResource):
+    schema_get = staticmethod(TargetService.get_obj)
+    schema_list = staticmethod( lambda: TargetService.get_obj_list(request.args.to_dict()))
+    output_fields = line_fields
+
+#*----------------------------------------------------------------
+#---------------------------Collection------------------------------
+
+class CollectionGetResource(BaseGetResource):
+    schema_get = staticmethod(CollectionService.get_obj)
+    schema_list = staticmethod( lambda: CollectionService.get_obj_list(request.args.to_dict()))
+    output_fields = collection_fields
+
+class CollectionGetSpecificResource(BaseGetResource):
+    schema_get = staticmethod(CollectionService.get_obj)
+    schema_list = staticmethod( lambda: CollectionService.get_specific_list(request.args.to_dict()))
+    output_fields = collection_fields
+
+class CollectionPostResource(BasePostResource):
+    service_create = staticmethod(CollectionService.create_obj)
+    output_fields = line_fields
+
+class CollectionPatchResource(BasePatchResource):
+    service_get = staticmethod(CollectionService.get_obj)
+    service_patch = staticmethod(CollectionService.patch_obj)
+    output_fields = line_fields
+
+class NextCodeCollectionCodeResource(Resource):
+    def get(self):
+        line_id = request.args.get('line_id', type=int)
+        subline_id = request.args.get('subline_id', type=int)
+        target_id = request.args.get('target_id', type=int)
+
+
+        number = CollectionService.preview_collection_code(line_id, subline_id, target_id)
+        if number:
+            return ({'preview_code': str(number)})
+        

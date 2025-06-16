@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Crear Línea{% endblock %}
+
+{% block content %}
+<div class="container mt-3" x-data="createSubLine()" x-init="init()">
+  <div x-data="{ href: '/products/sublines', title: '👟 Crear Sublineas de productos' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+  {% include "products/sublines/_sublineForm.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/product_lines_sublines.js') }}"></script>
+{% endblock %}

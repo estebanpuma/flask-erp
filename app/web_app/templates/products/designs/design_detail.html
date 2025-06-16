@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from 'components/detailCard.html' import detail_card %}
+{% block title %}Detalle de Línea{% endblock %}
+
+{% block content %}
+<div class="container mt-3" >
+
+  <div x-data="{ href: '/products', title: 'Detalle de colores/diseños de productos' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+    <div
+      x-data="genericDetail(
+        '/api/v1/product-designs/{{ design_id }}',
+        
+          [
+            { field:'product.line.name', label:'Línea'},
+            { field:'product.collection.name', label:'Colección'},
+            { field:'code',        label:'Código' },
+            { field:'name',        label:'Nombre' },
+            { field:'description', label:'Descripción' },
+          ],
+
+          '👟'
+        
+      )"
+    >
+    {% include "components/detailCard.html" %}
+    
+    <!-- Mensaje de error -->
+    <template x-if="error">
+      <div class="alert alert-danger" x-text="error"></div>
+    </template>
+
+  </div>
+
+  <!-- Una vez que llega `item`, mostramos la lista de variantes -->
+  <div>
+    <div
+        x-data="genericList(
+          `/api/v1/product-variants?design_id={{design_id}}`,
+          '/products/variants',
+          [
+            { field: 'code',        label: 'Código',      filterable: true  },
+            { field: 'size.value',  label: 'Talla',      filterable: true  },
+            { field: 'is_active',   label: 'Status',      filterable: true  },
+          ]
+        )"
+        x-init="init()"
+        class="table-responsive"
+      >
+        {% include 'components/listTable.html' %}
+    </div>
+  </div>
+
+  
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}

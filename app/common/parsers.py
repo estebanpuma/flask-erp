@@ -1,5 +1,6 @@
 from datetime import datetime
 from ..core.exceptions import ValidationError
+from flask import flash
 
 def parse_str(value, field=None, nullable=False, default=None):
     if value is None or str(value).strip().lower() in ["", "none", "nan"]:
@@ -114,3 +115,45 @@ def parse_ruc_or_ci(value):
     return val
 
 
+def parse_ids_list(value, nullable=False, field=None, default=None, min_value=None, max_value=None):
+
+    flash(value)
+    
+    if not isinstance(value, list) or not value:
+            raise ValidationError(f"{field}. No debe ser una lista vacia")
+    
+    if value is None or str(value).lower() in ["none", "nan", ""]:
+        if nullable:
+            return None
+        if default is not None:
+            value = default
+        else:
+            raise ValidationError(f"El campo '{field}' es obligatorio.")
+    try:
+        for val in value:
+            val = int(float(val))
+            if min_value is not None and val < min_value:
+                raise ValidationError(f"El campo '{field}' debe ser mayor o igual a {min_value}.")
+            if max_value is not None and val > max_value:
+                raise ValidationError(f"El campo '{field}' debe ser menor o igual a {max_value}.")
+    except (ValueError, TypeError):
+        raise ValidationError(f"El campo '{field}' debe ser una lista de números entero.")
+    
+    return value
+
+
+def parse_srt_list(value, field=None, nullable=False, default=None):
+    if not isinstance(value, list) or not value:
+            raise ValidationError(f"{field}. No debe ser una lista vacia")
+    if value is None or str(value).strip().lower() in ["", "none", "nan"]:
+        if nullable:
+            return None
+        if default is not None:
+            return list(default)
+        raise ValidationError(f"El campo '{field}' es obligatorio.")
+    for val in value:
+        try:
+           val = str(val).strip()
+        except(ValueError, TypeError):
+            raise ValidationError(f"El campo '{field}' debe ser una lista de strings.")
+    return value

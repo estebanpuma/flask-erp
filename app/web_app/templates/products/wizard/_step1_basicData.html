@@ -1,55 +1,147 @@
-<form @submit.prevent="nextStep">
+<!-- templates/products/_wizard_step1.html -->
+<div
+  class="mx-auto"
+  style="max-width: 600px;"
+>
 
-  <!-- Letra del código -->
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control text-uppercase"
-           maxlength="1" id="product_code_letter" placeholder="Ej: C"
-           x-model="product_code_letter"
-           @input.debounce.300="fetchNextCode">
-    <label for="product_code_letter">Letra del código del producto</label>
+  <!-- Indicador de pasos 
+  <div class="d-flex justify-content-center mb-4">
+    <div :class="{'fw-bold text-primary': step===1}">1</div>
+    <span class="mx-2">/</span>
+    <div :class="{'fw-bold text-secondary': step>1}">2…5</div>
   </div>
+-->
+  <!-- Paso 1 -->
+  <template x-if="step===1">
+    <div class="card shadow-sm">
+      <div class="card-body">
 
-  <!-- Código generado automáticamente (opcionalmente visible solo como texto) -->
-  <template x-if="productData.code">
-    <div class="alert alert-secondary mb-3">
-      Código generado: <strong x-text="productData.code"></strong>
+        <h5 class="card-title text-center mb-4">Datos Generales</h5>
+
+        <!-- Línea (obligatorio) -->
+        <div class="form-floating mb-3">
+          <select
+            id="lineSelect"
+            x-model="productData.line_id"
+            @change="fetchCollections()"
+            class="form-select"
+            required
+          >
+            <option value="">Selecciona línea</option>
+            <template x-for="l in lines" :key="l.id">
+              <option :value="l.id" x-text="l.code + '-'+ l.name"></option>
+            </template>
+          </select>
+          <label for="lineSelect">Línea <span class="text-danger">*</span></label>
+        </div>
+
+        <!-- Sublínea (opcional) -->
+        <div class="form-floating mb-3">
+          <select
+            id="sublineSelect"
+            x-model="productData.subline_id"
+            @change="fetchCollections()"
+            class="form-select"
+          >
+            <option value="" class="text-muted">(Opcional)</option>
+            <template x-for="s in sublines" :key="s.id">
+              <option :value="s.id" x-text="s.code + '-'+ s.name"></option>
+            </template>
+          </select>
+          <label for="sublineSelect">Sublínea</label>
+        </div>
+
+        <!-- Target (obligatorio) -->
+        <div class="form-floating mb-3">
+          <select
+            id="targetSelect"
+            x-model="productData.target_id"
+            @change="fetchCollections()"
+            class="form-select"
+            required
+          >
+            <option value="">Selecciona target</option>
+            <template x-for="t in targets" :key="t.id">
+              <option :value="t.id" x-text="t.code+'-'+t.name"></option>
+            </template>
+          </select>
+          <label for="targetSelect">Target <span class="text-danger">*</span></label>
+        </div>
+
+        <!-- Colección (obligatorio) -->
+        <template x-if="!loading">
+          <div class="form-floating mb-3">
+            <select
+              id="collectionSelect"
+              x-model="productData.collection_id"
+              @change="fetchNextCode()"
+              class="form-select"
+              required
+            >
+              <option value="">Selecciona colección</option>
+              <template x-for="c in collections" :key="c.id">
+                <option :value="c.id" x-text="c.code + '-' + c.name"></option>
+              </template>
+            </select>
+            <label for="collectionSelect">Colección <span class="text-danger">*</span></label>
+          </div>
+        </template>
+        <div class="text-center text-muted mb-3" x-show="loading">
+          Cargando colecciones…
+        </div>
+
+        <!-- Preview de Código -->
+        <template x-if="productData.code!==''">
+        <div class="mb-3 text-start " >
+          <label class="form-label">Código:</label>
+          <div class="fs-5 fw-bold">
+
+            <span x-text="productData.code"></span>
+          </div>
+        </div>
+        </template>
+
+        <!-- Nombre del Modelo -->
+        <div class="form-floating mb-3">
+          <input
+            type="text"
+            id="productName"
+            class="form-control"
+            x-model="productData.name"
+            placeholder="Nombre del modelo"
+          >
+          <label for="productName">Nombre del Modelo</label>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-floating mb-3">
+          <textarea
+            id="productDescription"
+            class="form-control"
+            x-model="productData.description"
+            placeholder="Descripción"
+            style="height: 80px;"
+          ></textarea>
+          <label for="productDescription">Descripción</label>
+        </div>
+
+        <!-- Navegación -->
+        <div class="d-flex justify-content-between">
+          <button
+            type="button"
+            @click="prevStep()"
+            class="btn btn-outline-secondary"
+            x-show="step>1"
+          >Atrás</button>
+          <button
+            @click="nextStep()"
+            class="btn btn-dark"
+            :disabled="!productData.line_id || !productData.target_id || !productData.collection_id ||!productData.code"
+          >Siguiente</button>
+        </div>
+
+      </div>
     </div>
   </template>
 
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control" id="name" x-model="productData.name" required>
-    <label for="name">Nombre comercial</label>
-  </div>
-
-  <div class="form-floating mb-3">
-    <textarea class="form-control" id="description" x-model="productData.description" style="height: 80px"></textarea>
-    <label for="description">Descripción (opcional)</label>
-  </div>
-
-  <!-- Línea -->
-  <div class="form-floating mb-3">
-    <select class="form-select" id="line_id" x-model="productData.line_id">
-      <option value="">Selecciona una línea</option>
-      <template x-for="line in lines" :key="line.id">
-        <option :value="line.id" x-text="line.name"></option>
-      </template>
-    </select>
-    <label for="line_id">Línea</label>
-  </div>
-
-  <!-- Sub-línea -->
-  <div class="form-floating mb-3">
-    <select class="form-select" id="subline_id" x-model="productData.subline_id">
-      <option value="">(Opcional)</option>
-      <template x-for="sub in sublines" :key="sub.id">
-        <option :value="sub.id" x-text="sub.name"></option>
-      </template>
-    </select>
-    <label for="subline_id">Sub-línea</label>
-  </div>
-
-  <!-- Acciones -->
-  <div class="d-flex justify-content-end mt-4">
-    <button type="submit" class="btn btn-dark" :disabled="!isStep1Valid()">Siguiente →</button>
-  </div>
-</form>
+</div>

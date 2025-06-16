@@ -6,6 +6,8 @@ function productWizard() {
       name: '',
       line_id: null,
       subline_id: null,
+      target_id: null,
+      collection_id: null,
       description: '',
       designs: [],
       variants: [],
@@ -14,66 +16,95 @@ function productWizard() {
 
     lines: [],
     sublines: [],
-    product_code_letter:'',
+    targets: [],
+    collections: [],
+
+
+    // Flags + combinación de prefijo
+    loading: false,
+    error:   '',
+    code_combination:'',
 
 
     availableColors: [],
     selectedColors: [],
 
     init() {
-      this.fetchLines()
-      this.fetchSubLines()
-      this.fetchColors()
-      this.fecthSeries()
+      console.log('init:', this.step)
+      this.fetchLines();
+      this.fetchSubLines();
+      this.fetchTargets();
+      this.fetchColors();
+      this.fecthSeries();
+
     },
 
     //------------------------------------
     //------------Step1-----------------
-    async fetchLines(){
-      try{
-        const res = await fetch('/api/v1/product-lines');
+    async fetchLines() {
+      try {
+        this.lines = await (await fetch('/api/v1/product-lines')).json();
+      } catch (e) { console.error(e); }
+    },
+
+    async fetchSubLines() {
+      try {
+        this.sublines = await (await fetch('/api/v1/product-sublines')).json();
+      } catch (e) { console.error(e); }
+    },
+
+    async fetchTargets() {
+      try {
+        this.targets = await (await fetch('/api/v1/product-targets')).json();
+      } catch (e) { console.error(e); }
+    },
+
+    // Filtra colecciones cada vez que cambia línea/sub-línea/target
+    async fetchCollections() {
+      const params = new URLSearchParams();
+      if (this.productData.line_id)   params.append('line_id',   this.productData.line_id);
+      if (this.productData.subline_id) params.append('subline_id', this.productData.subline_id);
+      if (this.productData.target_id) params.append('target_id', this.productData.target_id);
+      this.productData.code='';
+      this.loading = true;
+      console.log('init collections')
+      if(this.productData.line_id && this.productData.target_id){
+        try {
+                const res = await fetch(`/api/v1/product-collections/specific?${params}`);
+                this.collections = await res.json();
+                console.log('fetched collections')
+              } catch (e) {
+                console.error(e);
+                this.error = 'No pudimos cargar colecciones.';
+              } finally {
+                this.loading = false;
+              }
+      }else{
+        console.info('Debe escoger una linea y un target')
+      }
+      
+    },
+
+    // Genera el código completo (prefijo + auto-incremental)
+    async fetchNextCode() {
+      const params = new URLSearchParams();
+      if (this.productData.line_id)   params.append('line_id',   this.productData.line_id);
+      if (this.productData.subline_id) params.append('subline_id', this.productData.subline_id);
+      if (this.productData.target_id) params.append('target_id', this.productData.target_id);
+      if (this.productData.collection_id) params.append('collection_id', this.productData.collection_id);
+      
+
+      // Solo si hay prefijo válido
+      if (!this.productData.line_id, !this.productData.target_id, !this.productData.collection_id) return console.info('seleccione params');
+      try {
+        const res  = await fetch(`/api/v1/products/next-code?${params}`);
         const data = await res.json();
-        this.lines = data;
-      }catch(err){
-        console.error('Error: ',err)
+        this.productData.code = data || '';
+      } catch {
+        this.error = 'Error al generar código.';
       }
     },
 
-    async fetchSubLines(){
-      try{
-        const res = await fetch('/api/v1/product-sublines');
-        const data = await res.json();
-        this.sublines = data;
-      }catch(err){
-        console.error('Error: ',err)
-      }
-    },
-
-    fetchNextCode() {
-      const letter = this.product_code_letter?.toUpperCase();
-      this.product_code_letter = letter;
-
-      if (!letter || !/^[A-Z]$/.test(letter)) {
-        this.productData.code = '';
-        return;
-      }
-
-      fetch(`/api/v1/products/next-code?letter=${letter}`)
-        .then(res => res.json())
-        .then(data => {
-          console.log(data)
-          if (data) {
-            this.productData.code = data;
-          } else {
-            this.error = data.message || 'No se pudo generar el código.';
-            this.productData.code = '';
-          }
-        })
-        .catch(() => {
-          this.error = 'Error al verificar el código.';
-          this.productData.code = '';
-        });
-    },
 
   //--------------------------------------------
   //-------------------------Step2---------------
@@ -126,7 +157,9 @@ function productWizard() {
 
     sizeSeries: [],
     selectedSeriesId: '',
+    selectedSerie:'',
     sizes: [],
+    variants: [],
 
 
     async fecthSeries(){
@@ -143,6 +176,7 @@ function productWizard() {
     async loadSizes() {
       if (!this.selectedSeriesId) {
         this.sizes = [];
+        this.variants = [];
         this.productData.variants = [];
         return;
       }
@@ -152,6 +186,25 @@ function productWizard() {
       this.sizes = data;
       console.log('sosiz', data)
       this.generateVariants();
+      this.fecthSerie();
+    },
+
+    async fecthSerie(){
+      try{
+        const resSerie = await fetch(`/api/v1/series/${this.selectedSeriesId}`);
+        const dataSerie = await resSerie.json();
+        this.selectedSerie = dataSerie;
+
+      }catch(err){
+        console.error('error: ', err);
+      }
+    },
+
+    removeSerie() {
+      this.selectedSeriesId = '';
+      this.productData.variants='';
+      this.variants = [];
+      this.selectedSerie = '';
     },
 
     generateVariants() {
@@ -160,11 +213,12 @@ function productWizard() {
       const design = this.productData.designs[0]; // solo uno permitido
       const prefix = design.design_code;
 
-      this.productData.variants = this.sizes.map(size => ({
+      this.variants = this.sizes.map(size => ({
         size_id: size.id,
         size_name: size.value,
         variant_code: `${prefix}${size.value}`,
       }));
+      this.productData.variants.push({series_ids:[this.selectedSeriesId]})
     },
 
 //------------------------------STEP4--------------------------------
@@ -190,13 +244,14 @@ function productWizard() {
 
     addMaterial(mat) {
       if (this.productData.materials.some(m => m.id === mat.id)) return;
-      this.productData.materials.push({
-        id: mat.id,
-        code: mat.code,
-        name: mat.name,
-        quantity: 0,
-        unit: mat.unit
-      });
+        this.productData.materials.push({
+          id: mat.id,
+          code: mat.code,
+          name: mat.name,
+          quantity: 0,
+          unit: mat.unit
+        });
+        this.clearSearch();
     },
 
     removeMaterial(id) {
@@ -215,6 +270,7 @@ function productWizard() {
 
     nextStep() {
       if (this.step < 4) this.step++;
+      console.log('step', this.step)
     },
 
     prevStep() {

@@ -1,0 +1,35 @@
+<form @submit.prevent="createsubLine">
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control text-uppercase"
+           id="name" placeholder="Ej: Escolar"
+           x-model="subline.name" required>
+    <label for="name">Nombre de la sublínea</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control text-uppercase"
+           id="code" placeholder="Ej: Escolar"
+           x-model="subline.code" 
+           @input="checkCode()"
+           required>
+    <label for="code">Código de la sublínea</label>
+    <template x-if="existing_code" >
+        <span id="codeFeedback" class="text-danger">
+             🚫 El código ya existe.
+        </span>        
+    </template>
+  </div>
+
+  <div class="form-floating mb-3">
+    <textarea class="form-control" id="description"
+              placeholder="Descripción" style="height: 80px"
+              x-model="subline.description"></textarea>
+    <label for="description">Descripción (opcional)</label>
+  </div>
+
+  <div class="d-flex justify-content-end mt-4">
+    <button type="submit" class="btn btn-dark">Guardar Sublinea</button>
+  </div>
+
+</form>

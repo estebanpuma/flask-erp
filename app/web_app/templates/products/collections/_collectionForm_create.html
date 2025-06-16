@@ -1,0 +1,52 @@
+<form @submit.prevent="createCollection" class="needs-validation">
+  <div class="form-floating mb-3">
+    <select class="form-select" x-model="collection.line_id" required
+    @change="previewCode()">
+      <option value="">Selecciona línea</option>
+      <template x-for="line in lines" :key="line.id">
+        <option :value="line.id" x-text="line.name"></option>
+      </template>
+    </select>
+    <label>Línea</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <select class="form-select" x-model="collection.subline_id"
+    @change="previewCode()">
+      <option value="">Selecciona sublínea(opcional)</option>
+      <template x-for="subline in sublines" :key="subline.id">
+        <option :value="subline.id" x-text="subline.name"></option>
+      </template>
+    </select>
+    <label>Sublínea</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <select class="form-select" x-model="collection.target_id"
+    @change="previewCode()" required>
+      <option value="">Selecciona tipo</option>
+      <template x-for="target in targets" :key="target.id">
+        <option :value="target.id" x-text="target.name"></option>
+      </template>
+    </select>
+    <label>Tipo de usuario</label>
+  </div>
+
+  <div class="mb-3" x-show="preview_code">
+    <div class="alert alert-secondary">Código: <strong x-text="preview_code"></strong></div>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control" x-model="collection.name" placeholder="Nombre de colección" required>
+    <label>Nombre de la colección</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <textarea class="form-control" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
+    <label>Descripción</label>
+  </div>
+
+  <div class="d-grid">
+    <button type="submit" class="btn btn-dark">Crear colección</button>
+  </div>
+</form>

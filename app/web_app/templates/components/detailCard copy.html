@@ -1,0 +1,67 @@
+<template x-if="error">
+  <div class="alert alert-danger text-center my-4" x-text="error"></div>
+</template>
+
+<template x-if="!error && loading">
+  <div class="text-center text-muted my-5">
+    <div class="spinner-border text-dark" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <div class="mt-2">Cargando información...</div>
+  </div>
+</template>
+
+<template x-if="!error && !loading">
+  <div class="card border-0 shadow rounded-4 p-3" style="background-color: #fff;">
+
+    <div class="d-flex">
+      <!-- Imagen o Emoji a la izquierda -->
+      <div class="me-4 flex-shrink-0">
+        <template x-if="item.image_url">
+          <img :src="item.image_url"
+               alt="Imagen"
+               class="rounded-circle shadow-sm"
+               style="width: 100px; height: 100px; object-fit: cover;">
+        </template>
+        <template x-if="!item.image_url">
+          <div class="rounded-circle bg-light text-white d-flex justify-content-center align-items-center"
+               style="width: 100px; height: 100px; font-size: 2rem;">
+              <template x-if="icon">
+                    <span class="me-2" x-text="icon"></span>
+              </template>
+          </div>
+        </template>
+      </div>
+
+      <!-- Datos principales y demás campos -->
+      <div class="w-100">
+        <!-- Nombre y estado arriba -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h4 class="fw-bold mb-0" x-text="item.name || 'Sin nombre'"></h4>
+          <span class="badge rounded-pill px-3 py-2"
+                :class="item.is_active ? 'bg-success' : 'bg-secondary'"
+                x-text="item.is_active ? 'Activo' : 'Inactivo'">
+          </span>
+        </div>
+
+        <!-- Campos secundarios en dos columnas -->
+        <div class="row">
+          <template x-for="field in fields" :key="field.label">
+            <template x-if="!['is_active','name','image_url'].includes(field.field)">
+              <div class="col-6 mb-3">
+                <div class="small text-muted mb-1 d-flex align-items-center">
+                  <template x-if="field.icon">
+                    <span class="me-2" x-text="field.icon"></span>
+                  </template>
+                  <span x-text="field.label"></span>
+                </div>
+                <div class="fw-semibold text-dark" x-text="item[field.field] ?? '—'"></div>
+              </div>
+            </template>
+          </template>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>

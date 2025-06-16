@@ -28,7 +28,17 @@ from .resources import (
     SubLinePatchResource,
     SubLinePostResource,
 
+    TargetGetResource,
+
+    CollectionGetResource,
+    CollectionPostResource,
+    CollectionPatchResource,
+    CollectionGetSpecificResource,
+    NextCodeCollectionCodeResource,
+
     SerieSizesGetReosurce
+
+
     
 )
 
@@ -39,7 +49,7 @@ products_api_bp = Blueprint('products_api', __name__, url_prefix='/api/v1')
 products_api = Api(products_api_bp)
 
 
-#*******************************Lines/Sublines****************************************
+#*******************************Lines/Sublines/Target/Collections****************************************
 #*****************************************************************************
 
 products_api.add_resource(LineGetResource, '/product-lines', '/product-lines/<int:resource_id>')
@@ -49,6 +59,15 @@ products_api.add_resource(LinePatchResource, '/product-lines/<int:resource_id>')
 products_api.add_resource(SubLineGetResource, '/product-sublines', '/product-sublines/<int:resource_id>')
 products_api.add_resource(SubLinePostResource, '/product-sublines')
 products_api.add_resource(SubLinePatchResource, '/product-sublines/<int:resource_id>')
+
+products_api.add_resource(TargetGetResource, '/product-targets', '/product-targets/<int:resource_id>')
+
+products_api.add_resource(CollectionGetResource, '/product-collections', '/product-collections/<int:resource_id>')
+products_api.add_resource(CollectionGetSpecificResource, '/product-collections/specific', '/product-collections/specific/<int:resource_id>')
+products_api.add_resource(CollectionPostResource, '/product-collections')
+products_api.add_resource(CollectionPatchResource, '/product-collections/<int:resource_id>')
+
+products_api.add_resource(NextCodeCollectionCodeResource, '/product-collections/preview-code')
 
 
 

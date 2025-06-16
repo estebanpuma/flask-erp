@@ -21,6 +21,12 @@
     <!-- ✅ Alpine.js (local o CDN) -->
     <script defer src="{{ url_for('static', filename='js/alpine/alpine.min.js') }}"></script>
     <!-- ✅ Hook para scripts específicos -->
+
+    <style>
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    </style>
     {% block scripts %}{% endblock %}
 </head>
 <body class="bg-light text-dark">

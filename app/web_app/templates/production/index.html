@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% from 'components/entryCard.html' import entry_card %}
+{% block content %}
+  {% set title = 'Producción' %}
+  {% include 'components/pageHeader.html' %}
+  <div class="row g-3">
+    {{ entry_card('/products/index', '👟 Productos', 'Modelos, diseños, colecciones.') }}
+    {{ entry_card('/production-plans', '🗓️ Planificación', 'Órdenes y requerimientos semanales.') }}
+    {{ entry_card('/production-orders', '📟 Órdenes de Producción', 'Seguimiento por etapas.') }}
+    {{ entry_card('/production-control', '📋 Control de Producción', 'Avance por área y productividad.') }}
+    {{ entry_card('/reprocesses', '♻️ Reprocesos', 'Devoluciones o defectuosos.') }}
+  </div>
+{% endblock %}

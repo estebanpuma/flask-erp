@@ -16,20 +16,26 @@
     <label for="size_series_id">Serie de tallas</label>
   </div>
 
-  <!-- Vista previa de tallas seleccionadas -->
+  <!-- Vista previa de serie seleccionada -->
   <div class="mb-4" x-show="sizes.length > 0">
-    <h6 class="mb-2">Tallas seleccionadas:</h6>
+    <h6 class="mb-2">Serie seleccionada:</h6>
     <div class="d-flex flex-wrap gap-2">
         <template x-if="sizes">
-             <span class="badge bg-dark" >serie</span>
+             <span class="badge bg-dark" x-text="'serie '+ selectedSerie.name + '['+selectedSerie.start_size+'-'+selectedSerie.end_size+'] ('+selectedSerie.category')'"></span>
         </template>
       
     </div>
   </div>
 
   <!-- Variantes generadas -->
-  <div x-show="productData.variants.length > 0">
-    <h6 class="mb-2">🧩 Variantes generadas:</h6>
+  <div x-show="productData.variants.length > 0" >
+    <div class="d-flex justify-content-between align-items-center bg-dark">
+      <h6 class="mb-2 text-white">🧩 Variantes generadas:</h6>
+      <button class="btn btn-sm btn-outline-dark" @click="removeSerie()" type="button">
+          <i class="bi bi-x"></i>
+      </button>
+    </div>
+    
     <ul class="list-group">
       <template x-for="variant in productData.variants" :key="variant.size_id">
         <li class="list-group-item d-flex justify-content-between">
@@ -37,6 +43,7 @@
           <small class="text-muted" x-text="variant.size_name"></small>
         </li>
       </template>
+      
     </ul>
   </div>
 
