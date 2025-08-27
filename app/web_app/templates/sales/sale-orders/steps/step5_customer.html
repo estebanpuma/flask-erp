@@ -1,0 +1,73 @@
+      
+<div class="card-body" id="customer">
+  <h2 class="fs-5 fw-bold mb-4 text-center">Datos del cliente</h2>
+  <div class="mb-4">
+    <div class="input-group">
+      <input x-model="customerQuery"
+            autocomplete="off"
+            @input="searchCustomers()"
+            class="form-control"
+            placeholder="Buscar cliente…"
+            @click="clearCustomerSearch()">
+            
+    </div>
+    <ul class="list-group mt-2" x-show="customerResults.length > 0">
+      <template x-for="c in customerResults" :key="c.id">
+        <li @click="selectCustomer(c)"
+            class="list-group-item list-group-item-action">
+          <i class="bi bi-person-circle me-2"></i>
+          <span x-text="c.name"></span>
+          <div x-text="c.ruc_or_ci"></div>
+        </li>
+      </template>
+    </ul>
+          
+
+    <!-- Detalle tras selección -->
+    <template x-if="customer.ruc_or_ci">
+      <div class="card mt-3 p-3"  x-transition>
+        <p><strong>Nombre:</strong> <span x-text="customer.name"></span></p>
+        <p><strong>RUC/CI:</strong> <span x-text="customer.ruc_or_ci"></span></p>
+        <p><strong>Dirección:</strong> <span x-text="customer.address"></span></p>
+        <p><strong>Teléfono:</strong> <span x-text="customer.phone"></span></p>
+        <p>
+          <strong>Categoría:</strong>
+          <span x-text="customer.client_category || '—'"></span>
+        </p>
+
+        <div class="d-grid">
+          <button class="btn btn-secondary rounded-pill py-2" style="max-width: 480px;" @click="customer=''">Limpar</button>
+        </div>
+      </div>
+
+    </template>
+    <template x-if="!customer.ruc_or_ci">
+      <div>
+        <div>No se ha seleccionado un cliente</div>
+        <div class="d-grid container" style="max-width: 480px;">
+          <button class="btn btn-dark w-100 rounded-pill py-2 fw-semibold" @click="openNewCustomer">Registrar nuevo cliente</button>
+        </div>
+        <div class="offcanvas offcanvas-end" tabindex="-1" x-ref="customerOffcanvas" id="customerOffcanvas">
+          <div class="container">
+            <div class="d-flex justify-content-start">
+              <button class="btn btn-back" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="bi bi-chevron-left"></i><span>Regresar</span>
+              </button>
+            </div>
+            
+            {% include 'sales/sale-orders/steps/_clientForm.html' %}
+
+          </div>
+          
+        </div>
+
+      </div>
+      
+    </template>
+    
+  </div>   
+</div>
+     
+
+
+

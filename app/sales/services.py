@@ -16,9 +16,18 @@ from ..core.filters import apply_filters
 
 from ..common.parsers import parse_int, parse_float, parse_date, parse_enum, parse_str
 
-from .dto import SaleOrderCreateDTO, SaleOrderPreviewDTO, SaleOrderPatchDTO
+from .dto import SaleOrderCreateDTO, SaleOrderPreviewDTO, SaleOrderPatchDTO, UpdateSaleOrderStatusDTO
 
 from ..core.exceptions import ConflictError
+
+from decimal import Decimal
+
+from datetime import datetime
+
+from decimal import getcontext, ROUND_HALF_UP
+
+getcontext().rounding = ROUND_HALF_UP
+CENT = Decimal('0.01')
 
 
 class SalesOrderService:
@@ -26,35 +35,53 @@ class SalesOrderService:
     @staticmethod
     def create_obj(data):
         with db.session.begin():
-            dto = SaleOrderCreateDTO(**data)
+            dto = SaleOrderCreateDTO.validate_with_message(**data)
+        
             order = SalesOrderService.create_order(dto)
             return order
         
     @staticmethod
-    def create_order(dto):
+    def create_order(dto:SaleOrderCreateDTO):
         
         # Validar claves foráneas (no lo hace la entidad)
-        from ..crm.models import Client
-        from ..admin.models import Salesperson
+        from ..crm.models import Client, Provinces, Cantons
+        from ..admin.models import Worker
         from ..products.models import ProductVariant
+        from ..common.models import AppSetting
         validate_foreign_key(Client, dto.client_id, "Cliente")
-        validate_foreign_key(Salesperson, dto.sales_person_id, "Vendedor")
+        validate_foreign_key(Worker, dto.sales_person_id, "Vendedor")
+        validate_foreign_key(Provinces, dto.shipping_province_id, "Provincia")
+        validate_foreign_key(Cantons, dto.shipping_canton_id, "Canton")
+        province = Provinces.query.get(dto.shipping_province_id)
+        canton = Cantons.query.get(dto.shipping_canton_id)
+        if canton not in province.cantons:
+            raise ValueError('El canton no pertence  la provincia especificada')
 
         for line in dto.lines:
             validate_foreign_key(ProductVariant, line.variant_id, "Variante")
 
+        tax_rate = AppSetting.query.filter(AppSetting.key == 'tax_rate').first()
+        if tax_rate is None:
+            raise ValueError("No se ha registrao el IVA contacte al administrador")
+        tax_rate = Decimal(tax_rate.value)
+
         # Crear modelo de orden (aquí mismo)
         order = SaleOrder(
             order_number=dto.order_number,
-            order_date=dto.order_date,
-            delivery_date=dto.delivery_date,
-            delivery_address=dto.delivery_address,
-            status='Borrador',
+            order_date=dto.order_date or datetime.today(),
+            due_date=dto.due_date,
+            shipping_address=dto.shipping_address,
+            shipping_province_id = dto.shipping_province_id,
+            shipping_canton_id = dto.shipping_canton_id,
+            shipping_reference = dto.shipping_reference,
+            status=OrderStatus.PENDING.value,
             client_id=dto.client_id,
             sales_person_id=dto.sales_person_id,
-            discount=dto.discount or 0.0,
-            tax=dto.tax or 0.0,
-            notes=dto.notes
+            discount_rate=dto.discount_rate or Decimal('0.00'),
+            tax_rate= tax_rate,
+            notes=dto.notes,
+            amount_paid = Decimal('0.00'),
+            amount_due = Decimal('0.0')
         )
         db.session.add(order)
 
@@ -64,41 +91,58 @@ class SalesOrderService:
             if not variant:
                 raise ValidationError(f'No existe la variente con el id: {line_data.variant_id}')
             line = SaleOrderLine(
+                order = order,
                 variant_id=line_data.variant_id,
                 quantity=line_data.quantity,
-                price_unit=variant.current_price,
-                discount=line_data.discount or 0.0
+                price_unit=variant.design.current_price,
+                discount_rate= Decimal('0.00')
             )
-            order.lines.append(line)
+            db.session.add(line)
 
          # Lógica de negocio: cálculos 
-        entity = SalesOrderEntity(order)
+        entity = SalesOrderEntity(order, tax_rate)
+        print(f'entity: {entity}, vs entiny.amount.paid {entity.order.amount_paid}')
+        order.subtotal = entity.calculate_subtotal()
+        base = entity.calculate_base()
+        order.tax = entity.calculate_taxes(base)
+        #discount = entity.calculate_total_discount()
+        order.total = entity.calculate_total()
         order.subtotal = entity.calculate_subtotal()
         order.total = entity.calculate_total()
+        order.amount_due = entity.calculate_total()
+        print(f'order.amountpaid: {order.amount_paid}')
+        
         print(f'TOtal de la orden:{order.total}')
-        order.amount_due = order.total
-
-        #crear cuotas/acuerdos de pago
-        new_total_installment = 0
-        from ..payments.models import PaymentAgreement
-        for agreement_data in dto.agreements:
-            print(f'aber newTT:{new_total_installment} vs agrAM:{agreement_data.amount}')
-            new_total_installment += agreement_data.amount
-            print(f'Ahora si el total inst: {new_total_installment} vs {order.total}' )
-            if new_total_installment > order.total:
-                raise ValidationError(f"El monto total de las cuotas comprometidas excede el total de la orden. Monto maximo:{str(order.total-(new_total_installment-agreement_data.amount))}")
-
-            agreement = PaymentAgreement(
-                amount=agreement_data.amount,
-                expected_date=agreement_data.expected_date,
-                notes=agreement_data.notes,
-                user_id=order.sales_person_id
-            )
-            order.agreements.append(agreement)  
-
+        
+        
+        print(repr(order.total))
+        print(order.total == Decimal('16.10'))
+        #crear pago
+        from ..payments.models import PaymentTransaction, PaymentMethod
+        payment = dto.payment.amount.quantize(CENT)
+        print(f' payment {payment} {type(payment)} vs total:{order.total} {type(order.total)}')
        
-
-        db.session.add(order)
+        if payment > order.total:
+            print('es aqui')
+            raise ValidationError(f"El monto excede el total de la orden")
+        payment_method = PaymentMethod.query.get(dto.payment.method_id)
+        if payment_method is None:
+            raise ValidationError('El metodo de pago seleccionado no existe')
+        
+        transaction = PaymentTransaction(
+            sale_order = order,
+            amount=dto.payment.amount,
+            payment_date=dto.payment.date,
+            user_id= None
+        ) 
+        db.session.add(transaction)
+        
+        entity.order.amount_due = entity.calculate_total()
+        
+        entity.add_payment(dto.payment.amount)
+        order.amount_paid = entity.order.amount_paid
+        order.amount_due = entity.order.amount_due
+        order.payment_status = entity.order.payment_status
 
         return order
 
@@ -144,8 +188,13 @@ class SalesOrderService:
     def preview_order(data):
         #parsear DTO
         dto = SaleOrderPreviewDTO(**data)
-        print(f'dto in service: {dto}')
         from ..products.models import ProductVariant
+        from ..common.models import AppSetting
+
+        tax_rate = AppSetting.query.filter(AppSetting.key == 'tax_rate').first()
+        if tax_rate is None:
+            raise ValueError("No se ha registrao el IVA contacte al administrador")
+        tax_rate = Decimal(tax_rate.value)
 
         # Crear modelo de preview (en memoria)
         preview_lines = []
@@ -154,32 +203,39 @@ class SalesOrderService:
             variant = ProductVariant.query.get(line.variant_id)
             if not variant:
                 raise ValidationError(f'No existen variantes con el id: {str(line.variant_id)}')
-            print(f'variant price: {variant.current_price}')
+            
             prev_line = SaleOrderPreviewLine(
                 variant_id=line.variant_id,
                 quantity=line.quantity,
                 # Obtenemos el precio actual desde backend para evitar inconsistencias y garantizar trazabilidad
-                price_unit=variant.current_price,
-                discount=line.discount or 0.0)
+                price_unit=Decimal(variant.design.current_price),
+                discount_rate=line.discount_rate or Decimal('0.0')
+                )
             preview_lines.append(prev_line)
 
         preview_order = SaleOrderPreview(
             lines=preview_lines,
-            discount=dto.discount or 0.0,
-            tax=dto.tax or 0.0
+            discount_rate= dto.discount_rate or Decimal('0.0'),
+            tax_rate=tax_rate
         )
 
+        print(preview_order)
+
         # Usar entidad para cálculos
-        entity = SalesOrderEntity(preview_order)
+        entity = SalesOrderEntity(preview_order, tax_rate)
         
    
         subtotal = entity.calculate_subtotal()
+        base = entity.calculate_base()
+        taxes = entity.calculate_taxes(base)
+        discount = entity.calculate_total_discount()
         total = entity.calculate_total()
-
-       
 
         return {
             "subtotal": subtotal,
+            "base": base,
+            "taxes": taxes,
+            "discount": discount,
             "total": total
         }
 
@@ -210,6 +266,36 @@ class SalesOrderService:
             db.session.rollback()
             current_app.logger.warning('Error al actualizar el elemento')
             raise
+
+    @staticmethod
+    def update_status_order(order, data):
+        dto = UpdateSaleOrderStatusDTO(**data)
+        print(f'si hay orden; {order.status}')
+        print(f'SI ha dto: {dto.status}')
+        if dto.status == 'Aprobada':
+            order.status = OrderStatus.APPROVED.value
+            from ..production.production_request_services import ProductionRequestServices
+            from ..core.enums import ProductionSourceTypeEnum
+            new_production_request = ProductionRequestServices.create_production_request(
+                origin_type=ProductionSourceTypeEnum.SALES.value,
+                origin_id=order.id,
+                title = 'Ventas',             
+            )
+        if dto.status == 'Pendiente':
+            order.status = OrderStatus.PENDING.value
+        if dto.status == 'Cancelada':
+            order.status = OrderStatus.CANCELED.value
+        if dto.status == 'Rechazada':
+            order.status == OrderStatus.REJECTED.value
+
+        try:
+            db.session.commit()
+            return f'Estado actualizado'
+        except Exception as e:
+            print(f'Error: {e}')
+            db.session.rollback()
+            raise e
+
 
     @staticmethod
     def update_sale_order(order, dto):
@@ -295,3 +381,15 @@ class SalesOrderService:
             db.session.rollback()
             current_app.logger.warning(f'Error al eliminar la orden. e:{e}')
             raise
+
+
+class SaleOrderLineService:
+
+    @staticmethod
+    def get_order_list(order_id):
+        order = SaleOrder.query.get(order_id)
+        if order is None:
+            raise NotFoundError(f'No existe orden de venta con id: {order_id}')
+        lines = SaleOrderLine.query.filter(SaleOrderLine.sale_order_id==order_id).all()
+
+        return lines

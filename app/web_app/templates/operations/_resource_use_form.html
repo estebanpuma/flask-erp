@@ -1,0 +1,259 @@
+<!-- resource_use.html -->
+<form class="container" style="max-width:480px" x-data="resourceUse({{ operation_id or 'null' }})" @submit.prevent="submitForm" autocomplete="off">
+  <!-- Operación -->
+  <div class="mb-3">
+    <label class="form-label">Operación</label>
+
+    <!-- Si viene operation_id: bloqueado -->
+    <template x-if="isOperationLocked">
+      <input type="text" class="form-control" x-model="lockedOperationName" disabled>
+    </template>
+
+    <!-- Si no viene: selector -->
+    <template x-if="!isOperationLocked">
+      <select class="form-select" x-model="form.operation_id">
+        <option value="">— Selecciona una operación —</option>
+        <template x-for="op in operations" :key="op.id">
+          <option :value="op.id" x-text="op.name"></option>
+        </template>
+      </select>
+    </template>
+  </div>
+
+  <!-- Diseño (buscar por código) -->
+  <div class="mb-2">
+    <label for="design_code" class="form-label">Modelo/Diseño (código)</label>
+    <div class="d-flex gap-2">
+      <input id="design_code" class="form-control" placeholder="p.ej. EDH005NEAZ"
+             x-model.trim="designCode" @keydown.enter.prevent="fetchDesign">
+      <button class="btn btn-dark" type="button" @click="fetchDesign" :disabled="loadingDesign">
+        <span x-show="!loadingDesign">Buscar</span>
+        <span x-show="loadingDesign">Buscando…</span>
+      </button>
+    </div>
+    <div class="form-text text-danger" x-text="designError"></div>
+  </div>
+
+  <!-- Variantes / Tallas -->
+  <template x-if="variants.length">
+    <div class="mb-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <label class="form-label mb-0">Tallas</label>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggleAll" @change="toggleAll($event.target.checked)">
+          <label class="form-check-label" for="toggleAll">Todas</label>
+        </div>
+      </div>
+
+      <div class="border rounded p-2" style="max-height:220px;overflow:auto">
+        <template x-for="v in variants" :key="v.id">
+          <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   :id="`variant_${v.id}`"
+                   :value="v.id"
+                   @change="onVariantChange($event)">
+            <label class="form-check-label" :for="`variant_${v.id}`" x-text="v.code"></label>
+          </div>
+        </template>
+      </div>
+      <div class="form-text">
+        Seleccionadas: <span x-text="form.variant_ids.length"></span>
+      </div>
+    </div>
+  </template>
+
+  <!-- Recurso -->
+  <div class="mb-3">
+    <label class="form-label">Recurso</label>
+    <select class="form-select" x-model="form.resource_id">
+      <option value="">— Selecciona un recurso —</option>
+      <template x-for="r in resources" :key="r.id">
+        <option :value="r.id" x-text="r.name"></option>
+      </template>
+    </select>
+  </div>
+
+  <!-- Tiempo estándar (min/unidad) -->
+  <div class="mb-4">
+    <label for="std_min" class="form-label">Tiempo estándar (min/unidad)</label>
+    <input id="std_min" class="form-control" type="number" min="0" step="0.001" placeholder="0.000"
+           x-model.number="form.std_min_unit">
+    <div class="form-text">Aplica al conjunto seleccionado (operación + recurso + variantes).</div>
+  </div>
+
+  <!-- Errores -->
+  <template x-if="error">
+    <div class="alert alert-danger" x-text="error"></div>
+  </template>
+
+  <!-- Acciones -->
+  <div class="d-flex gap-2">
+    <button class="btn btn-dark flex-grow-1" type="submit" :disabled="submitting">
+      <span x-show="!submitting">Guardar</span>
+      <span x-show="submitting">Guardando…</span>
+    </button>
+    <a class="btn btn-outline-dark" href="javascript:history.back()">Cancelar</a>
+  </div>
+</form>
+
+<script>
+function resourceUse(initialOperationId) {
+  return {
+    // Estado principal del formulario
+    form: {
+      operation_id: initialOperationId || '',
+      design_id: '',
+      variant_ids: [],
+      resource_id: '',
+      std_min_unit: null,
+    },
+
+    // Estado UI/datos
+    isOperationLocked: !!initialOperationId,
+    lockedOperationName: '',
+    operations: [],
+    resources: [],
+    variants: [],
+    designCode: '',
+    designError: '',
+    error: '',
+    loadingDesign: false,
+    submitting: false,
+
+    async init() {
+      // Carga recursos siempre
+      await this.fetchResources();
+
+      // Operaciones: si viene bloqueada, obtener nombre; si no, llenar selector
+      if (this.isOperationLocked) {
+        await this.fetchLockedOperationName(this.form.operation_id);
+      } else {
+        await this.fetchOperations();
+      }
+    },
+
+    // --- Fetchers ---
+    async fetchOperations() {
+      try {
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', 'operations');
+        this.operations = Array.isArray(res) ? res : [];
+      } catch (e) {
+        this.error = 'No se pudieron cargar las operaciones.';
+      }
+    },
+
+    async fetchLockedOperationName(id) {
+      if (!id) return;
+      try {
+        const op = await window.guifer.helpers.fetch.apiFetch('GET', `operations/${id}`);
+        this.lockedOperationName = op?.name || `Operación #${id}`;
+      } catch (e) {
+        this.lockedOperationName = `Operación #${id}`;
+      }
+    },
+
+    async fetchResources() {
+      try {
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', 'production-resources');
+        this.resources = Array.isArray(res) ? res : [];
+      } catch (e) {
+        this.error = 'No se pudieron cargar los recursos.';
+      }
+    },
+
+    async fetchDesign() {
+      this.designError = '';
+      this.variants = [];
+      this.form.design_id = '';
+      this.form.variant_ids = [];
+      if (!this.designCode) {
+        this.designError = 'Ingresa un código de diseño.';
+        return;
+      }
+      this.loadingDesign = true;
+      try {
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-designs?code=${encodeURIComponent(this.designCode)}`);
+        // Asumimos que el endpoint devuelve un arreglo o un objeto
+        const design = Array.isArray(res) ? res[0] : res;
+        if (!design) {
+          this.designError = 'No existe un diseño con ese código.';
+          return;
+        }
+        this.form.design_id = design.id;
+        this.variants = Array.isArray(design.variants) ? design.variants : [];
+        if (!this.variants.length) {
+          this.designError = 'El diseño no tiene variantes declaradas.';
+        }
+      } catch (e) {
+        this.designError = 'Error buscando el diseño.';
+      } finally {
+        this.loadingDesign = false;
+      }
+    },
+
+    // --- Selección de variantes ---
+    onVariantChange(evt) {
+      const id = Number(evt.target.value);
+      if (evt.target.checked) {
+        if (!this.form.variant_ids.includes(id)) this.form.variant_ids.push(id);
+      } else {
+        this.form.variant_ids = this.form.variant_ids.filter(v => v !== id);
+      }
+    },
+    toggleAll(checked) {
+      if (checked) {
+        this.form.variant_ids = this.variants.map(v => v.id);
+        // marca todos los checks visibles
+        queueMicrotask(() => {
+          document.querySelectorAll('[id^="variant_"]').forEach(el => el.checked = true);
+        });
+      } else {
+        this.form.variant_ids = [];
+        queueMicrotask(() => {
+          document.querySelectorAll('[id^="variant_"]').forEach(el => el.checked = false);
+        });
+      }
+    },
+
+    // --- Validación ---
+    validate() {
+      this.error = '';
+      if (!this.form.operation_id) return this.error = 'Debes seleccionar una operación.', false;
+      if (!this.form.design_id)   return this.error = 'Debes seleccionar un diseño válido.', false;
+      if (!this.form.variant_ids.length) return this.error = 'Debes seleccionar al menos una talla.', false;
+      if (!this.form.resource_id) return this.error = 'Debes seleccionar un recurso.', false;
+      if (this.form.std_min_unit === null || this.form.std_min_unit < 0) {
+        return this.error = 'Debes ingresar un tiempo estándar (min/unidad) válido.', false;
+      }
+      return true;
+    },
+
+    // --- Submit ---
+    async submitForm() {
+      if (!this.validate()) return;
+      this.submitting = true;
+
+      const payload = {
+        operation_id: Number(this.form.operation_id),
+        design_id: Number(this.form.design_id),
+        variant_ids: this.form.variant_ids.map(Number),
+        resource_id: Number(this.form.resource_id),
+        std_min_unit: Number(this.form.std_min_unit), // ej. 0.750
+      };
+
+      try {
+        // Ajusta la ruta al endpoint real que persiste los tiempos estándar:
+        // Puede ser algo como: POST api/v1/variant-operation-std-times
+        await window.guifer.helpers.fetch.apiFetch('POST', 'operations-sheet', payload);
+        window.guifer.components?.alert?.showToast?.('Registro guardado', 'success');
+        history.back(); // o redirige a donde prefieras
+      } catch (e) {
+        this.error = e.message ?? 'Error guardando los datos.';
+      } finally {
+        this.submitting = false;
+      }
+    }
+  }
+}
+</script>

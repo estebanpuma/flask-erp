@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Recursos{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block content %}
+
+{{ pageHeader(href='/production', 
+              title='Recursos', 
+              has_btn=True, 
+              btn_href='/production/resources/create',
+              btn_label='Nuevo') }}
+
+
+<div
+    x-data="genericList(
+      '/api/v1/production-resources',
+      '/production/resources',
+      [
+        { field: 'code',        label: 'Código',      filterable: true  },
+        { field: 'name',        label: 'Nombre',      filterable: true  },
+        { field: 'kind',        label: 'Tipo',      filterable: true  },
+        { field: 'qty',        label: 'Cantidad',      filterable: true  },   
+      ]
+    )"
+    x-init="init()"
+    class="table-responsive"
+  >
+    {% include 'components/listTable.html' %}
+  </div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script  src="{{ url_for('static', filename='js/components.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+

@@ -1,5 +1,54 @@
 from flask_restful import fields, reqparse, MethodView
 
+
+
+production_resources_fields = {
+    "id": fields.Integer,
+    "kind": fields.String,
+    "name": fields.String,
+    "code": fields.String,
+    "qty": fields.Integer,
+    "description": fields.String,
+    "operation_id": fields.Integer,
+    "operation_name": fields.String(attribute='operation.name'),
+    "capacity_per_unit": fields.MyDecimal,
+    "capacity_unit": fields.String,
+    "total_capacity":fields.MyDecimal,
+    "is_active":fields.Boolean,
+}
+
+variant_resource_usage = {
+    'id': fields.Integer,
+    'resource_id': fields.Integer,
+    'operation_id': fields.Integer,
+    'variant_id': fields.Integer,
+    'std_min_unit': fields.MyDecimal,
+    "operation_name": fields.String(attribute='operation.name'),
+    "resource_name": fields.String(attribute='resource.name'),
+    "variant_code": fields.String(attribute='variant.code'),
+
+
+
+}
+
+op_fields = {
+    'id':fields.Integer,
+    'code': fields.String,
+    'name': fields.String,
+    'rate_hour': fields.MyDecimal,
+    'mission': fields.String,
+    'kpi': fields.String,
+    'responsible': fields.String,
+    'resources': fields.List(fields.Nested(production_resources_fields)),
+    'variant_operations': fields.List(fields.Nested(variant_resource_usage)),
+    'is_active': fields.Boolean,
+
+}
+
+
+
+
+
 production_request_fields = {
     "id": fields.Integer,
     "origin_type": fields.String,

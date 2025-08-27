@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Proceso{% endblock %}
+
+{% block content %}
+<div class="container mt-3">
+
+  <!-- Header de página -->
+  <div x-data="{ href: '/production/operations', title: 'Proceso' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <!-- Detalle de la operación (usa tu genericDetail existente) -->
+  <div
+    x-data="genericDetail(
+      '/api/v1/operations/{{ id }}',
+      [
+        { field:'code',      label:'Código' },
+        { field:'name',      label:'Nombre' },
+        { field:'is_active', label:'Status' },
+        { field:'rate_hour', label:'$/hora' },
+        { field:'goal',      label:'Objetivo del proceso' },
+        { field:'scoope',    label:'Alcance' }
+      ],
+      '⚙️',
+      '/production/operations'
+    )"
+    class="mb-3"
+  >
+    {% include "components/detailCard.html" %}
+  </div>
+
+  <!-- Recursos + Ficha de operaciones (un solo x-data) -->
+  <div x-data="operationView({{ id }})" class="d-grid gap-3">
+
+    <!-- Recursos -->
+    <div class="card rounded-4 border-1">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="fs-5 fw-semibold">Recursos</span>
+          <!-- (Opcional) botón de asignación de recursos -->
+          <!-- <a class="btn btn-sm btn-outline-dark" :href="`/production/resources?operation_id=${operationId}`">Asignar</a> -->
+        </div>
+
+        <!-- Loading -->
+        <template x-if="loading.resources">
+          <div class="text-muted small">Cargando recursos…</div>
+        </template>
+
+        <!-- Vacío -->
+        <template x-if="!loading.resources && !resources.length">
+          <div class="text-muted small">Sin recursos asignados a este proceso.</div>
+        </template>
+
+        <!-- Chips -->
+        <div class="d-flex flex-wrap gap-2">
+          <template x-for="r in resources" :key="r.id">
+            <span class="badge text-bg-secondary" x-text="r.name"></span>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ficha de operaciones -->
+    <div class="card rounded-4 border-1">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="fs-5 fw-semibold">Ficha de operaciones</span>
+          <a class="btn btn-dark btn-sm"
+             :href="`/production/operations-sheet/create?operation_id=${operationId}`">
+            Nuevo registro
+          </a>
+        </div>
+
+        <!-- Toolbar: filtro + búsqueda -->
+        <div class="row g-2 mb-3">
+          <div class="col-12 col-md-4">
+            <select class="form-select" x-model="filters.resourceId">
+              <option value="">— Todos los recursos —</option>
+              <template x-for="r in resources" :key="r.id">
+                <option :value="r.id" x-text="r.name"></option>
+              </template>
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <input class="form-control" type="search" placeholder="Buscar variante…"
+                   x-model.trim="filters.q" @input.debounce.200ms="noop">
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <template x-if="loading.sheet">
+          <div class="text-muted small">Cargando ficha de operaciones…</div>
+        </template>
+
+        <!-- Vacío -->
+        <template x-if="!loading.sheet && !filteredRows().length">
+          <div class="text-muted small">Sin registros para los filtros actuales.</div>
+        </template>
+
+        <!-- Tabla -->
+        <div class="table-responsive" x-show="!loading.sheet && filteredRows().length">
+          <table class="table table-hover table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Variante</th>
+                <th>Recurso</th>
+                <th class="text-end">Tiempo (min/u)</th>
+                <th class="text-end">Cap. turno</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="ru in filteredRows()" :key="ru.id">
+                <tr>
+                  <td x-text="ru.variant_code"></td>
+                  <td x-text="ru.res_name"></td>
+                  <td class="text-end" x-text="fmt3(ru.std_min_unit)"></td>
+                  <td class="text-end" x-text="fmt3(ru.resource_capacity)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Error general -->
+        <template x-if="error">
+          <div class="alert alert-danger mt-3" x-text="error"></div>
+        </template>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function operationView(operationId) {
+  return {
+    operationId,
+    resources: [],
+    sheet: [],
+    loading: { resources: true, sheet: true },
+    error: '',
+    filters: { resourceId: '', q: '' },
+
+    async init() {
+      await Promise.all([this.fetchResources(), this.fetchSheet()]);
+    },
+
+    async fetchResources() {
+      this.loading.resources = true;
+      try {
+        const op = await window.guifer.helpers.fetch.apiFetch('GET', `operations/${this.operationId}`);
+        this.resources = Array.isArray(op?.resources) ? op.resources : [];
+      } catch (e) {
+        this.error = 'No se pudieron cargar los recursos.';
+      } finally {
+        this.loading.resources = false;
+      }
+    },
+
+    async fetchSheet() {
+      this.loading.sheet = true;
+      try {
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `operations-sheet?operation_id=${this.operationId}`);
+        this.sheet = Array.isArray(res) ? res : [];
+      } catch (e) {
+        this.error = 'No se pudo cargar la ficha de operaciones.';
+      } finally {
+        this.loading.sheet = false;
+      }
+    },
+
+    // Helpers UI
+    fmt3(v) {
+      const n = Number(v);
+      if (Number.isNaN(n)) return '';
+      return n.toFixed(3);
+    },
+    filteredRows() {
+      const rid = this.filters.resourceId ? Number(this.filters.resourceId) : null;
+      const q = (this.filters.q || '').toLowerCase();
+      return this.sheet.filter(row => {
+        const byRes = !rid || Number(row.resource_id) === rid;
+        const byQ = !q || (row.variant_code?.toLowerCase().includes(q) || row.res_name?.toLowerCase().includes(q));
+        return byRes && byQ;
+      });
+    },
+    noop() {}
+  };
+}
+</script>
+{% endblock %}
+
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}

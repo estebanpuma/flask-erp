@@ -1,0 +1,31 @@
+{# components/_quantityInput.html #}
+
+<div class="d-flex align-items-center">
+    <button 
+        @click="decrementVariant(v)" 
+        class="btn btn-outline-dark btn-sm me-1"
+        :disabled="!v.quantity">
+        &minus;
+    </button>
+    <input
+        class="form-control form-control-sm px-1 text-center" style="max-width: 60px; min-width: 30px;"
+        type="text"
+        maxlength="4"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        x-model="v.quantity"
+        @input="
+            let num = $event.target.value.replace(/[^0-9]/g, '');
+            if(num.length > 1 && num.startsWith('0')) num = num.replace(/^0+/, '');
+            if(num === '') num = '0';
+            if(Number(num) > 9999) num = '9999';
+            v.quantity = num;
+        "
+        @change="updateLine(v)"
+    >
+    <button 
+        @click="incrementVariant(v)" 
+        class="btn btn-outline-dark btn-sm ms-1">
+        +
+    </button>
+</div>

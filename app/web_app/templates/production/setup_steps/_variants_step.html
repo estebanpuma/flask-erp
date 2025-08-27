@@ -1,0 +1,141 @@
+  <!-- STEP 0: PRODUCTOS & VARIANTES (primero) -->
+  <div x-show="step===0" class="mt-3" x-cloak>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <h2 class="h5 mb-0">0. Selecciona productos y tallas</h2>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-dark" @click="toggleSelectAllModels()" x-text="allModelsSelected ? 'Deseleccionar todo' : 'Seleccionar todo'"></button>
+          </div>
+        </div>
+        <p class="text-muted small">Puedes seleccionar por línea, sublínea, colecciones o por <strong>modelo</strong>. Luego marca las tallas.</p>
+
+        <!-- Filtros de colección -->
+    
+
+        <!-- Buscador por modelo -->
+        <div class="input-group mb-3">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input type="text" class="form-control" placeholder="Buscar modelo..." x-model.trim="catalog.search" @input="filterItems()">
+        </div>
+
+        <div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <th>
+                            <div x-data="{open:false}">
+                                <span @click="open = !open" class="btn fw-bold px-1">Línea <i class="bi bi-chevron-down small"></i> </span>
+                                <div x-show="open">
+                                    <input type="text" 
+                                        class="form-control" 
+                                        x-model="filters.line" 
+                                        placeholder="Filtrar" 
+                                        @input="filterItems()">
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div x-data="{open:false}">
+                                <span @click="open = !open" class="btn fw-bold">Sublínea <i class="bi bi-chevron-down"></i> </span>
+                                <div x-show="open">
+                                    <input type="text" 
+                                            x-model="filters.subline" 
+                                            class="form-control" 
+                                            placeholder="Filtrar" 
+                                            @input="filterItems()">
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div x-data="{open:false}">
+                                <span @click="open = !open" class="btn fw-bold">Target <i class="bi bi-chevron-down"></i></span>
+                                <div x-show="open">
+                                    <input type="text" 
+                                            x-model="filters.target" 
+                                            class="form-control" 
+                                            placeholder="Filtrar" 
+                                            @input="filterItems()">
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div x-data="{open:false}">
+                                <span @click="open = !open" class="btn fw-bold">Coleccion <i class="bi bi-chevron-down"></i></span>
+                                <div x-show="open">
+                                    <input type="text" 
+                                            x-model="filters.collection" 
+                                            class="form-control" 
+                                            placeholder="Filtrar"
+                                            @input="filterItems()">
+                                </div>
+                            </div>
+                        </th>
+                        <th>
+                            <div x-data="{open:false}">
+                                <span @click="open = !open" class="btn fw-bold">Modelo</span>
+                                <div x-show="open">
+                                    <input type="text" x-model="filters.product"
+                                     class="form-control" placeholder="Filtrar" 
+                                     @input="filterItems()">
+                                </div>
+                            </div>
+                        </th>
+                    </thead>
+                    <tbody>
+                        <template x-for="p in filteredItems" :key="p.id">
+                            <tr @click="selectProduct(p.id)">
+                                <td x-text="p.line.name"></td>
+                                <td x-text="p.subline.name"></td>
+                                <td x-text="p.target.name"></td>
+                                <td x-text="p.collection.name"></td>
+                                <td x-text="p.code" class="fw-semibold"></td>
+                            </tr>
+                        </template> 
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row g-3">
+          <template x-for="mdl in catalog.models" :key="mdl.id">
+            <div class="col-12 col-md-6">
+              <div class="border rounded p-3 h-100">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" :id="`mdl_${mdl.id}`" x-model="mdl.selected" @change="onModelToggle(mdl)">
+                      <label class="form-check-label fw-semibold" :for="`mdl_${mdl.id}`" x-text="mdl.name"></label>
+                    </div>
+                    <div class="small text-muted">
+                      <span class="me-2" x-text="mdl.code"></span>
+                      <span class="badge bg-light text-dark border" x-text="mdl.line"></span>
+                      <span class="badge bg-light text-dark border" x-text="mdl.subline"></span>
+                    </div>
+                  </div>
+                  <div class="d-flex flex-column gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" @click="selectAllSizes(mdl)">Todas las tallas</button>
+                    <button class="btn btn-sm btn-outline-secondary" @click="clearSizes(mdl)">Borrar tallas</button>
+                  </div>
+                </div>
+
+                <!-- tallas -->
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                  <template x-for="sz in mdl.variants" :key="sz.id">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" :id="`mdl_${mdl.id}_sz_${sz.code}`" x-model="sz.selected" :disabled="!mdl.selected">
+                      <label class="form-check-label badge rounded-pill bg-light text-dark border" :for="`mdl_${mdl.id}_sz_${sz.code}`" x-text="sz.code"></label>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-end mt-3">
+      <button class="btn btn-dark" @click="next()">Siguiente</button>
+    </div>
+  </div>

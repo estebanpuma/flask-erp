@@ -1,7 +1,31 @@
 <!-- Componente reutilizable de encabezado de página -->
-<div class="d-flex align-items-center mb-4">
-  <a :href="href" class="me-3 text-dark text-decoration-none">
-    <i class="bi bi-chevron-left fs-4"></i>
-  </a>
-  <h4 class="mb-0" x-text="title"></h4>
+{% macro pageHeader(href='', title='', subtitle='', has_btn=False, btn_href='', btn_label='' )%}
+
+
+<div class="d-flex align-items-center">
+    <a href="{{href}}" class="text-decoration-none btn btn-back ps-0">
+      <i class="bi bi-arrow-left h1 fw-bold"></i>
+    </a>
 </div>
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 class="h5 mb-1">{{title}}</h1>
+    
+  </div>
+  {% if has_btn %}
+  <div>
+    <a class="btn btn-dark" href="{{btn_href}}">
+        <i class="bi bi-plus-circle me-2"></i>{{btn_label}}
+    </a>
+  </div>
+  {% endif %}
+</div>
+<div class="text-muted small">{{subtitle}}</div>
+
+
+{% endmacro %}
+
+
+

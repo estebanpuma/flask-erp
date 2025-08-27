@@ -2,53 +2,42 @@
 {% block title %}Detalle cliente | Guifer{% endblock %}
 
 {% block content %}
-<div x-data="clientDetail({{client_id}})" class="col-lg-10 mx-auto mt-4">
 
-  <!-- Título y botón volver -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="mb-0">
-      <i class="bi bi-chevron-left me-2" role="button" onclick="window.history.back()"></i>
-      Cliente
-    </h2>
-    <button class="btn btn-outline-dark btn-sm" :disabled="!client.id" @click="goToEdit">
-      <i class="bi bi-pencil me-1"></i> Editar
-    </button>
+ <div x-data="{ href: '/clients', title: 'Detalle de cliente' }">
+    {% include 'components/_pageHeader.html' %}
   </div>
 
-  <!-- Cargando -->
-  <span x-show="loading">
-    <p>Cargando cliente...</p>
-  </span>
+    <div
+      x-data="genericDetail(
+        '/api/v1/clients/{{ client_id }}',
+        
+          [
+           { field: 'ruc_or_ci',        label: 'RUC/CI', },
+          { field: 'name',        label: 'Nombre',  },
+          { field: 'province.name',        label: 'Provincia'},
+          { field: 'address',        label: 'Direccion'},
+          { field: 'email',        label: 'Correo'},
+          { field: 'phone',        label: 'Telefono'},
+          { field: 'client_type',        label: 'Tipo'},
+          { field: 'last_purchase',        label: 'Ultima compra'},
+          { field: 'purchases_count',        label: 'Compras'},
+          ],
 
-  <!-- Error -->
-  <template x-if="error!==null">
-    <div class="alert alert-danger" x-text="error"></div>
-  </template>
+          '🙍'
+        
+      )"
+    >
+    {% include "components/detailCard.html" %}
+    
+    <!-- Mensaje de error -->
+    <template x-if="error">
+      <div class="alert alert-danger" x-text="error"></div>
+    </template>
 
-  <!-- Info del cliente -->
-  <div x-show="!loading && client.id">
-    <div class="card shadow-sm">
-      <div class="card-body">
-
-        <h4 class="card-title mb-3" x-text="client.name"></h4>
-
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item"><strong>CI/RUC:</strong> <span x-text="client.ruc_or_ci"></span></li>
-          <li class="list-group-item"><strong>Correo:</strong> <span x-text="client.email || '-'"></span></li>
-          <li class="list-group-item"><strong>Teléfono:</strong> <span x-text="client.phone || '-'"></span></li>
-          <li class="list-group-item"><strong>Dirección:</strong> <span x-text="client.address || '-'"></span></li>
-          <li class="list-group-item"><strong>Provincia:</strong> <span x-text="client.province?.name || '-'"></span></li>
-          <li class="list-group-item"><strong>Cantón:</strong> <span x-text="client.canton?.name || '-'"></span></li>
-          <li class="list-group-item"><strong>Tipo:</strong> <span x-text="client.client_type === 'juridica' ? 'Empresa' : 'Persona natural'"></span></li>
-          <li class="list-group-item"><strong>Contribuyente especial:</strong> <span x-text="client.is_special_taxpayer ? 'Sí' : 'No'"></span></li>
-          <li class="list-group-item"><strong>Compras realizadas:</strong> <span x-text="client.purchases_count || 0"></span></li>
-        </ul>
-
-      </div>
-    </div>
   </div>
 
-</div>
-
-<script src="{{ url_for('static', filename='js/clients.js') }}"></script>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}

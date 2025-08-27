@@ -8,7 +8,7 @@ from sqlalchemy import or_, and_
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
-def apply_filters(model, filters: dict) -> list:
+def apply_filters(model, filters: dict, query_only:bool=None) -> list:
     """
     Aplica filtros dinámicos a un modelo SQLAlchemy basado en la convención campo__operador=valor.
 
@@ -51,7 +51,9 @@ def apply_filters(model, filters: dict) -> list:
         except Exception as e:
             # En entorno real puedes loggear con current_app.logger.warning(...)
             print(f"Error al aplicar filtro {raw_key}={raw_value}: {e}")
-
+    
+    if query_only:
+        return query
     return query.all()
 
 
@@ -73,9 +75,9 @@ def normalize_value(value: str):
     """
     if isinstance(value, str):
         val = value.strip().upper()
-        if val == "true":
+        if val == "TRUE":
             return True
-        if val == "false":
+        if val == "FALSE":
             return False
         return value.strip()
     return value

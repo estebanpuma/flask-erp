@@ -23,6 +23,7 @@ class MaterialGroupService:
             raise ValidationError(f"Ya existe un grupo de materiales con el nombre: {dto.name}")
 
         group = MaterialGroup(
+            code = dto.code.upper(),
             name=dto.name.strip(),
             description=dto.description
         )

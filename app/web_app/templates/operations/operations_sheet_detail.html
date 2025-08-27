@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from 'components/detailCard.html' import detail_card %}
+{% block title %}Registro{% endblock %}
+
+{% block content %}
+<div class="container mt-3" >
+
+  <div x-data="{ href: '/production/operations', title: 'Proceso' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <div
+        x-data="genericDetail(
+          '/api/v1/operations-sheet/{{id }}',
+          
+            [  
+              { field: 'code',      label:  'Código'},
+              { field: 'name',      label:  'Nombre' },
+              { field: 'is_active', label:  'Status' },
+              { field: 'rate_hour', label:  '$/hora' },
+              { field: 'goal',      label:  'Objetivo del proceso' },
+              { field: 'scoope',    label:  'Alcance' },
+            
+            ],
+            '⚙️',
+            '/production/operations-sheet'
+        )"
+      >
+      {% include "components/detailCard.html" %}
+
+      <!-- Mensaje de error -->
+      <template x-if="error">
+        <div class="alert alert-danger" x-text="error"></div>
+      </template>
+  </div>
+  
+  
+
+</div>
+<script>
+  function opRes(id){
+    return{
+      resources:[],
+
+      async init(){
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `operations/${id}`)
+        this.resources = res.resources;
+        console.log('a', this.resources)
+      }
+      
+    }
+  }
+</script>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}

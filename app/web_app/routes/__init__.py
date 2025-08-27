@@ -12,6 +12,7 @@ from .inventory import inventory_bp
 from .sales import sales_bp
 from .quality import quality_bp
 from .finances import finances_bp
+from .warehouses import warehouses_bp
 
 
 def register_frontend_routes(app):
@@ -27,3 +28,4 @@ def register_frontend_routes(app):
     app.register_blueprint(sales_bp)
     app.register_blueprint(quality_bp)
     app.register_blueprint(finances_bp)
+    app.register_blueprint(warehouses_bp)

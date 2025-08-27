@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}Asistente de Configuración de Planta{% endblock %}
+
+{% block content %}
+<div class="container py-3"
+     x-data="seqSimple({
+       variantId: 123,
+       ops: [
+        {id:'corte', name:'Corte', cycle:0.8},
+        {id:'aparado', name:'Aparado', cycle:1.2},
+        {id:'montaje', name:'Montaje', cycle:2.0},
+        {id:'terminado', name:'Terminado', cycle:0.7},
+        {id:'planchado', name:'Planchado', cycle:0.5},
+       ],
+       stages: [] // [{ops:[{id,name,cycle}], note:''}]
+     })" x-init="init()">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <h1 class="fs-5 mb-0">Secuenciar operaciones (simple)</h1>
+      <small class="text-muted">Variante #<span x-text="variantId"></span></small>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-sm btn-outline-dark" @click="openNewOp()">+ Operación</button>
+      <button class="btn btn-sm btn-dark" @click="save()">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Parámetros para TAKT -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <label class="form-label small">Tiempo disponible (min/turno)</label>
+      <input type="number" class="form-control" min="1" step="1" x-model.number="shiftMin">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small">Demanda (unid/turno)</label>
+      <input type="number" class="form-control" min="1" step="1" x-model.number="demandUnits">
+    </div>
+    <div class="col-12 col-md-6 d-flex align-items-end">
+      <div class="alert alert-light border w-100 py-2 mb-0 small">
+        <div><strong>TAKT</strong>: <span class="badge bg-dark" x-text="fmt(takt(),'min/und')"></span></div>
+        <div><strong>Cuello de botella</strong>:
+          <span class="badge bg-danger" x-text="bottleneck()?.name || '—'"></span>
+          <span class="text-muted ms-1" x-show="bottleneck()">(<span x-text="fmt(bottleneck().cycle)"></span>)</span>
+        </div>
+        <div class="text-muted">
+          Ciclo por etapa = máx etapa · Tiempo total = suma de ciclos por etapa
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Operaciones disponibles -->
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <strong>Operaciones</strong>
+          <button class="btn btn-sm btn-outline-dark" @click="openNewOp()">+ Agregar</button>
+        </div>
+        <ul class="list-group list-group-flush">
+          <template x-for="op in ops" :key="op.id">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="me-2">
+                <div class="fw-semibold" x-text="op.name"></div>
+                <div class="small text-muted">ID: <span x-text="op.id"></span></div>
+              </div>
+              <div class="d-flex align-items-center" style="gap:.5rem">
+                <input type="number" step="0.1" min="0" class="form-control form-control-sm" style="width:90px"
+                       x-model.number="op.cycle"
+                       :class="{'is-invalid': takt() && op.cycle>takt()}">
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-dark" @click="addStageWith(op)">→ Etapa</button>
+                  <button class="btn btn-sm btn-outline-secondary" @click="addToLastStage(op)">→ Última</button>
+                </div>
+              </div>
+            </li>
+          </template>
+          <li class="list-group-item text-center">
+            <button class="btn btn-sm btn-outline-dark" @click="openNewOp()">+ Nueva operación</button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- JSON -->
+      <div class="card border-0 shadow-sm mt-3">
+        <div class="card-header bg-white"><strong>JSON</strong></div>
+        <div class="card-body">
+          <textarea class="form-control" rows="6" readonly x-text="exportJSON()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secuencia: etapas -->
+    <div class="col-12 col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <strong>Secuencia por etapas</strong>
+          <button class="btn btn-sm btn-outline-dark" @click="addEmptyStage()">+ Nueva etapa</button>
+        </div>
+
+        <template x-if="stages.length===0">
+          <div class="p-3 small text-muted">Aún no hay etapas. Crea una con “+ Nueva etapa” o manda una operación con “→ Etapa”.</div>
+        </template>
+
+        <ul class="list-group list-group-flush">
+          <template x-for="(stage, idx) in stages" :key="stage.uid">
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                  <span class="badge bg-dark">Etapa <span x-text="idx+1"></span></span>
+                  <small class="ms-2 text-muted">Ciclo etapa: <strong x-text="fmt(stageCycle(stage))"></strong></small>
+                </div>
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-secondary" @click="moveStageUp(idx)">↑</button>
+                  <button class="btn btn-sm btn-outline-secondary" @click="moveStageDown(idx)">↓</button>
+                  <button class="btn btn-sm btn-outline-danger" @click="removeStage(idx)">✕</button>
+                </div>
+              </div>
+
+              <!-- Operaciones paralelas en la etapa -->
+              <div class="d-flex flex-wrap" style="gap:.5rem">
+                <template x-for="(op, j) in stage.ops" :key="op.uid">
+                  <div class="border rounded-pill px-2 py-1 d-flex align-items-center"
+                       :class="op.cycle>takt() ? 'border-danger' : 'border-dark'">
+                    <span class="fw-semibold me-2" x-text="op.name"></span>
+                    <input type="number" step="0.1" min="0" class="form-control form-control-sm me-2"
+                           style="width:90px" x-model.number="op.cycle"
+                           :class="{'is-invalid': takt() && op.cycle>takt()}">
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-secondary" @click="moveOp(idx,j,-1)">&laquo;</button>
+                      <button class="btn btn-outline-secondary" @click="moveOp(idx,j,1)">&raquo;</button>
+                      <button class="btn btn-outline-danger" @click="removeOp(idx,j)">✕</button>
+                    </div>
+                  </div>
+                </template>
+                <button class="btn btn-sm btn-outline-dark" @click="addFromPicker(idx)">+ Añadir op</button>
+              </div>
+            </li>
+          </template>
+
+          <!-- Footer métricas -->
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div class="small">
+              Etapas: <span class="badge bg-dark" x-text="stages.length"></span> ·
+              Ciclo de línea (máx etapa): <strong x-text="fmt(lineCycle())"></strong> ·
+              Tiempo total (suma etapas): <strong x-text="fmt(totalTime())"></strong>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" @click="clearAll()">Limpiar todo</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nueva operación -->
+  <div class="modal fade" id="opModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nueva operación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2"><label class="form-label small">Nombre</label>
+            <input class="form-control" x-model.trim="newOp.name"></div>
+          <div class="mb-2"><label class="form-label small">ID</label>
+            <input class="form-control" x-model.trim="newOp.id"></div>
+          <div class="mb-2"><label class="form-label small">Tiempo de ciclo (min)</label>
+            <input type="number" step="0.1" min="0" class="form-control" x-model.number="newOp.cycle"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-dark" @click="createOp()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function seqSimple({variantId, ops, stages}) {
+  return {
+    variantId,
+    ops: structuredClone(ops),
+    stages: (stages||[]),
+    shiftMin: 480,
+    demandUnits: 100,
+    newOp: {id:'', name:'', cycle:1},
+    modalRef: null,
+
+    init(){ this.modalRef = new bootstrap.Modal(document.getElementById('opModal')); },
+
+    // ===== Operaciones disponibles
+    openNewOp(){ this.newOp={id:'',name:'',cycle:1}; this.modalRef.show(); },
+    createOp(){
+      const {id,name,cycle}=this.newOp;
+      if(!id||!name) return alert('Completa ID y nombre');
+      if(this.ops.some(o=>o.id===id)) return alert('ID duplicado');
+      this.ops.push({id, name, cycle:Number(cycle)});
+      this.modalRef.hide();
+    },
+
+    // ===== Etapas y paralelos
+    addEmptyStage(){ this.stages.push({uid:crypto.randomUUID(), ops:[]}); },
+    addStageWith(op){
+      const stage={uid:crypto.randomUUID(), ops:[this.cloneOp(op)]};
+      this.stages.push(stage);
+    },
+    addToLastStage(op){
+      if(this.stages.length===0) this.addEmptyStage();
+      this.stages[this.stages.length-1].ops.push(this.cloneOp(op));
+    },
+    addFromPicker(stageIdx){
+      const name = prompt('Nombre (o ID) de la operación a añadir:');
+      if(!name) return;
+      let op = this.ops.find(o => o.id===name || o.name.toLowerCase()===name.toLowerCase());
+      if(!op){ // crear rápido
+        const id = name.trim().toLowerCase().replace(/\s+/g,'_');
+        const cycle = Number(prompt('Tiempo de ciclo (min):', '1')) || 1;
+        op = {id, name:name.trim(), cycle};
+        this.ops.push(op);
+      } else {
+        op = {...op}; // copiar
+      }
+      const cycle = Number(prompt(`Tiempo de ciclo para "${op.name}" (min):`, op.cycle)) || op.cycle;
+      op.cycle = cycle;
+      this.stages[stageIdx].ops.push(this.cloneOp(op));
+    },
+    cloneOp(op){ return {uid:crypto.randomUUID(), id:op.id, name:op.name, cycle:Number(op.cycle)}; },
+
+    removeStage(i){ this.stages.splice(i,1); },
+    moveStageUp(i){ if(i>0) [this.stages[i-1],this.stages[i]]=[this.stages[i],this.stages[i-1]]; },
+    moveStageDown(i){ if(i<this.stages.length-1) [this.stages[i],this.stages[i+1]]=[this.stages[i+1],this.stages[i]]; },
+
+    removeOp(si, oj){ this.stages[si].ops.splice(oj,1); },
+    moveOp(si, oj, dir){
+      const target = si + dir;
+      if(target<0 || target>=this.stages.length) return;
+      const [item]=this.stages[si].ops.splice(oj,1);
+      this.stages[target].ops.push(item);
+    },
+
+    // ===== Métricas
+    takt(){ return (this.shiftMin && this.demandUnits) ? this.shiftMin/this.demandUnits : 0; },
+    stageCycle(stage){ return stage.ops.length ? Math.max(...stage.ops.map(o=>o.cycle||0)) : 0; },
+    lineCycle(){ return this.stages.length ? Math.max(...this.stages.map(s=>this.stageCycle(s))) : 0; },
+    totalTime(){ return this.stages.reduce((acc,s)=> acc + this.stageCycle(s), 0); },
+    bottleneck(){
+      const all = this.stages.flatMap(s=>s.ops);
+      if(all.length===0) return null;
+      return all.reduce((a,b)=> b.cycle>a.cycle? b:a);
+    },
+    fmt(v, suf='min'){ if(v===0) return '0.00 '+suf; if(!v) return '—'; return (Math.round(v*100)/100).toFixed(2)+' '+suf; },
+
+    // ===== Persistencia
+    exportJSON(){
+      const payload = {
+        variant_id: this.variantId,
+        params: {shift_min:this.shiftMin, demand_units:this.demandUnits},
+        stages: this.stages.map((s,i)=>({
+          order: i+1,
+          ops: s.ops.map(o=>({operation_id:o.id, name:o.name, cycle_min:o.cycle}))
+        })),
+        metrics: {
+          takt_min: this.takt(),
+          line_cycle_min: this.lineCycle(),
+          total_time_min: this.totalTime(),
+          bottleneck: this.bottleneck()
+        }
+      };
+      return JSON.stringify(payload, null, 2);
+    },
+    async save(){
+      try{
+        const body = JSON.parse(this.exportJSON());
+        // await window.guifer.helpers.fetch.apiFetch('POST', `production/variants/${this.variantId}/sequence-stages`, body)
+        console.log('POST →', body);
+        alert('Secuencia guardada (ver consola).');
+      }catch(err){ alert('Error: '+err.message); }
+    },
+    clearAll(){ if(confirm('¿Vaciar todo?')){ this.stages=[]; } }
+  }
+}
+</script>
+
+
+
+
+{% endblock %}

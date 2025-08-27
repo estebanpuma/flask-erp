@@ -1,5 +1,5 @@
 // static/js/genericList.js
-window.genericList = function(apiUrl,baseHref, columns) {
+function genericList(apiUrl,baseHref, columns) {
   return {
     apiUrl,
     columns,            // [ { field, label, filterable }, … ]
@@ -12,16 +12,45 @@ window.genericList = function(apiUrl,baseHref, columns) {
     error: '',       // ← mensaje de error
 
     init() {
+      console.log('initLis')
       this.fetchItems();
       this.columns.forEach(c => {
         if (c.filterable) this.filters[c.field] = '';
       });
     },
 
-    // Helper para leer rutas anidadas safely
-    getNested(obj, path) {
-      return path.split('.').reduce((o, key) => (o != null ? o[key] : undefined), obj);
+    /* ───────── helpers ───────── */
+    deepValue(obj, path) {
+      return path.split('.').reduce((o, k) => (o ? o[k] : undefined), obj);
     },
+
+    cellHtml (row, col) {
+      
+        const raw = this.deepValue(row, col.field)
+        
+        /* ① Mini-componente global (badge, botón, etc.) */
+        if (typeof col.component === 'string') {
+          const comp = window.guifer?.components?.[col.component]
+          console.log('is-string', comp)
+          if (comp) {
+            const kind = col.props?.kind ?? 'default'
+            return comp(raw, kind)
+          }
+        }
+
+        /* ② Función pasada directamente en columns */
+        if (typeof col.component === 'function') {
+          
+          return col.component(raw, col.props || {})
+
+        }
+
+        /* ③ Formatter específico */
+        if (col.formatter) return col.formatter(raw)
+
+        /* ④ Valor por defecto */
+        return raw ?? '—'
+      },
 
     async fetchItems() {
       this.loading = true;
@@ -37,12 +66,12 @@ window.genericList = function(apiUrl,baseHref, columns) {
           // genera href si aplica
           const href = this.baseHref ? `${this.baseHref}/${item.id}` : null;
           // construye mapa de valores planos
-          const flat = {};
-          this.columns.forEach(c => {
+          //const flat = {};
+          //this.columns.forEach(c => {
             // valor anidado o directo
-            flat[c.field] = this.getNested(item, c.field);
-          });
-          return { ...item, ...flat, href };
+          //  flat[c.field] = this.deepValue(item, c.field);
+          //});
+          return { ...item,  href };
         });
         this.filteredItems = this.items;
       } catch (e) {

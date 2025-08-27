@@ -18,15 +18,25 @@
     <!-- ✅ Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
 
-    <!-- ✅ Alpine.js (local o CDN) -->
-    <script defer src="{{ url_for('static', filename='js/alpine/alpine.min.js') }}"></script>
-    <!-- ✅ Hook para scripts específicos -->
 
-    <style>
-    .hover-shadow:hover {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    }
-    </style>
+    <!-- Loader externo (define window.deferLoadingAlpine) -->
+    <script defer src="{{ url_for('static', filename='js/alpine-loader.js') }}"></script>
+
+    
+    <script  defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        onerror="loadLocalBootstrap()"></script>
+    
+        
+    <script>
+        function loadLocalBootstrap() {
+            var s = document.createElement('script');
+            s.src = '/static/js/bootstrap/bootstrap.bundle.min.js';
+            s.defer = true;
+            document.head.appendChild(s);
+        }
+    </script>
+
+
     {% block scripts %}{% endblock %}
 </head>
 <body class="bg-light text-dark">
@@ -73,10 +83,7 @@
     <!-- ✅ Footer -->
     {% include 'shared/__footer.html' %}
 
-    <!-- ✅ Bootstrap JS (bundle con Popper) -->
-    <script src="{{ url_for('static', filename='js/bootstrap/bootstrap.bundle.min.js') }}"></script>
-
     <!-- ✅ JS personalizado opcional -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
 </body>
 </html>

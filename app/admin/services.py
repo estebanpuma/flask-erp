@@ -263,8 +263,9 @@ class WorkerService:
         return worker
     
     @staticmethod
-    def get_obj_list(filters=None):
-        workers = db.session.query(Worker).options(joinedload(Worker.job)).all()     
+    def get_obj_list(filters:dict=None):
+        query = apply_filters(Worker, filters, query_only=True)
+        workers = query.options(joinedload(Worker.job)).all()    
         return workers
     
     @staticmethod

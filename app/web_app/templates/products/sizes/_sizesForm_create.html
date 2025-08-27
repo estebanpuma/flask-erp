@@ -1,0 +1,45 @@
+<form @submit.prevent="submitForm" autocomplete="off">
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control text-uppercase"
+           id="code" placeholder="Ej: Escolar"
+           x-model="serie.name"
+           required>
+    <label for="code">Código de la serie</label>
+    <template  >
+        <span id="codeFeedback" class="text-danger">
+             🚫 El código ya existe.
+        </span>        
+    </template>
+  </div>
+
+ <div class="form-floating mb-3">
+    <select class="form-select" x-model="serie.category" required>
+      <option value="">Selecciona Tipo</option>
+      <option value="Hombre">Hombre</option>
+      <option value="Mujer">Mujer</option>
+      <option value="Niño">Niño</option>
+      <option value="Niña">Niña</option>
+    </select>
+    <label>Tipo</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input class="form-control" id="description"
+              placeholder="Descripción" style="height: 80px"
+              x-model="serie.start_size" type="number" required></input>
+    <label for="description">Talla inicio</label>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input class="form-control" id="description"
+              placeholder="Descripción" style="height: 80px"
+              x-model="serie.end_size" type="number" required></input>
+    <label for="description">Talla fin</label>
+  </div>
+
+  <div class="d-flex justify-content-end mt-4">
+    <button type="submit" class="btn btn-dark">Guardar Serie</button>
+  </div>
+
+</form>

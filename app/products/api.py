@@ -81,6 +81,8 @@ products_api.add_resource(ProductDeleteResource, '/products/<int:resource_id>')
 
 products_api.add_resource(NextProductCodeGetResource, '/products/next-code')
 
+
+
 #*******************************ProductDesigns****************************************
 #*****************************************************************************
 

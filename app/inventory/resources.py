@@ -21,3 +21,9 @@ class WarehousePatchResource(BasePatchResource):
     service_patch = staticmethod(WarehouseService.patch_obj)
     output_fields = warehouse_fields
         
+
+
+class WarehouseDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(WarehouseService.get_obj)
+    service_delete = staticmethod(WarehouseService.delete_obj)
+    

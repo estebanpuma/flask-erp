@@ -1,0 +1,40 @@
+    <div class="card-body">
+        <h2 class="fs-5 fw-bold mb-4 text-center">Datos de venta</h2>
+
+        
+        <form  id="orderForm" autocomplete="off" x-init="fetchSalesPersons()">
+            <!--Lote/fctura -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="order_number" placeholder="Número de orden" x-model="order.order_number">
+                <label for="order_number">Número de orden</label>
+            </div>
+
+            <!-- Selector de material -->
+            <div class="form-floating mb-3">
+                <select class="form-select" id="salesperson" x-model="order.salesperson" >
+                <option value="">Seleccionar vendedor/a</option>
+                <template x-for="s in salespersons" :key="s.id">
+                    <option :value="s.id" x-text="s.first_name +' '+s.last_name"></option>
+                </template>
+                </select>
+                <label for="salesperson">Vendedor</label>
+            </div>
+
+           <div class="form-floating mb-3">
+                <input type="date" class="form-control" id="request_date" placeholder="Fecha de pedido" x-model="order.request_date=today()">
+                <label for="request_date">Fecha de pedido</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="date" class="form-control" id="due_date" placeholder="Fecha de pedido" x-model="order.due_date=futureDay()">
+                <label for="due_date">Fecha de entrega</label>
+            </div>
+
+
+            <!-- Notas -->
+            <div class="form-floating mb-3">
+                <textarea class="form-control" placeholder="Notas" id="notes" style="height: 100px" x-model="order.notes"></textarea>
+                <label for="notes">Notas</label>
+            </div>
+        </form> 
+    </div>

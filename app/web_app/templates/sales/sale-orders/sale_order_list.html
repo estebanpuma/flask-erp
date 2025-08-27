@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Ventas{% endblock %}
+{% block content %}
+
+<div x-data="{ href: '/sales', title: 'Ventas' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<div x-data
+     x-html="window.guifer.components.createBtn({
+               href:'/sales/sale-orders/create',
+               label:'Nueva venta',
+               float:true
+             })">
+</div>
+
+<div
+    x-data="genericList(
+      `/api/v1/sale-orders`,
+      '/sales/sale-orders',
+      [
+        {field:'status', label:'Estado', component:'statusBadge', props:{value: 'status', 'kind':'sale_order'}},
+        {field:'order_number',   label:'N.Orden', filterable:true},
+        {field:'total',  label:'Total'}
+      ]
+    )"
+    x-init="init()"
+    class="table-responsive"
+  >
+    {% include 'components/listTable.html' %}
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+  <script  src="{{ url_for('static', filename='js/components.js') }}"></script>
+  <script  src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+

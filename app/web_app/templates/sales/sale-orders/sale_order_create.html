@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Crear Diseno{% endblock %}
+
+{% block content %}
+<div x-data="{ href: '/sales/sale-orders', title: ' Crear nueva orden de venta' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<div class="container mt-3" x-data="salesWizard()">
+  
+  {% include 'sales/sale-orders/sale_order_wizard.html'%}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sale_orderForm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+{% endblock %}
+

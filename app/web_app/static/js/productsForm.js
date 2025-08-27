@@ -1,6 +1,10 @@
-function productWizard() {
+function productWizard({ productId = null, startStep = null } = {}) {
   return {
-    step: 1,
+    // Configuración inicial
+    startStep,
+    step: startStep || 1,
+    productId,
+    // Payload central
     productData: {
       code: '',
       name: '',
@@ -14,33 +18,60 @@ function productWizard() {
       materials: [],
     },
 
+    //catalogos y estados
     lines: [],
     sublines: [],
     targets: [],
     collections: [],
-
-
     // Flags + combinación de prefijo
     loading: false,
     error:   '',
     code_combination:'',
-
-
     availableColors: [],
     selectedColors: [],
+    existingDesignCodes: null,
+    newDesignCode: null,
+    isDuplicateDesign: true,
+
+
+
 
     init() {
       console.log('init:', this.step)
+      console.log('product_id:', this.productId)
       this.fetchLines();
       this.fetchSubLines();
       this.fetchTargets();
-      this.fetchColors();
-      this.fecthSeries();
+      // Si productId existe, cargamos datos base
+      if (this.productId) this.loadProductContext();
+      // Carga pasos necesarios según startStep
+      if (this.step <= 2) {
+        this.fetchColors();
+      }
+      if (this.step <= 3) this.fetchSeries();
 
     },
 
-    //------------------------------------
-    //------------Step1-----------------
+    // --- Contexto producto (solo si editing design) ---
+    async loadProductContext() {
+      try {
+        const prod = await (await fetch(`/api/v1/products/${this.productId}`)).json();
+        this.productData.code = prod.code;
+        // Si startStep>1, precarga diseños existentes...
+        this.productData.designs = (await (await fetch(`/api/v1/product-designs?product_id=${this.productId}`)).json())
+          .map(d => ({ color_ids: d.colors.id, design_code: d.code }));
+        console.log('this product_designs', this.productData.designs)
+        this.existingDesignCodes = this.productData.designs.map(d => d.design_code);
+        console.log('this existing codes init', this.existingDesignCodes)
+      } catch (e) {
+        console.error(e);
+        this.error = 'Error cargando datos del producto.';
+      }
+    },
+
+    // --- Pasos comunes ---
+    // Paso 1: Datos básicos (solo si startStep<=1)
+ 
     async fetchLines() {
       try {
         this.lines = await (await fetch('/api/v1/product-lines')).json();
@@ -72,6 +103,9 @@ function productWizard() {
         try {
                 const res = await fetch(`/api/v1/product-collections/specific?${params}`);
                 this.collections = await res.json();
+                if(this.collections === null || this.collections.length==0){
+                  alert('No hay colecciones para esta linea. Cree una coleccion')
+                }
                 console.log('fetched collections')
               } catch (e) {
                 console.error(e);
@@ -81,8 +115,7 @@ function productWizard() {
               }
       }else{
         console.info('Debe escoger una linea y un target')
-      }
-      
+      }    
     },
 
     // Genera el código completo (prefijo + auto-incremental)
@@ -143,6 +176,21 @@ function productWizard() {
     updateDesign() {
       this.productData.designs = []; // en este modelo, solo un diseño
       if (this.selectedColors.length > 0) {
+        const suffix = this.selectedColors.map(c => c.code).join('');
+          // 2.b) Nuevo código completo
+        this.newDesignCode = this.productData.code + suffix;
+        this.error = '';
+        this.isDuplicateDesign = false;
+          // 2.c) Validación de duplicado
+        if(this.existingDesignCodes){
+          if (this.existingDesignCodes.includes(this.newDesignCode)) {
+            this.error = `El diseño "${this.newDesignCode}" ya existe.`;
+            this.isDuplicateDesign = true;
+          } 
+        }
+          
+        
+        
         this.productData.designs.push({
           color_ids: this.selectedColors.map(c => c.id),
           color_codes: this.selectedColors.map(c => c.code),
@@ -162,7 +210,7 @@ function productWizard() {
     variants: [],
 
 
-    async fecthSeries(){
+    async fetchSeries(){
       try{
         const resSeries = await fetch('/api/v1/series');
         const dataSeries = await resSeries.json();
@@ -208,11 +256,12 @@ function productWizard() {
     },
 
     generateVariants() {
-      if (!this.productData.designs.length || !this.sizes.length) return;
-
+      if (!this.productData.designs.length || !this.sizes.length) return console.error('No mismo');
+      this.productData.variants = [] // solo una serie permitida
       const design = this.productData.designs[0]; // solo uno permitido
+      console.log('fessddi', design)
       const prefix = design.design_code;
-
+      this.variants = [];
       this.variants = this.sizes.map(size => ({
         size_id: size.id,
         size_name: size.value,
@@ -267,6 +316,12 @@ function productWizard() {
       return this.productData.code && this.productData.name ;
     },
 
+    isStep2Valid() {
+      return !this.isDuplicateDesign && this.selectedColors.length>0;
+    },
+
+    
+
 
     nextStep() {
       if (this.step < 4) this.step++;
@@ -274,7 +329,8 @@ function productWizard() {
     },
 
     prevStep() {
-      if (this.step > 1) this.step--;
+      if (this.step > 1 && this.step > startStep) this.step--;
+      
     },
 
     resetWizard() {
@@ -285,19 +341,44 @@ function productWizard() {
 
     async submitFinal() {
       try {
-        const res = await fetch('/api/v1/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.productData),
-        });
 
-        const data = await res.json();
-        if (res.ok) {
-          alert('✅ Producto creado correctamente');
-          window.location.href = `/products/${data.id}`;
-        } else {
-          alert(data.message || '❌ Error al crear producto');
+        //--------------------------------------------
+        //------------------Diseno-------------------
+        if (this.productId && this.startStep===2) {
+        /* crear disenoy obtener productId */
+          this.productData.product_id = this.productId;
+          const res = await fetch('/api/v1/product-designs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.productData),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert('✅ Diseno creado correctamente');
+            window.location.href = `/products/designs/${data.id}`;
+          } else {
+            alert(data.message || '❌ Error al crear Diseno');
+          }
+          
+
+        }else{
+           /* crear producto y obtener productId */
+           const res = await fetch('/api/v1/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.productData),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            alert('✅ Producto creado correctamente');
+            window.location.href = `/products/${data.id}`;
+          } else {
+            alert(data.message || '❌ Error al crear producto');
+          }
         }
+        
+
+        
       } catch (e) {
         alert('❌ Error de conexión');
       }

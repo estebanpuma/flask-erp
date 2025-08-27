@@ -1,0 +1,60 @@
+<div class="card-body" x-init="fetchPaymentMethods()" style=" margin:auto;">
+  <h2 class="fs-5 fw-bold mb-4 text-center">Datos de Pago</h2>
+  
+  <form @submit.prevent>
+    <div class="mb-4">
+      <!-- Método de pago -->
+      <label class="form-label fw-semibold mb-1" for="payment_method">Método de pago</label>
+      <select
+        id="payment_method"
+        x-model="payment.method_id"
+        class="form-select form-select-lg rounded-pill"
+        required
+      >
+        <option value="">— Seleccione —</option>
+        <template x-for="m in payment_methods" :key="m.id">
+          <option :value="m.id" x-text="m.name"></option>
+        </template>
+      </select>
+    </div>
+
+    <div class="mb-3 d-flex align-items-center justify-content-between">
+      <span class="text-muted">Total</span>
+      <span class="fw-bold fs-5" x-text="total"></span>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label fw-semibold mb-1" for="amount_paid">Monto pagado</label>
+      <div class="input-group input-group-lg">
+        <span class="input-group-text rounded-start-pill">$</span>
+        <input
+          id="amount_paid"
+          type="number"
+          x-model.number="payment.amount"
+          class="form-control rounded-end-pill"
+          min="0"
+          max="total"
+          step="0.01"
+          required
+          @change="calculatePendingAmount(total, payment.amount)"
+          @input="calculatePendingAmount(total, payment.amount)"
+        >
+      </div>
+    </div>
+
+    <div class="mb-3 d-flex align-items-center justify-content-between">
+      <span class="text-muted">Monto pendiente</span>
+      <span
+        :class="(Number(total) - Number(payment.amount)) > 0 ? 'text-danger fw-semibold' : 'text-success'"
+        x-text="calculatePendingAmount(total, payment.amount)"
+      ></span>
+    </div>
+
+    <!-- Mensaje si falta saldo -->
+    <template x-if="(total - payment.amount) > 0">
+      <div class="alert alert-warning small p-2 mt-2">
+        El pago ingresado es menor al total. Debe saldar el total para confirmar el pedido.
+      </div>
+    </template>
+  </form>
+</div>

@@ -1,4 +1,5 @@
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload # Importa joinedload
 from werkzeug.exceptions import NotFound, BadRequest
 
@@ -112,17 +113,23 @@ class CRMServices:
 
     @staticmethod
     def search_clients(query:str, limit=10):
-        from .models import Client, Provinces
+        from .models import Client, Provinces, ClientCategory
         q = query.strip().lower()
         clients = (
             db.session.query(
             Client.id,
             Client.name,
             Client.ruc_or_ci,
-            Provinces.name.label('province_name'),
-            
+            Client.address,
+            Client.phone,
+            Client.province_id,
+            Client.canton_id,
+            func.coalesce(ClientCategory.name, 'Sin categoría').label('client_category'),
+            Provinces.name.label('province_name')
             )
-            .join(Provinces, Client.province_id == Provinces.id)
+            .join(Provinces, Client.province_id == Provinces.id,
+                 )
+            .outerjoin(ClientCategory, Client.client_category_id == ClientCategory.id)
             .filter(
                 (Client.name.ilike(f'%{q}%')) |
                 (Client.ruc_or_ci.ilike(f'%{q}%'))

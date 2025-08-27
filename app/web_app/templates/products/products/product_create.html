@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}➕ Nuevo producto{% endblock %}
+
+
+{% block content %}
+<div x-data="{ href: '/products', title: '👟 Crear nuevo producto' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <div x-data="productWizard()">
+    {% include 'products/products/product_wizard.html' %}
+      <button class="btn btn-outline-danger btn-sm" @click="resetWizard()">Cancelar</button>
+  </div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/productsForm.js') }}" ></script>
+{% endblock %}

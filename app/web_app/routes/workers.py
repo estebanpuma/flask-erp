@@ -4,6 +4,10 @@ from flask import Blueprint, render_template
 workers_bp = Blueprint('workers', __name__, url_prefix='/workers', template_folder='../templates')
 
 
+@workers_bp.route('/rrhh')
+def index():
+    return render_template('rrhh/index.html')
+
 @workers_bp.route('/')
 def workers_list():
     return render_template('workers/workers_list.html')

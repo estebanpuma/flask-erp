@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Colores de Producto{% endblock %}
+{% block content %}
+
+<div x-data="{ href: '/products/index', title: '🎨 Colores' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<a href="/products/create" class="btn btn-dark">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo color
+</a>
+
+<div
+    x-data="genericList(
+      `/api/v1/colors`,
+      '/products/colors',
+      [
+       { field: 'code',  label: 'Códigoo',      filterable: true  },
+        { field: 'name',        label: 'Nombre',      filterable: true  },
+        { field: 'hex_value',        label: 'HEX',      filterable: true  },
+      
+      ]
+    )"
+    class="table-responsive"
+  >
+    {% include 'components/listTable.html' %}
+  </div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+

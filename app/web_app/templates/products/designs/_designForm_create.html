@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Diseño {{ design.id }}</h1>
+  <!-- Mostrar formulario de subida -->
+  {% include 'design_upload_form.html' %}
+
+  <!-- Galería de imágenes existentes -->
+  <div id="gallery">
+    
+  </div>
+{% endblock %}

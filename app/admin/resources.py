@@ -135,7 +135,7 @@ class RoleResource(Resource):
 
 class WorkerGetResource(BaseGetResource):
     schema_get = staticmethod(WorkerService.get_obj)       #servicio para obtener un elemento
-    schema_list = staticmethod(WorkerService.get_obj_list)      #servicio para obtener una lista de elementos
+    schema_list = staticmethod(lambda: WorkerService.get_obj_list(request.args.to_dict()) )      #servicio para obtener una lista de elementos
     output_fields = worker_fields    #qué campos devolver(marshal)
 
 class WorkerPostResource(BasePostResource):

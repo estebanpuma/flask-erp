@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Crear Grupo{% endblock %}
+
+{% block content %}
+<div x-data="{ href: '/warehouses', title: ' Crear nueva bodega' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<div class="container mt-3" x-data="warehousesForm()">
+  
+  {% include "warehouses/_warehousesForm_create.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/warehousesForm.js') }}"></script>
+{% endblock %}
+

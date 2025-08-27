@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Planificación{% endblock %}
+{% block content %}
+
+<div x-data="{ href: '/sales', title: 'Planificación' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<div
+    x-data="genericList(
+      `/api/v1/production-requests`,
+      '#',
+      [
+        {field:'origin_type', label:'Tipo(Origen)', filterable: true},
+        {field:'subline_code',   label:'Sublínea', filterable:true},
+        {field:'target_code',  label:'Tipo', filterable:true},
+        {field:'code',  label:'Tipo', filterable:true},
+        {field:'n_hormas',  label:'Cantidad', filterable:true},
+      ]
+    )"
+    x-init="init()"
+    class="table-responsive"
+  >
+    {% include 'components/listTable.html' %}
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+  <script  src="{{ url_for('static', filename='js/components.js') }}"></script>
+  <script  src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+

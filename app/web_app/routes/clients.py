@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, url_for, redirect, request, flash
 
 
-clients_bp = Blueprint('clients', __name__, url_prefix='/clients', template_folder='../templates')
+clients_bp = Blueprint('clients', __name__, url_prefix='/clients')
 
 
 @clients_bp.route('/')

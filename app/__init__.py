@@ -5,9 +5,11 @@ from flask_sqlalchemy import SQLAlchemy
 
 from flask_migrate import Migrate
 
+from flask_cors import CORS
+
 from flask_jwt_extended import JWTManager
 
-
+import os
 
 db = SQLAlchemy()
 
@@ -16,14 +18,27 @@ migrate = Migrate()
 
 
 def create_app(config):
-    print(config)
-    app = Flask(__name__, static_folder='web_app/static', template_folder='web_app/templates')
-    app.config.from_object(config)
+   
+    app = Flask(
+        __name__,
+        static_folder='web_app/static',       # aquí van tus imágenes / media
+        static_url_path='/static',
+        template_folder='web_app/templates',
+    )
     
+    app.config.from_object(config)
+    CORS(app, resources={r"/media/*": {"origins": "*"}})
     jwt = JWTManager(app)
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    for folder in app.config['UPLOAD_FOLDERS'].values():
+        os.makedirs(folder, exist_ok=True)
+
+    from .storage.local import LocalStorageService
+    storage_svc = LocalStorageService()
+    app.extensions['storage_service'] = storage_svc
 
     from .core.error_handlers import register_error_handlers
     register_error_handlers(app)
@@ -82,6 +97,8 @@ def create_app(config):
     from .inventory.api import inventory_api_bp
     app.register_blueprint(inventory_api_bp)
     
+    from .media.api import media_api_bp
+    app.register_blueprint(media_api_bp)
     
 
     #routes blueprints
@@ -90,13 +107,13 @@ def create_app(config):
 
 
     #frontend blueprints
-    from .web_app import init_web_app
-    init_web_app(app)
+    from .web_app import init_web_app, web_app_bp
+    
+    init_web_app(web_app_bp)
+    app.register_blueprint(web_app_bp)
 
-
-    with app.app_context():
-        from .admin.services import AdminServices 
-        #AdminServices.initialize_admin_user()
+   
+ 
 
     return app
 

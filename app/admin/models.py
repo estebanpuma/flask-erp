@@ -50,7 +50,6 @@ class Salesperson(User):
     sales_orders_count = db.Column(db.Integer, default=0)
     visits = db.Column(db.Integer, default=0)
     
-    sale_orders = db.relationship('SaleOrder', back_populates='salesperson')
 
 
 class SalesSupervisor(User):
@@ -156,6 +155,7 @@ class Worker(BaseModel, SoftDeleteMixin):
     phone = db.Column(db.String(), nullable=True)
     hour_rate_normal = db.Column(db.Float)
     notes = db.Column(db.String(), nullable=False)
+
 
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=True )
     

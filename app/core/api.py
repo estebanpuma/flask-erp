@@ -7,3 +7,4 @@ core_api_bp = Blueprint('core_api', __name__, url_prefix='/api/v1')
 api = Api(core_api_bp)
 
 api.add_resource(HealthCheckResource, '/health')
+

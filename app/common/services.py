@@ -20,7 +20,7 @@ class ProductCodeGenerator:
         app_settings_key = f'product_counter_{key}'
         setting = AppSetting.query.filter_by(key=app_settings_key).first()
         if not setting:
-            setting = AppSetting(key=key, value='1')
+            setting = AppSetting(key=app_settings_key, value='1')
             db.session.add(setting)
             db.session.flush()
             return f'{key}001'
@@ -89,3 +89,26 @@ class CollectionCodeGenerator:
         key = CollectionCodeGenerator.get_counter_key(linea, sublinea, tipo)
         setting = AppSetting.query.filter_by(key=key).first()
         return int(setting.value)+1 if setting else 1
+
+
+
+class SecuenceGenerator:
+    @staticmethod
+    def get_next_number(prefix)->int:
+        
+        if prefix == None:
+            raise ValueError('Prefix at service SecuenceGenerator')
+
+        counter = AppSetting.query.filter(AppSetting.key == prefix).first()
+
+        #pendiente crer contunres
+
+        if counter:
+            n= int(counter.value) + 1
+            counter.value = n
+            return int(n)
+        else:
+            new_setting = AppSetting(key = prefix, 
+                                     value = 1)
+            db.session.add(new_setting)
+            return 1

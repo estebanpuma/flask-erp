@@ -7,6 +7,7 @@ class OrderStatus(str, Enum):
     PLANNED = 'Planificada'
     CANCELED = 'Cancelada'
     DELIVERED = 'Entregada'
+    REJECTED = 'Rechazada'
     WIP = "En proceso"
 
     @classmethod
@@ -40,7 +41,7 @@ class ProductLotStatusEnum(str, Enum):
     IN_STOCK = 'En stock'
     DELIVERED = 'Entregado'
     REJECTED = 'Rechazado'
-    RETURNED = 'Regresado'
+    #RETURNED = 'Regresado'
 
     @classmethod
     def has_value(cls, value):

@@ -1,13 +1,21 @@
 {% extends 'base.html' %}
 {% from 'components/entryCard.html' import entry_card %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}Producción{% endblock %}
 {% block content %}
-  {% set title = 'Producción' %}
-  {% include 'components/pageHeader.html' %}
+ 
+  {{ pageHeader(href='/', title='Producción')}}
+
+
   <div class="row g-3">
     {{ entry_card('/products/index', '👟 Productos', 'Modelos, diseños, colecciones.') }}
     {{ entry_card('/production-plans', '🗓️ Planificación', 'Órdenes y requerimientos semanales.') }}
     {{ entry_card('/production-orders', '📟 Órdenes de Producción', 'Seguimiento por etapas.') }}
     {{ entry_card('/production-control', '📋 Control de Producción', 'Avance por área y productividad.') }}
+    {{ entry_card('/production/operations', '🏭 Procesos', 'Procesos de producción') }}
     {{ entry_card('/reprocesses', '♻️ Reprocesos', 'Devoluciones o defectuosos.') }}
+    {{ entry_card('/production/capacity', '🏭 Capacidad instalada', 'Capacidad instalada de producción por variante') }}
+    {{ entry_card('/production/resources', '⚙️ Recursos', 'Definir recursos de producción.') }}
+    {{ entry_card('/production/setup', '⚙️ Setup', 'Setup planta') }}
   </div>
 {% endblock %}

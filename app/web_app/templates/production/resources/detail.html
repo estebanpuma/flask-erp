@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from 'components/detailCard.html' import detail_card %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}Recurso{% endblock %}
+
+{% block content %}
+
+<div class="container mt-3" >
+    {{ pageHeader(href='/production/resources', title='Detalle del recurso')}}
+
+    <div
+      x-data="genericDetail(
+        '/api/v1/production-resources/{{id }}',
+        
+          [  
+            { field: 'code',        label: 'Código', },
+            { field: 'name',        label: 'Nombre', },
+            { field:'is_active', label:'Status' },
+            { field: 'kind',        label: 'Tipo', },
+            { field: 'qty',        label: 'Cantidad', },
+            { field: 'description', label:'Descripción'}
+          ],
+          '⚙️',
+          '/production/resources',
+          '/production/resources/{{id}}/edit'
+      )"
+    >
+    {% include "components/detailCard.html" %}
+    
+    <!-- Mensaje de error -->
+    <template x-if="error">
+      <div class="alert alert-danger" x-text="error"></div>
+    </template>
+
+  </div>
+
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}

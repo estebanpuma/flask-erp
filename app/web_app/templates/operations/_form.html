@@ -1,0 +1,179 @@
+<form action="" autocomplete="off" style="max-width: 480px;" class="container my-4" x-data="opsForm()" validate>
+    <div x-data="{ href: '/production/operations', title: ' Crear nuevo proceso' }">
+        {% include 'components/_pageHeader.html' %}
+    </div>
+
+    <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h5 mb-1">Crear operación</h1>
+      <div class="text-muted small">Ingresa los datos</div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <template x-if="error"><div class="alert alert-danger" x-text="error"></div></template>
+  <template x-if="notice"><div class="alert alert-info" x-text="notice"></div></template>
+
+  <!-- inputs  -->
+   
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h2 class="h6 mb-3">1. Datos generales</h2>
+            <p class="text-muted small mb-3">Con esto ya puedes guardar. Los demás campos son opcionales.</p>
+
+            <div x-data="inputText({label:'Nombre de la operación*', 
+                                    id:'name',
+                                    })"
+                    x-model="form.name"
+                    x-modelable="value"
+                    @input.debounce.300="validateName()"
+                    @change="validateName()"></div>
+
+
+            <div x-data="inputSelect({label:'Responsable*', 
+                                        id:'job', 
+                                        show:'name', 
+                                        list:'jobs',
+                                        help:'Responsable final(cargo) del proceso y de sus metricas',
+                                        })"
+                                       
+                    x-model="form.job_id"
+                    x-modelable="value"
+                    ></div>
+                    
+            <div x-data="inputTextArea({id:'description'})"
+                    x-model="form.description"
+                    x-modelable="value"></div>  
+
+
+            
+
+            <div x-data="{open: false}">
+                <h2 class="h6 mb-3">2. Datos opcionales <button type="button" class="btn btn-link" @click="open = !open" ><i class="bi bi-chevron-down"></i></button></p> </h2>
+                <p class="text-muted small mb-3">Campos opcionales.   
+                <div x-show="open">
+                    <div x-data="inputText({label:'Kpi', id:'kpi'})"
+                    x-model="form.kpi"
+                    x-modelable="value">
+                    </div>
+                        
+                    <div class="mb-3" x-data="inputText({label:'meta', id:'goal', model:'form.goal'})"
+                    x-model="form.goal"
+                    x-modelable="value">
+                    </div>
+                </div>
+                
+            </div>
+                                                                                   
+        
+            <div class="d-flex">
+                <div x-data="actionBtn({label:'Guardar', loading:loading})" @click="submitForm" type="submit" class="flex-grow-1 me-2"></div>
+                <div x-data="actionBtn({label:'Cancelar', variant:'outline-dark'} )" class="ps"></div>
+            </div>
+        </div>
+    </div>
+    
+    
+
+</form>
+<script defer>
+function opsForm(){
+    return{
+        form:{
+            name:'',
+            goal:'',
+            scope:'',
+            job_id:'',
+            description:'',
+            kpi:'',
+
+        },
+        error:'',
+        notice:'',
+        errors:{name:{
+                        status:false,
+                        msg:''
+                    }},
+        jobs: [],
+        loading: false,
+
+        init(){
+            this.fetchJobs()
+        },
+
+        async fetchJobs(){
+            const res = await window.guifer.helpers.fetch.apiFetch('GET', 'jobs');     
+            console.log(res)
+            this.jobs = res;
+        },
+
+
+        async validateName(){
+            console.log('validate nomre')
+            const res = await window.guifer.helpers.fetch.apiFetch('GET', `operations?name=${this.form.name}`)
+            if(res && res.length>0){
+                console.log('this res', res)
+                 this.error= 'Ya existe un proceso con ese nombre';
+                 this.errors.name.status=true;
+                 return true
+            }else{
+                this.error= '';
+                 this.errors.name.status=false;
+                 return false
+            }
+        },
+
+        validateData(){
+            console.log('entra a validar')
+            if(this.validateName()) return 
+            
+            if(!this.form.name) {
+                
+                this.error = 'Debe establecer un nombre'
+                console.log('this', this.error)
+                return false
+            };
+            if(!this.form.job_id) {
+                this.error = 'Debe elegir un ejecutor'
+                return false
+            };
+            return true
+        },
+
+        cancel(){
+            this.form={
+                name:'',
+                goal:'',
+                scope:'',
+                job_id:'',
+                description:'',
+                kpi:'',
+
+            };
+            this.loading=false;
+        },
+
+        async submitForm(){
+            this.loading = true
+            this.error='';
+            if(this.validateData()) return
+            const payload = this.form
+            try{
+                const res = await window.guifer.helpers.fetch.apiFetch('POST', 'operations', payload)
+                console.log(res)
+                if(res) {
+                    window.guifer.components.alert.showToast('Registro guardado', 'success')
+                    window.location.href = '/production/operations'
+                }
+
+            }catch(err){
+                window.guifer.helpers.ui.showToast(err.message, 'danger');
+            }
+            this.loading = false
+            
+        }
+    }
+}
+</script>

@@ -10,47 +10,58 @@ def product_index():
 
 @products_bp.route('/')
 def product_list():
-    return render_template('/products/product_list.html')
+    return render_template('/products/products/product_list.html')
 
 @products_bp.route('/<int:id>')
 def product_detail(id):
-    return render_template('products/product_detail.html', product_id=id)
+    return render_template('products/products/product_detail.html', product_id=id)
 
 @products_bp.route('/create', methods=['GET'])
 def create_product_view():
-    return render_template('products/product_wizard.html')
+    return render_template('products/products/product_create.html')
 
 
 #----------------------------------------------------
 #------------------------DEsigns--------------------
 
-@products_bp.route('/desings')
-def design_list():
-    return render_template('/products/designs/design_list.html')
+@products_bp.route('/<int:product_id>/desings')
+def design_list(product_id):
+    return render_template('/products/designs/design_list.html', product_id=product_id)
 
-@products_bp.route('/designs/<int:id>')
-def design_detail(id):
-    return render_template('products/designs/design_detail.html', design_id=id)
+@products_bp.route('/<int:product_id>/designs/<int:design_id>')
+def design_detail(product_id, design_id):
+    return render_template('products/designs/design_detail.html', design_id=design_id, product_id=product_id)
 
 @products_bp.route('/designs/create', methods=['GET'])
 def create_design_view():
-    return render_template('products/product_wizard.html')
+    return render_template('products/products/product_wizard.html')
+
+
+@products_bp.route('/<int:product_id>/designs/create', methods=['GET'])
+def create_product_design_view(product_id):
+   
+    return render_template('products/designs/design_create.html', product_id=product_id)
+
+@products_bp.route('/<int:product_id>/designs/<int:design_id>/images/create', methods=['GET'])
+def create_design_image(product_id, design_id):
+   
+    return render_template('products/designs/_designImages.html', product_id=product_id, design_id=design_id)
 
 
 #----------------------------------------------------
 #------------------------Variants--------------------
 
-@products_bp.route('/variants')
-def variant_list():
-    return render_template('/products/variants/variant_list.html')
+@products_bp.route('/<int:product_id>/designs/<int:design_id>/variants')
+def variant_list(product_id, designs_id):
+    return render_template('/products/variants/variant_list.html', product_id=product_id, designs_id=designs_id)
 
-@products_bp.route('/variants/<int:id>')
-def variant_detail(id):
-    return render_template('products/variants/variant_detail.html', variant_id=id)
+@products_bp.route('/<int:product_id>/designs/<int:design_id>/variants/<int:variant_id>')
+def variant_detail(product_id, design_id, variant_id):
+    return render_template('products/variants/variant_detail.html',product_id=product_id, design_id=design_id, variant_id=variant_id)
 
-@products_bp.route('/variants/create', methods=['GET'])
-def create_variant_view():
-    return render_template('products/product_wizard.html')
+@products_bp.route('/<int:product_id>/designs/<int:design_id>/variants/create', methods=['GET'])
+def create_variant_view(product_id, design_id):
+    return render_template('products/product_wizard.html', product_id=product_id, design_id=design_id)
 
 
 #-------------------------------------------------------
@@ -101,3 +112,39 @@ def product_collection_list():
 @products_bp.route('/collections/<int:id>')
 def product_collection_detail(id):
     return render_template('products/collections/collection_detail.html', collection_id=id)
+
+
+
+#----------------------------------------------------
+#------------------Sizes/tallas
+
+@products_bp.route('/series/create', methods=['GET'])
+def create_size():
+    return render_template('products/sizes/series_create.html')
+
+
+@products_bp.route('/series')
+def size_list():
+    return render_template('/products/sizes/series_list.html')
+
+@products_bp.route('/series/<int:id>')
+def size_detail(id):
+    return render_template('products/sizes/series_detail.html', serie_id=id)
+
+
+
+#----------------------------------------------------
+#------------------Colores-------------------------------------
+
+@products_bp.route('/colors/create', methods=['GET'])
+def create_color():
+    return render_template('products/colors/colors_create.html')
+
+
+@products_bp.route('/colors')
+def color_list():
+    return render_template('/products/colors/colors_list.html')
+
+@products_bp.route('/colors/<int:id>')
+def color_detail(id):
+    return render_template('products/colors/colors_detail.html', color_id=id)

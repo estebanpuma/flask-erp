@@ -1,0 +1,194 @@
+{% from 'components/_pageHeader.html' import pageHeader %}
+<div action="" style="max-width: 560px;" class="container my-4" x-data="prForm()">
+    {{ pageHeader(href='/production/resources', title='Crear Recurso') }}
+    <template x-if="error">
+        <div x-html="window.guifer.components.alert.alert({msg:error, type:'danger'})"></div>
+    </template>
+    
+    <template x-if="notice"><div class="alert alert-info" x-text="notice"></div></template>
+
+    <!-- inputs  -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h2 class="h6 mb-3">1. Datos del recurso</h2>
+            <p class="text-muted small mb-3">Información general.   </p>
+
+            <form action="" autocomplete="off" >
+                <div x-data="inputText({label:'Nombre*', id:'name', })"
+                    x-model="form.name"
+                    x-modelable="value"
+                    @input.debounce.300="validateName()">
+                </div>
+
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="fs-6">Cantidad:</div>
+                    <div x-data="inputQty({ initial:1, step:1, min:1, max:10, size:'lg' })"
+                        x-modelable="value"
+                        x-model="form.qty"
+                        class="d-flex align-items-center gap-1 mb-2">
+                    </div>
+                </div>  
+                
+                <div x-data="inputTextArea({label:'Descripción'})"
+                    x-model="form.description"
+                    x-modelable="value">
+                </div>   
+
+                
+                <p class="text-muted small mb-3">Qué tipo de recurso es?</p>
+
+                <div x-data="inputSelect({label:'Tipo*', 
+                                            id:'resource', 
+                                            show:'name', 
+                                            change:'', 
+                                            list:'resources'})"
+                    x-model="form.kind"
+                    x-modelable="value"></div>
+
+                <p class="text-muted small mb-3">A qué proceso pertenece(opcional) </p>
+                <div x-data="inputSelect({label:'Proceso', 
+                                            id:'operation',  
+                                            show:'name', 
+                                            list:'operations'})"
+                    x-model="form.operation_id"
+                    x-modelable="value">
+                </div>
+
+                 
+                
+                <div x-data="{open: false}">
+                    <h2 class="h6 mb-3">2. Datos opcionales <button type="button" class="btn btn-link" @click="open = !open" ><i class="bi bi-chevron-down"></i></button></p> </h2>
+                    <p class="text-muted small mb-3">Campos adicionales.   </p>
+                    <div x-show="open">
+                        <div x-data="inputText({label:'Código adicional', id:'code_doc', help:'Código para sistema de gestión documental'})"
+                        x-model="form.code_doc"
+                        x-modelable="value">
+                        </div>
+
+                    </div>
+                
+                </div>
+            </form>
+            <div class="d-flex pt-3">
+                <div x-data="actionBtn({label:'Guardar', loading:loading})" @click="submitForm" type="submit" class="w-75 me-2"></div>
+                <div x-data="actionBtn({label:'Cancelar', variant:'outline-dark'} )" class="w-25"></div>
+            </div>                                
+        </div>          
+    </div> 
+</div>
+<script >
+function prForm(){
+    return{
+        form:{
+            name:'',
+            qty:1,
+            kind:'',
+            efficiency:1,
+            operation_id:'',
+            code_doc:'',
+        },
+        error:'',
+        notice:'',
+        errors:{name:false},
+        error_name:'',
+        resources: [
+            {id:'labor', name:'Mano de obra'},
+            {id:'machine', name:'Maquinaria'},
+            {id:'tool', name:'Herramienta'}
+        ],
+        operations:[],
+        loading: false,
+
+        init(){
+            console.info('Init...')
+            this.fetchOps() 
+        },
+
+        async fetchOps(){
+            const res = await window.guifer.helpers.fetch.apiFetch('GET', 'operations');     
+            console.log(res)
+            this.operations = res;
+        },
+
+        async fetchName(){
+            const res = await window.guifer.helpers.fetch.apiFetch('GET', `production-resources?name=${this.form.name}`)
+            return res
+        },
+
+        validateName(){
+            console.log('validate nomre')
+            const res = this.fetchName().then(res=>{
+                console.log(res)
+                if(res && res.length>0){
+                    console.log('this res', res)
+                    this.error= 'Ya existen recursos con ese nombre';
+                    return true
+                }else{
+                    this.error= '';
+                    return false
+                }
+                })    
+        },
+
+        validateData(){
+            console.log('entra a validar')
+            if( this.validateName()){
+
+                console.log('que carajo')
+                console.log('this valnme', this.validateName())
+                return false
+            }
+            console.log('pasa validateNme')
+            if(!this.form.name) {
+                
+                this.error = 'Debe establecer un nombre'
+                console.log('2erro val', this.error)
+                return false
+            };
+            this.error = '';
+            return true
+        },
+
+        cancel(){
+            this.form = {
+                            name:'',
+                            qty:0,
+                            kind:'',
+                            efficiency:1,
+                            operation_id:'',
+                            code_doc:'',
+                        };
+            this.error='';
+        },
+
+        async submitForm(){
+            loading = true
+            this.error='';
+            if(!this.validateData()) {
+                window.scrollTo({ top: 10, behavior: 'smooth' });
+                loading = false
+                return}
+
+            const payload = this.form
+            console.log('payload: ', payload)
+   
+            try{
+                const res = await window.guifer.helpers.fetch.apiFetch('POST', 'production-resources', payload)
+                console.log(res)
+                if(res) {
+                    window.guifer.components.alert.showToast('Registro guardado', 'success')
+                    window.location.href = '/production/resources'
+                }
+
+            }catch(err){
+                console.error('err', err)
+                window.guifer.helpers.ui.showToast(err.message, 'danger');
+                window.scrollTo({ top: 10, behavior: 'smooth' });
+
+            }
+            loading = false
+            
+        }
+    }
+}
+</script>

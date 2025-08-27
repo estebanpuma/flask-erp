@@ -1,0 +1,43 @@
+<!-- templates/sales/sale-orders/steps/step2_catalog.html -->
+<div class="mb-4" x-init="searchDesigns()">
+  <input x-model.debounce.500ms="productQuery"
+         @input="searchProducts"
+         class="form-control mb-3"
+         placeholder="Buscar producto… (código o nombre)">
+
+  <div class="row gy-2">
+    <template x-for="d in designs" :key="d.id">
+      <div class="col-6 col-md-4 col-lg-3 px-1">
+        <div class="card h-100 shadow-sm border-0 p-0 btn" @click="selectDesign(d.id)">
+          <!-- Imagen/Icono -->
+          <img :src="getPrimaryImageUrl(d.images)"
+               class="card-img-top p-0" alt="Imagen producto">
+          <div class="card-body p-2 d-flex flex-column align-items-start">
+            <!-- Nombre y código -->
+            <h6 class="card-title text-dark mb-1" x-text="d.name || d.product.name || d.product.collection.name"></h6>
+            <small class="text-muted mb-2" x-text="d.code"></small>
+
+
+            <!-- Precio y descuento -->
+            <div class="d-flex mb-2">
+              $
+              <span class="fs-6 fw-bold me-auto"
+                    x-text="Number(d.current_price).toFixed(2)"></span>
+              <span x-show="d.discount"
+                    class="badge bg-danger ms-1"
+                    x-text="`5% off`"></span>
+            </div>
+
+            <!-- Min. order -->
+            <small class="text-muted text-start" x-text="`Pedido min: 2 pares`"></small>
+
+            <!-- Botones de acción -->
+            <div class="mt-auto d-grid gap-2">
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>

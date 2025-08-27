@@ -1,6 +1,26 @@
 from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional
 from datetime import date
+from ..core.dto_base import MyBase
+from decimal import Decimal
+
+
+class OperationDTO(MyBase):
+    name: str
+    job_id: int
+    goal: Optional[str] = None
+    kpi: Optional[str] = None
+    responsible:  Optional[str] = None
+
+class OperationPatchDTO(MyBase):
+    name: Optional[str]=None
+    goal: Optional[str] = None
+    kpi: Optional[str] = None
+    responsible: Optional[str] = None
+
+class OperationStatusDTO(MyBase):
+    is_active: bool
+
 
 class ProductionOrderLineDTO(BaseModel):
     product_variant_id: int

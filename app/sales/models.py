@@ -6,6 +6,10 @@ from ..core.enums import OrderStatus, PaymentStatus
 
 from datetime import datetime,date
 
+from decimal import Decimal
+
+from sqlalchemy import Numeric
+
 
 class SaleOrder(BaseModel):
     __tablename__ = "sale_orders"
@@ -13,41 +17,40 @@ class SaleOrder(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     order_number = db.Column(db.String(20), unique=True)
     order_date = db.Column(db.Date, default=date.today)
-    delivery_date = db.Column(db.Date)
-    actual_delivery_date = db.Column(db.Date)  # Para comparar cumplimiento vs promesa
+    due_date = db.Column(db.Date)
+    delivery_date = db.Column(db.Date)  # Para comparar cumplimiento vs promesa
+    #Entrega 
+    shipping_province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=False)
+    shipping_canton_id = db.Column(db.Integer, db.ForeignKey('cantons.id'), nullable=False)
+    shipping_address = db.Column(db.String(250), nullable=False)
+    shipping_reference = db.Column(db.String(250))
+    #status
+    status = db.Column(db.String(20), nullable=True, default=OrderStatus.DRAFT.value)
+    payment_status = db.Column(db.String(20), nullable=False, default=PaymentStatus.UNPAID.value)
 
-    payment_status = db.Column(db.String(20), nullable=True, default=OrderStatus.DRAFT.value)
-    status = db.Column(db.String(20), nullable=False, default=PaymentStatus.UNPAID.value)
-    delivery_address = db.Column(db.String(200))
-
-    subtotal = db.Column(db.Float, default=0.0)
-    discount = db.Column(db.Float, default=0.0)  # Descuento global
-    tax = db.Column(db.Float, default=0.0)
-    total = db.Column(db.Float, default=0.0)
+    subtotal = db.Column(Numeric(12,2), nullable=False, default=Decimal('0.00'))
+    discount_rate = db.Column(Numeric(12,2), nullable=False, default=Decimal('0.00'))  # Descuento global
+    tax = db.Column(Numeric(12,2), nullable=False, default=Decimal('0.00'))
+    tax_rate = db.Column(Numeric(10,2), nullable=False, default=Decimal('15.00'))
+    total = db.Column(Numeric(12,2), nullable=False, default=Decimal('0.00'))
 
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
-    sales_person_id = db.Column(db.Integer, db.ForeignKey('salespersons.id'))
+    sales_person_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
 
-    salesperson = db.relationship('Salesperson', back_populates='sale_orders', lazy='joined')
+    salesperson = db.relationship('Worker', backref='sale_orders')
     client = db.relationship('Client', back_populates='orders', lazy='joined')
 
-    amount_paid = db.Column(db.Float, default=0.0)  # Pagos reales recibidos
-    amount_due = db.Column(db.Float, default=0.0)   # Lo que falta por cobrar
+    amount_paid = db.Column(Numeric(12,2), default=Decimal('0.00'))  # Pagos reales recibidos
+    amount_due = db.Column(Numeric(12,2), default=Decimal('0.00'))   # Lo que falta por cobrar
 
     lines = db.relationship('SaleOrderLine', back_populates='order', cascade='all, delete-orphan', lazy='joined')
+    province = db.relationship('Provinces', back_populates='orders')
+    canton = db.relationship('Cantons', back_populates='orders')
     agreements = db.relationship('PaymentAgreement', back_populates='sale_order', cascade='all, delete-orphan')
     transactions = db.relationship('PaymentTransaction', back_populates='sale_order', cascade='all, delete-orphan')
 
     canceled_reason = db.Column(db.String(200))
     notes = db.Column(db.String(250), nullable=True)
-
-    @property
-    def calculated_subtotal(self):
-        return sum(line.subtotal for line in self.lines)
-
-    @property
-    def calculated_total(self):
-        return self.calculated_subtotal - self.discount + self.tax
 
     def validate_status(self):
         if self.status not in [s.value for s in OrderStatus]:
@@ -62,34 +65,43 @@ class SaleOrderLine(BaseModel):
     variant_id = db.Column(db.Integer, db.ForeignKey('product_variants.id'), nullable=False)
     
     quantity = db.Column(db.Integer, nullable=False)
-    price_unit = db.Column(db.Float, nullable=False)
-    discount = db.Column(db.Float, default=0.0)
-    cost_unit = db.Column(db.Float)  # Opcional, útil para cálculo de margen
+    price_unit = db.Column(Numeric(12,2), nullable=False)
+    discount_rate = db.Column(Numeric(12,2), default=Decimal(0.00))
+    cost_unit = db.Column(Numeric(12,2))  # Opcional, útil para cálculo de margen
 
     order = db.relationship('SaleOrder', back_populates='lines')
     variant = db.relationship('ProductVariant')
 
+
     @property
     def subtotal(self):
-        return (self.price_unit - self.discount) * self.quantity
+        return (self.price_unit - (self.price_unit*self.discount_rate/100)) * self.quantity
 
-    
+    @property
+    def line_discount(self):
+        return (self.discount_rate/100 * self.price_unit) * self.quantity
 
 
 
 class SaleOrderPreview:
-    def __init__(self, lines, discount=0.0, tax=0.0):
+    def __init__(self, lines, discount_rate=0.0, tax_rate=0.0):
         self.lines = lines
-        self.discount = discount
-        self.tax = tax
+        self.discount_rate = discount_rate
+        self.tax_rate = tax_rate
 
 class SaleOrderPreviewLine:
-    def __init__(self, variant_id, quantity, price_unit, discount=0.0):
+    def __init__(self, variant_id, quantity, price_unit, discount_rate=0.0):
         self.variant_id = variant_id
         self.quantity = quantity
         self.price_unit = price_unit
-        self.discount = discount
+        self.discount_rate = discount_rate
 
     @property
     def subtotal(self):
-        return (self.price_unit - self.discount) * self.quantity
+        return (self.price_unit - (self.price_unit*self.discount_rate/100)) * self.quantity
+
+    @property
+    def line_discount(self):
+        return (self.discount_rate/100 * self.price_unit) * self.quantity
+    
+    

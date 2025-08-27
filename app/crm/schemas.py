@@ -36,14 +36,24 @@ client_fields = {
     'phone': fields.String,
     'is_special_taxpayer':fields.Boolean,
     'province': fields.Nested(province_name_fields),
-    'canton':fields.Nested(canton_fields)
+    'canton':fields.Nested(canton_fields),
+    'province_id': fields.Integer,
+    'canton_id': fields.Integer,
+
 }
 
 client_search_fields = {
     'id': fields.Integer,
     'ruc_or_ci': fields.String,
     'name': fields.String,
-    'province_name': fields.String
+    'email': fields.String,
+    'client_category': fields.String,
+    'address': fields.String,
+    'phone': fields.String,
+    'is_special_taxpayer':fields.Boolean,
+    'province_name': fields.String,
+    'province_id': fields.Integer,
+    'canton_id': fields.Integer,
 }
 
 contact_fields = {

@@ -44,3 +44,24 @@ def create_lot():
 def create_material_lot(id):
     return render_template('materials/lot_create.html', material_id=id)
 
+
+
+#----------------------------Groups--------------------------------------------
+#------------------------------------------------------------------------------
+@materials_bp.route('/groups/')
+def groups_list():
+    return render_template('materials/groups/groups_list.html')
+
+@materials_bp.route('/groups/<int:id>')
+def groups_detail(id):
+    return render_template('materials/groups/groups_detail.html', group_id=id)
+
+
+@materials_bp.route('/groups/create', methods=['GET'])
+def create_group_view():
+    return render_template('materials/groups/groups_create.html')
+
+
+@materials_bp.route('/groups/<int:id>/edit')
+def edit_group(id):
+    return render_template('materials/groups/groups_edit.html', group_id=id)

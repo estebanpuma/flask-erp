@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container mt-3" >
 
-  <div x-data="{ href: '/products/designs', title: 'Detalle de variante' }">
+  <div x-data="{ href: '/products/{{product_id}}/designs/{{design_id}}', title: 'Detalle de variante' }">
     {% include 'components/_pageHeader.html' %}
   </div>
   

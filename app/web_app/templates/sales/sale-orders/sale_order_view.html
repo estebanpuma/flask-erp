@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<div x-data="orderDetail({{ order_id }})" x-init="init()" class="container-xl my-4">
+
+  <!-- Loading / error --------------------------------------------- -->
+  <div x-show="loading" class="text-center my-5">
+    <div class="spinner-border" role="status"></div>
+    <p class="mt-2">Cargando pedido…</p>
+  </div>
+  <div x-show="error" class="alert alert-danger" x-text="error"></div>
+
+  <!-- Contenido solo cuando hay datos ----------------------------- -->
+  <template x-if="order">
+    <div>
+
+      <!-- Cabecera ------------------------------------------------ -->
+      <h2 class="h4 d-flex align-items-center gap-2">
+        Pedido <span x-text="order.order_number"></span>
+        <span x-html="window.guifer.components.statusBadge(order.status,'sale_order')"></span>
+      </h2>
+
+      <dl class="row small">
+        <dt class="col-4 col-md-3">Cliente</dt>
+        <dd class="col-8 col-md-9" x-text="order.client.name"></dd>
+
+        <dt class="col-4 col-md-3">Fecha</dt>
+        <dd class="col-8 col-md-9" x-text="order.order_date"></dd>
+
+        <dt class="col-4 col-md-3">Total</dt>
+        <dd class="col-8 col-md-9" x-text="money(order.total)"></dd>
+      </dl>
+
+      <!-- Tabla de líneas ----------------------------------------- -->
+      <table class="table table-sm mt-4">
+        <thead>
+          <tr><th>Código</th><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>
+          <template x-for="it in items" :key="it.id">
+            <tr>
+              <td x-text="it.code"></td>
+              <td x-text="it.name"></td>
+              <td x-text="it.qty"></td>
+              <td x-text="money(it.price)"></td>
+              <td x-text="money(it.subtotal)"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+
+      <!-- Acciones si pendiente ----------------------------------- -->
+      <div class="d-flex gap-2 justify-content-end mt-3"
+           x-show="order.status === 'Pendiente'">
+        <div x-html="window.guifer.components.actionBtn({
+              label:'Rechazar', variant:'danger', icon:'x-circle'
+            })" @click="changeStatus('Rechazada')"></div>
+        <div x-html="window.guifer.components.actionBtn({
+              label:'Aprobar',  variant:'success', icon:'check-circle'
+            })" @click="changeStatus('Aprobada')">
+          </div>
+      </div>
+
+    </div>
+  </template>
+</div>
+
+<script defer>
+  function orderDetail (id) {
+    return {
+      /* ---------- estado ---------- */
+      id,
+      order: null,          // cabecera
+      items: [],            // líneas
+      loading: true,
+      error: '',
+
+      /* ---------- ciclo ---------- */
+      async init () {
+        try {
+          this.loading = true;
+
+          /* ✓ 1. Cabecera */
+          const r1 = await fetch(`/api/v1/sale-orders/${this.id}`);
+          if (!r1.ok) throw new Error('Error cabecera');
+          this.order = await r1.json();
+
+          /* ✓ 2. Líneas */
+          const r2 = await fetch(`/api/v1/sale-orders/${this.id}/lines`);
+          if (!r2.ok) throw new Error('Error líneas');
+          const raw = await r2.json();
+          this.items = Array.isArray(raw) ? raw : raw.items;
+
+        } catch (e) {
+          console.error(e);
+          this.error = 'No se pudo cargar el pedido';
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      async changeStatus(newStatus) {
+        if (!confirm(`¿Confirmar orden ${newStatus.toLowerCase()}?`)) return;
+        this.loading = true;
+        try {
+          const res = await fetch(`/api/v1/sale-orders/${this.order.id}/status`, {
+            method:'PATCH',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({status:newStatus})
+          });
+          if(!res.ok) throw new Error(res?.error || res?.message || res.status)
+          this.order.status = newStatus;
+
+          window.guifer.helpers.ui.showToast(`Orden ${newStatus.toLowerCase()} correctamente`, 'success');
+        } catch(e) {
+          console.log(e)
+          window.guifer.helpers.ui.showToast('Error al actualizar', 'danger');
+        } finally { this.loading = false; }
+      },
+      /* ---------- helpers ---------- */
+      money (v) { return `US$ ${Number(v).toFixed(2)}` }
+
+    };
+  }
+</script>
+{% endblock %}
+{% block scripts %}
+  <script  src="{{ url_for('static', filename='js/components.js') }}"></script>
+{% endblock %}

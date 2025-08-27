@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Proveedores{% endblock %}
+{% block content %}
+
+<div x-data="{ href: '/suppliers', title: 'Proveedores' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<a href="/suppliers/create" class="btn btn-dark">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo diseno
+</a>
+
+<div
+    x-data="genericList(
+      `/api/v1/suppliers`,
+      '/suppliers',
+      [
+        { field: 'ruc_or_ci',        label: 'RUC/CI',      filterable: true  },
+        { field: 'name',  label: 'Nombre',      filterable: true  },
+        { field: 'address',   label: 'Dirección',      filterable: true  },
+      ]
+    )"
+    x-init="init()"
+    class="table-responsive"
+  >
+    {% include 'components/listTable.html' %}
+  </div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+

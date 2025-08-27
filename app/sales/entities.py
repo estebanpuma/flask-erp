@@ -1,5 +1,10 @@
 from ..core.exceptions import AppError
 from ..core.enums import PaymentStatus
+from decimal import Decimal
+from decimal import getcontext, ROUND_HALF_UP
+
+getcontext().rounding = ROUND_HALF_UP
+CENT = Decimal('0.01')
 
 class SalesOrderEntity:
     """
@@ -7,30 +12,70 @@ class SalesOrderEntity:
     Recibe modelos (no DTOs, no datos crudos).
     """
 
-    def __init__(self, order):
-        self.order = order
 
-    def calculate_subtotal(self):
-        """
-        Calcula el subtotal sumando los subtotales de las líneas.
-        """
+    def __init__(self, order, tax_rate:Decimal, shipping_amount:Decimal=0, shipping_taxable:bool=True):
+        self.order = order
+        self.tax_rate = tax_rate
+        self.shipping_amount = shipping_amount
+        self.shipping_taxable = shipping_taxable
+
+    
+    def calculate_lines_discount(self)->Decimal:
+        """Calcula el descuento de variantes/disenos"""
+        return sum(line.line_discount for line in self.order.lines)
+        
+    def calculate_subtotal(self)->Decimal: 
+        """Suma subtotales de las líneas."""
+    
         return sum(line.subtotal for line in self.order.lines)
+    
+
+    def calculate_taxes(self, base:Decimal):
+        """Calcula los impuestos de la orden de venta sobre la base imponible"""
+        tax_rate = ((self.tax_rate or Decimal('0'))/100)
+        if self.shipping_taxable:
+            base += self.shipping_amount
+        taxes = (base * tax_rate).quantize(CENT)
+        return taxes
+    
+    def calculate_base(self):
+        """Calcula la base imponible"""
+        subtotal = self.calculate_subtotal()
+        discount = self.calculate_order_discount()
+        base = (subtotal - discount).quantize(CENT)
+        return base
+
+
+    def calculate_order_discount(self):
+        """
+        Calcula el descuento aplicado a toda la venta
+        """
+        subtotal = self.calculate_subtotal()
+        discount_rate = self.order.discount_rate/100 or Decimal('0.00')
+        discount = (subtotal * discount_rate).quantize(CENT)
+        return discount
+    
+    def calculate_total_discount(self):
+        """Calcula el descuento total aplicado a la orden y los descuentos de cada linea"""
+        lines_discount = self.calculate_lines_discount()
+        order_discount = self.calculate_order_discount()
+        return (lines_discount + order_discount).quantize(CENT)
 
     def calculate_total(self):
         """
-        Calcula el total considerando descuento global y tax.
+        Total = subtotal – descuento + impuestos.
+        Devuelve Decimal con 2 decimales, redondeo HALF_UP.
         """
-        subtotal = self.calculate_subtotal()
-        discount = self.order.discount or 0.0
-        tax = self.order.tax or 0.0
-        return round(subtotal - discount + tax, 2)
+        base = self.calculate_base()
+        taxes = self.calculate_taxes(base)
+        total = (base + self.shipping_amount + taxes).quantize(CENT)
+        return total
 
 
-    def add_payment(self, amount: float):
+    def add_payment(self, amount: Decimal):
         """Registra un pago a la orden de venta"""
         if amount > self.order.amount_due:
             raise AppError("El pago excede el saldo pendiente de la orden.")
-
         self.order.amount_paid += amount
         self.order.amount_due -= amount
         self.update_payment_status()

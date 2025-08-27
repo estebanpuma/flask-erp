@@ -7,7 +7,7 @@ class SeriesEntity:
     """Entidad de Series para creacion."""
     def __init__(self, data:dict):
         print(f'data inside entity: {data}')
-        self.name = parse_str(data.get('name'), field='name')
+        self.name = parse_str(data.get('name'), field='name').upper()
         self.start_size = parse_int(data.get('start_size'))
         self.end_size = parse_int(data.get('end_size'))
         self.category = parse_str(data.get('category'))

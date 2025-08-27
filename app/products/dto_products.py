@@ -55,8 +55,9 @@ class ProductDesignCreateDTO:
         self.product_id = parse_int(data.get("product_id"), field="Id del producto")
         self.name = parse_str(data.get('name'), field='Nombre', nullable=True)
         self.description =  parse_str(data.get('description'), nullable=True)
-        self.color_ids = parse_ids_list(data.get('colors_ids'), field='Id de colores', min_value=1)
+        self.color_ids = [parse_ids_list(d.get('color_ids'), field='Id de colores(e:design)', min_value=1) for d in data.get('designs', [])] 
         self.variants = [InlineVariantDTO(v) for v in data.get("variants", [])] 
+        self.materials = [InlineMaterialsDTO(v) for v in data.get("materials", [])]
     
 
 class InlineProductDesignDTO:

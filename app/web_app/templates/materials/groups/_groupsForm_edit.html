@@ -1,0 +1,51 @@
+<form @submit.prevent="submitForm" autocomplete="off">
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control"
+           id="code" placeholder="Ej: Escolar"
+           x-model="form.code.toUpperCase()"
+           @input.bounce500 = "checkCode()"
+           required>
+    <label for="code">Código de la serie</label>
+    <template x-if="existing_code" >
+        <span id="codeFeedback" class="text-danger">
+             🚫 El código ya existe.
+        </span>        
+    </template>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control"
+           id="name" placeholder="Ej: Escolar"
+           x-model="form.name"
+           required>
+    <label for="name">Nombre</label>
+    <template x-if="existing_name" >
+        <span id="codeFeedback" class="text-danger">
+             🚫 El nombre de color ya existe.
+        </span>        
+    </template>
+  </div>
+
+  <div class="form-floating mb-3 text-uppercase">
+    <input type="text" class="form-control"
+           id="hex" placeholder="Ej: Escolar"
+           x-model="form.hex_value"
+           required>
+    <label for="hex">HEX</label>
+  </div>
+
+   <div class="form-floating mb-3">
+    <textarea class="form-control" id="description"
+              placeholder="Descripción" style="height: 80px"
+              x-model="form.description"></textarea>
+    <label for="description">Descripción (opcional)</label>
+  </div>
+
+ 
+
+  <div class="d-flex justify-content-end mt-4">
+    <button type="submit" class="btn btn-dark">Guardar Serie</button>
+  </div>
+
+</form>

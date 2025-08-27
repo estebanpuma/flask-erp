@@ -1,5 +1,5 @@
-
-<div class="my-3 ">
+<div>
+  <div class="my-3" >
   <div class="input-group">
     <!-- Ícono de lupa -->
     <span class="input-group-text bg-white border-end-0">
@@ -64,25 +64,7 @@
       <template x-for="item in filteredItems" :key="item.id">
         <tr role="button" @click="item.href && (window.location.href = item.href)">
           <template x-for="col in columns" :key="col.field">
-            <td>
-              <!-- Si es la columna de estado, mostrar badge -->
-                <template x-if="col.field === 'is_active'">
-                  <span
-                    class="px-2 py-1 badge rounded-pill"
-                    :class="item.is_active
-                      ? 'bg-success text-white'
-                      : 'bg-secondary text-white'"
-                    x-text="item.is_active ? 'Activo' : 'Inactivo'"
-                  ></span>
-                </template>
-
-                <!-- Resto de columnas -->
-                <template x-if="col.field !== 'is_active'">
-                  <span x-text="
-                    (col.field.split('.').reduce((o, k) => (o && o[k] != null) ? o[k] : null, item))
-                    ?? '—'
-                  "></span>
-                </template>
+            <td  x-html="cellHtml(item, col)">
             </td>  
           </template>      
         </tr>
@@ -102,3 +84,4 @@
 
 
   </template>
+</div>

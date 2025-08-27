@@ -4,12 +4,16 @@ from datetime import datetime
 
 from ..common.models import BaseModel
 
+from datetime import date
+
+from decimal import Decimal
+
 
 class MaterialGroup(BaseModel):
     __tablename__ = 'material_groups'
 
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(20), nullable=True, unique=True)
+    code = db.Column(db.String(20), nullable=False, unique=True) #cambial nullable
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String(), nullable=True)
 
@@ -27,6 +31,8 @@ class Material(BaseModel):
     name = db.Column(db.String(200), nullable=False)  # Ej: Cuero, Sintético, Textil
     detail = db.Column(db.String(), nullable=True)
     unit = db.Column(db.String(10), nullable=False)
+
+    current_cost = db.Column(db.Numeric(12, 2), nullable=True, default=Decimal("0"))
 
     group_id = db.Column(db.Integer, db.ForeignKey('material_groups.id'), nullable=True)
     group = db.relationship('MaterialGroup', back_populates='materials')
@@ -53,6 +59,25 @@ class Material(BaseModel):
         return total_stock
 
     
+    def current_avg_cost(self, as_of: date | None = None) -> Decimal:
+        ref = as_of or date.today()
+
+        active_lots = (
+            MaterialLot.query
+            .filter_by(material_id=self.id)
+            .filter(MaterialLot.quantity > 0,
+                    MaterialLot.received_date <= ref)      # stock vigente
+            .all()
+        )
+
+        if not active_lots:
+            return self.current_avg_cost or Decimal("0")
+
+        total_qty  = sum(lot.quantity for lot in active_lots)
+        total_cost = sum(lot.quantity * lot.unit_cost for lot in active_lots)
+        return total_cost / total_qty
+
+    
 
 class MaterialLot(BaseModel):
     __tablename__ = 'material_lots'
@@ -64,8 +89,8 @@ class MaterialLot(BaseModel):
     warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=False)
    
     quantity_committed = db.Column(db.Float, default=0) # Stock comprometido para órdenes de producción
-    quantity = db.Column(db.Float, nullable=False)# Stock físico disponible
-    unit_cost = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Float, nullable=False)# Stock físico disponible/ingresado
+    unit_cost = db.Column(db.Numeric(8,2), nullable=False)
     received_date = db.Column(db.Date, nullable=False, default=datetime.today())
     note = db.Column(db.String(), nullable=True)
 
@@ -137,7 +162,7 @@ class ProductLot(db.Model):
     warehouse_id = db.Column(db.Integer, db.ForeignKey('warehouses.id'), nullable=False)
 
     quantity = db.Column(db.Float, nullable=False)
-    unit_cost = db.Column(db.Float, nullable=False)  # Coste promedio unitario
+    unit_cost = db.Column(db.Float, nullable=False)  # Coste promedio unitario para borrar
     production_order_id = db.Column(db.Integer, db.ForeignKey('production_orders.id'), nullable=False)
 
     # Estado logístico (nunca in_process!)

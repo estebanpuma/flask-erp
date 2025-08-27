@@ -7,7 +7,11 @@ from .resources import (
                         SaleOrderPatchResource,
                         SaleOrderDeleteResource,
                         SaleOrderGetResource, 
-                        SaleOrderPreviewResource
+                        SaleOrderPreviewResource,
+
+                        SaleOrderLineGetResource,
+                        UpdateStatusPatchResource
+                        
 )
 
 
@@ -20,11 +24,15 @@ sales_api.add_resource(SaleOrderPostResource, '/sale-orders')
 sales_api.add_resource(SaleOrderGetResource, '/sale-orders', '/sale-orders/<int:resource_id>')
 
 sales_api.add_resource(SaleOrderPatchResource, '/sale-orders/<int:resource_id>')
+sales_api.add_resource(SaleOrderLineGetResource, '/sale-orders/<int:resource_id>/lines')
+
 sales_api.add_resource(SaleOrderDeleteResource, '/sale-orders/<int:resource_id>')
 
 sales_api.add_resource(SaleOrderPreviewResource, '/sale-orders/preview')
 
+sales_api.add_resource(UpdateStatusPatchResource, '/sale-orders/<int:resource_id>/status')
 """
+
 
 
 sales_api.add_resource(SaleOrderCancelResource, '/sale_orders/<int:resource_id>/cancel')

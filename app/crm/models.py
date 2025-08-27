@@ -81,6 +81,8 @@ class Provinces(db.Model):
     population = db.Column(db.Integer, nullable=True)
     cantons = db.relationship('Cantons', back_populates='province', cascade='all, delete-orphan')
     clients = db.relationship('Client', back_populates='province')
+
+    orders = db.relationship('SaleOrder', back_populates='province')
     
     def __repr__(self):
         return f'<Provincia(nombre={self.name})>'
@@ -97,6 +99,7 @@ class Cantons(db.Model):
     province_id = db.Column(db.Integer, db.ForeignKey('provinces.id'), nullable=False)
     province = db.relationship('Provinces', back_populates='cantons')
     clients = db.relationship('Client', back_populates='canton')
+    orders = db.relationship('SaleOrder', back_populates='canton')
     
     
     def __repr__(self):

@@ -1,6 +1,8 @@
 import os
 from datetime import timedelta
 
+from pathlib import Path
+
 
 class Config:
     DEBUG = True
@@ -11,14 +13,27 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    BASE_UPLOAD_FOLDER = os.path.join(os.getcwd(), 'app', 'static', 'media')
+    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB
+
+    # __file__ → /path/to/project/app/config.py
+    CONFIG_PATH = Path(__file__).resolve()
+
+    # dos niveles arriba, si fuese necesario:
+    PROJECT_ROOT = CONFIG_PATH.parents[1]
+
+    BASEDIR = str(os.path.join(PROJECT_ROOT, 'app'))
+
+    
+    BASE_UPLOAD_FOLDER = os.path.join(BASEDIR, 'static', 'media')
+
     UPLOAD_FOLDERS = {
         'products': os.path.join(BASE_UPLOAD_FOLDER, 'products'),
+        'designs':  os.path.join(BASE_UPLOAD_FOLDER, 'designs'),
         'clients': os.path.join(BASE_UPLOAD_FOLDER, 'clients'),
         'users': os.path.join(BASE_UPLOAD_FOLDER, 'users')
     }
 
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
     JWT_SECRET_KEY = 'super-clave-muy-segura-que-debes-cambiar'

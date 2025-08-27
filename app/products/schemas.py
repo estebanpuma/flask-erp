@@ -22,7 +22,8 @@ line_fields = {
     'id': fields.Integer,
     'code': fields.String,
     'name': fields.String,
-    'description': fields.String
+    'description': fields.String,
+  
 }
 
 subline_fields = {
@@ -81,6 +82,7 @@ variants_small = {
     'id': fields.Integer,
     'code': fields.String,
     'stock': fields.Float,
+    'size': fields.Nested(size_fields)
 }
 
 small_product_fields = {
@@ -97,6 +99,13 @@ small_product_fields = {
     'target': fields.Nested(line_fields),
     'collection': fields.Nested(line_fields),
 }
+color_names_field = fields.List(fields.String(attribute='name'), attribute='colors')
+
+design_images ={
+    'id': fields.Integer,
+    'filename': fields.String,
+    'is_primary': fields.Boolean
+}
 
 product_design_fields = {
     'id': fields.Integer,
@@ -104,10 +113,13 @@ product_design_fields = {
     'description': fields.String,
     'product_id': fields.Integer,
     'colors': fields.List(fields.Nested(color_fields)),  # o fields.String si prefieres mostrar nombres
+    'color_names':color_names_field,
+    'images':fields.List(fields.Nested(design_images)),
     'variants': fields.List(fields.Nested(variants_small)),
     'created_at': DateFormat,
     'is_active': fields.Boolean,
-    'product': fields.Nested(small_product_fields)
+    'product': fields.Nested(small_product_fields),
+    'current_price': fields.Float
     
 }
 
@@ -126,7 +138,8 @@ product_fields = {
     'collection': fields.Nested(line_fields),
     'designs': fields.List(fields.Nested(product_design_fields)),
     'created_at': fields.String,
-    'is_active': fields.Boolean
+    'is_active': fields.Boolean,
+    
 }
 
 collection_fields ={
@@ -144,6 +157,7 @@ collection_fields ={
     'line_name': fields.String(attribute='line.name'),
     'subline_name': fields.String(attribute='sub_line.name'),
     'target_name': fields.String(attribute='target.name'),
+    'n_hormas': fields.Integer,
     
     
 }

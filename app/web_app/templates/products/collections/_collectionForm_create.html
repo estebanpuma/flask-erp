@@ -1,52 +1,61 @@
-<form @submit.prevent="createCollection" class="needs-validation">
-  <div class="form-floating mb-3">
-    <select class="form-select" x-model="collection.line_id" required
-    @change="previewCode()">
-      <option value="">Selecciona línea</option>
-      <template x-for="line in lines" :key="line.id">
-        <option :value="line.id" x-text="line.name"></option>
-      </template>
-    </select>
-    <label>Línea</label>
-  </div>
+<form @submit.prevent="createCollection" class="needs-validation " autocomplete="off">
+  <div class="container bg-white pt-3 pb-5 px-2 rounded-5" style="max-width: 480px">
+    <h4 class="text-center mb-3">Nueva Colección</h4>
+    <div class="form-floating mb-3">
+        <select class="form-select form-select-lg ps-4 rounded-5"
+        style="font-size: 20px;"
+        x-model="collection.line_id" required
+        @change="previewCode()">
+          <option class="text-muted" value="">Selecciona línea</option>
+          <template x-for="line in lines" :key="line.id">
+            <option :value="line.id" x-text="line.name"></option>
+          </template>
+        </select>
+        <label class="px-4 text-muted small">Línea</label>
+      </div>
 
-  <div class="form-floating mb-3">
-    <select class="form-select" x-model="collection.subline_id"
-    @change="previewCode()">
-      <option value="">Selecciona sublínea(opcional)</option>
-      <template x-for="subline in sublines" :key="subline.id">
-        <option :value="subline.id" x-text="subline.name"></option>
-      </template>
-    </select>
-    <label>Sublínea</label>
-  </div>
+      <div class="form-floating mb-3">
+        <select class="form-select form-select-lg ps-4 px-1 rounded-5" x-model="collection.subline_id"
+        @change="previewCode()">
+          <option value="">Selecciona sublínea(opcional)</option>
+          <template x-for="subline in sublines" :key="subline.id">
+            <option :value="subline.id" x-text="subline.name"></option>
+          </template>
+        </select>
+        <label class="ps-4 text-muted small">Sublínea(Opcional)</label>
+      </div>
 
-  <div class="form-floating mb-3">
-    <select class="form-select" x-model="collection.target_id"
-    @change="previewCode()" required>
-      <option value="">Selecciona tipo</option>
-      <template x-for="target in targets" :key="target.id">
-        <option :value="target.id" x-text="target.name"></option>
-      </template>
-    </select>
-    <label>Tipo de usuario</label>
-  </div>
+      <div class="form-floating mb-3">
+        <select class="form-select form-select-lg ps-4 rounded-5" x-model="collection.target_id"
+        @change="previewCode()" required>
+          <option value="">Selecciona tipo</option>
+          <template x-for="target in targets" :key="target.id">
+            <option :value="target.id" x-text="target.name"></option>
+          </template>
+        </select>
+        <label class="ps-4 text-muted small">Tipo de usuario</label>
+      </div>
 
-  <div class="mb-3" x-show="preview_code">
-    <div class="alert alert-secondary">Código: <strong x-text="preview_code"></strong></div>
-  </div>
+      <div class="mb-3" x-show="preview_code">
+        <div class="alert alert-secondary rounded-5 fs-5">Código: <strong  x-text="preview_code"></strong></div>
+      </div>
 
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control" x-model="collection.name" placeholder="Nombre de colección" required>
-    <label>Nombre de la colección</label>
-  </div>
 
-  <div class="form-floating mb-3">
-    <textarea class="form-control" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
-    <label>Descripción</label>
-  </div>
+        <div class="form-floating mb-3">
+          <input type="text" class="ps-4 form-control form-control-lg rounded-5 fw-semibold" x-model="collection.name" placeholder="Nombre de colección" required>
+          <label class="ps-4 text-muted">Nombre de la colección</label>
+        </div>
+        
 
-  <div class="d-grid">
-    <button type="submit" class="btn btn-dark">Crear colección</button>
+
+      <div class="form-floating mb-3">
+        <textarea class="ps-4 form-control form-control-lg rounded-5 fw-semibold" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
+        <label class="text-muted px-4">Descripción</label>
+      </div>
+
+      <div class="d-grid">
+        <button type="submit" class="btn btn-dark rounded-5">Crear colección</button>
+      </div>
   </div>
+  
 </form>

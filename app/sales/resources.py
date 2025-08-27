@@ -2,7 +2,7 @@ from flask_restful import Resource, request, marshal_with, marshal_with_field, m
 
 from ..core.resources import BaseGetResource, BasePostResource, BasePatchResource, BaseDeleteResource
 
-from .services import SalesOrderService
+from .services import SalesOrderService, SaleOrderLineService
 
 from .schemas import sale_order_fields, sale_order_line_fields, preview_order_fields
 
@@ -31,19 +31,15 @@ class SaleOrderPatchResource(BasePatchResource):
 class SaleOrderPreviewResource(BasePostResource):
     service_create = staticmethod(SalesOrderService.preview_order)
     
+class SaleOrderLineGetResource(BaseGetResource):
+    schema_get = staticmethod(SaleOrderLineService.get_order_list)
+    output_fields = sale_order_line_fields
+
+class UpdateStatusPatchResource(BasePatchResource):
+    service_get = staticmethod(SalesOrderService.get_obj)
+    service_patch = staticmethod(SalesOrderService.update_status_order)
 
 """
-
-
-class SaleOrderGetResource(BaseGetResource):
-    schema_get = staticmethod(SalesOrderService.get_obj)
-    schema_list = staticmethod(lambda: SalesOrderService.get_obj_list(request.args.to_dict()))
-    output_fields = sale_order_fields
-
-
-class SaleOrderDeleteResource(BaseDeleteResource):
-    service_get = staticmethod(SalesOrderService.get_obj)
-    service_delete = staticmethod(SalesOrderService.delete_obj)
 
 class SaleOrderCancelResource(Resource):
     def patch(self, resource_id):

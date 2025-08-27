@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from 'components/detailCard.html' import detail_card %}
+{% block title %}Proceso{% endblock %}
+
+{% block content %}
+<div class="container mt-3" >
+
+  <div x-data="{ href: '/production/operations', title: 'Proceso' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+  <div
+        x-data="genericDetail(
+          '/api/v1/operations/{{id }}',
+          
+            [  
+              { field: 'code',      label:  'Código'},
+              { field: 'name',      label:  'Nombre' },
+              { field: 'is_active', label:  'Status' },
+              { field: 'rate_hour', label:  '$/hora' },
+              { field: 'goal',      label:  'Objetivo del proceso' },
+              { field: 'scoope',    label:  'Alcance' },
+            
+            ],
+            '⚙️',
+            '/production/operations'
+        )"
+      >
+      {% include "components/detailCard.html" %}
+      
+      <div x-data="opRes({{id}})" class=" card rounded-4 border-1">
+        <div class="card-body" >
+           <div class="card-title">
+              Recursos
+           </div>
+           <div class="card-body">
+              <template x-for="resource in resources" :key="resource.id">
+                <div>
+                  <span class="badge text-bg-secondary" x-text="resource.name"></span>
+                </div>
+              </template>
+           </div>         
+        </div>        
+      </div>
+
+      <div x-data="operationSheet({{id}})" class="card rounded-4 border-1">
+        <div class="card-body">
+          <div class="card-title">
+            <span class="fs-4 fw-semibold">Ficha de operaciones</span>
+          </div>
+          <div x-data="actionBtn({href:'/production/operations-sheet/create', label:'Nuevo registro'})">
+
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead> 
+                <th>Variante</th>
+                <th>Recurso</th>
+                <th>Tiempo_std_unit(min)</th>
+                <th>Cap_turno</th>
+              </thead>
+              <tbody>
+                <template x-for="ru in resources_use" :key="ru.id">
+                  <tr>
+                    <td x-text="ru.variant_code"></td>
+                    <td x-text="ru.res_name"></td>
+                    <td x-text="ru.std_min_unit"></td>
+                    <td x-text="ru.resource_capacity"></td>
+                  </tr>
+                </template>               
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+      </div>
+      <!-- Mensaje de error -->
+      <template x-if="error">
+        <div class="alert alert-danger" x-text="error"></div>
+      </template>
+  </div>
+  
+  
+
+</div>
+<script>
+  function opRes(id){
+    return{
+      resources:[],
+      
+
+      async init(){
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `operations/${id}`)
+        this.resources = res.resources;
+        console.log('a', this.resources)
+      },
+
+      
+    }
+  }
+
+  function operationSheet(id){
+    return{
+
+      resources_use:[],
+      init(){
+        this.fetchResourcesUse();
+      },
+      
+      async fetchResourcesUse(){
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `operations-sheet?operation_id=${id}`)
+        console.log('res', res)
+        this.resources_use = res
+      },
+    }
+  }
+</script>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}

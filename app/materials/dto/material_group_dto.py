@@ -4,6 +4,7 @@ from typing import Optional
 
 
 class MaterialGroupCreateDTO(BaseModel):
+    code: str
     name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
     description: Optional[str] = None
 

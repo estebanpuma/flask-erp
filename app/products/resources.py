@@ -18,9 +18,6 @@ from .schemas import line_fields, subline_fields, color_fields, size_series_fiel
 from .schemas import product_fields, product_design_fields, product_variant_material_detail_fields
 from .schemas import product_variant_fields, collection_fields
 
-from .validations import validate_size_create, validate_size_update, validate_size_series_update
-from .validations import *
-from .validations import validate_product_variant_materials_input
 
 
 
@@ -35,6 +32,9 @@ class ProductGetResource(BaseGetResource):
 class ProductPostResource(BasePostResource):
     service_create = staticmethod(ProductService.create_obj)
     output_fields = product_fields
+    file_fields = {
+        'images': 'products'
+    }
 
 
 class ProductPatchResource(BasePatchResource):
@@ -71,6 +71,10 @@ class ProductDesignGetResource(BaseGetResource):
 class ProductDesignPostResource(BasePostResource):
     service_create = staticmethod(DesignService.create_obj)
     output_fields = product_design_fields
+    file_fields    = {
+        'images': 'designs'
+    }
+
 
 
 class ProductDesignPatchResource(BasePatchResource):
@@ -231,17 +235,20 @@ class ColorGetResource(BaseGetResource):
     output_fields = color_fields
 
 class ColorPostResource(BasePostResource):
+    from .validations import validate_color_input
     schema = staticmethod(validate_color_input)
     service_create = staticmethod(ColorService.create_obj)
     output_fields = color_fields
 
 class ColorPatchResource(BasePatchResource):
+    from .validations import validate_color_patch
     schema_validate_partial = staticmethod(validate_color_patch)
     service_get = staticmethod(ColorService.get_obj)
     service_patch = staticmethod(ColorService.patch_obj)
     output_fields = color_fields
 
 class ColorDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(ColorService.get_obj)
     service_delete = staticmethod(ColorService.delete_obj)
 
 
@@ -308,7 +315,7 @@ class CollectionPostResource(BasePostResource):
 class CollectionPatchResource(BasePatchResource):
     service_get = staticmethod(CollectionService.get_obj)
     service_patch = staticmethod(CollectionService.patch_obj)
-    output_fields = line_fields
+    output_fields = collection_fields
 
 class NextCodeCollectionCodeResource(Resource):
     def get(self):

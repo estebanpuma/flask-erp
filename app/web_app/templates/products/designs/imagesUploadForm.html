@@ -1,0 +1,121 @@
+<div 
+  x-data="designImageUploader({{ design_id }}, {{ product_id }})" 
+  x-init="loadGallery()"
+  class="p-4 border rounded"
+>
+  <!-- Formulario -->
+  <form @submit.prevent="submit" enctype="multipart/form-data">
+    <fieldset class="mb-4">
+      <legend class="font-semibold">Subir imágenes al Diseño {{ design_id }}</legend>
+
+      <div class="mb-2">
+        <input 
+          type="file" 
+          name="images" 
+          multiple 
+          accept="image/*"
+          @change="handleFiles"
+        >
+      </div>
+      <div class="mb-4">
+        <input 
+          type="text" 
+          name="primary" 
+          placeholder="Nombre de la imagen principal (opcional)"
+          x-model="primary"
+          class="border p-1 rounded w-full"
+        >
+      </div>
+
+      <button 
+        type="submit"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >Subir</button>
+    </fieldset>
+  </form>
+
+  <!-- Errores -->
+  <template x-if="error">
+    <div class="text-red-600 mb-4" x-text="error"></div>
+  </template>
+
+  <!-- Galería -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    
+      <div class="border p-2">
+        <img 
+          :src="gallery" 
+          alt= 'ok'
+          class="w-full h-auto mb-2"
+        >
+        <div class="text-sm text-gray-600" x-text="gallery"></div>
+      </div>
+
+  </div>
+</div>
+
+<script>
+function designImageUploader(designId, productId) {
+  return {
+    productId,
+    designId,
+    files: [],          // Files seleccionados
+    primary: '',        // Nombre de la principal
+    gallery: [],        // Lista de imágenes actuales
+    error: null,        // Mensaje de error
+
+    handleFiles(event) {
+      this.files = Array.from(event.target.files)
+      this.error = null
+    },
+
+    async loadGallery() {
+      console.info('ingresa a load galery')
+      try {
+        let res = await fetch(`/api/v1/media/designs/${designId}`)
+        console.info('load gallery: ', res)
+        if (!res.ok) throw new Error(`Error ${res.status}`)
+        const gallery1 = await res.json()
+        console.log('json: ', gallery1, gallery1[0].filename)
+        let res2 = await fetch(`/api/v1/media/img/designs/${gallery1[0].filename}`)
+        console.info('load img: ', res2)
+        if (!res2.ok) throw new Error(`Error 2222 ${res2.status}`)
+        console.log('alo')
+        this.gallery = res2.url
+        console.log('res2: ', this.gallery)
+        
+      } catch (e) {
+        this.error = `No se pudo cargar la galería:${e.toString()} `
+        console.log(e)
+      }
+    },
+
+    async submit() {
+      if (this.files.length === 0) {
+        this.error = 'Selecciona al menos un archivo'
+        return
+      }
+      let form = new FormData()
+      this.files.forEach(f => form.append('images', f))
+      if (this.primary) form.append('primary', this.primary)
+      console.log('form: ', form)
+      try {
+          let res = await fetch(`/api/v1/media/designs/${this.designId}`, {
+          method: 'POST',
+          body: form
+        })
+        if (!res.ok) {
+          let text = await res.text()
+          throw new Error(text || `Error ${res.status}`)
+        }
+        this.files = []
+        this.primary = ''
+        this.error = null
+        await this.loadGallery()
+      } catch (e) {
+        this.error = 'Error subiendo: ' + e.message
+      }
+    }
+  }
+}
+</script>

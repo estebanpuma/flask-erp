@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+{% block title %}Asistente de Configuración de Planta{% endblock %}
+
+{% block content %}
+<div x-data="setupWizard()" class="container my-3">
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between">
+    <div>
+      <h1 class="h4 mb-0">Asistente de Configuración</h1>
+      <div class="text-muted small">Carga inicial, simple y sin fricciones. 6 pasos · Tiempo estimado: 15–30 min</div>
+    </div>
+    <div>
+      <span class="badge bg-dark" x-text="`Paso ${step}/${steps.length}`"></span>
+    </div>
+  </div>
+
+  <!-- Steps Nav -->
+  <div class="mt-3">
+    <ul class="nav nav-pills flex-wrap gap-2">
+      <template x-for="(s, idx) in steps" :key="idx">
+        <li class="nav-item">
+          <button type="button"
+                  class="nav-link"
+                  :class="{active: step===s.id, 'btn-outline-dark': step!==s.id}"
+                  @click="goTo(s.id)">
+            <span class="me-1" x-text="s.id"></span>
+            <span x-text="s.name"></span>
+          </button>
+        </li>
+      </template>
+    </ul>
+  </div>
+
+  <!-- Alerts -->
+  <template x-if="error"><div class="alert alert-danger my-3" x-text="error"></div></template>
+  <template x-if="notice"><div class="alert alert-info my-3" x-text="notice"></div></template>
+
+  <!-- STEP 0: PRODUCTOS & VARIANTES (primero) -->
+  {% include 'production/setup_steps/_variants_step.html' %}
+  <!-- STEP 1: OPERACIONES -->
+  {% include 'production/setup_steps/_operations_step.html' %}
+  <!-- STEP 2: RECURSOS -->
+  {% include 'production/setup_steps/_resources_step.html' %}
+
+  <!-- STEP 3: ASIGNAR RECURSOS A OPERACIONES -->
+  {% include 'production/setup_steps/_res_ops_step.html' %}
+
+  <!-- STEP 4: RUTA (UI más gráfica tipo "storyboard") -->
+  {% include 'production/setup_steps/_routing_ops_step.html' %}
+  <!-- STEP 5: PREVIEW & SUBMIT -->
+  <div x-show="step===5" class="mt-3" x-cloak>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h2 class="h5">5. Revisión final</h2>
+        <p class="text-muted small">Se generará la ruta y las asignaciones para todos los modelos/tallas seleccionados.</p>
+
+        <div class="d-flex gap-2 mb-2">
+          <button class="btn btn-outline-dark" @click="buildPreview()">Generar vista previa</button>
+          <button class="btn btn-success" @click="submitAll()"><i class="bi bi-cloud-upload me-1"></i>Guardar y finalizar</button>
+        </div>
+
+        <template x-if="preview">
+          <div class="mt-3">
+            <h6>Payload de ejemplo (para API)</h6>
+            <pre class="bg-light p-3 rounded border small" x-text="preview"></pre>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-3">
+      <button class="btn btn-outline-dark" @click="back()">Atrás</button>
+      <button class="btn btn-dark" @click="restart()">Reiniciar asistente</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  [x-cloak] { display: none !important; }
+</style>
+
+<script>
+  function uid(){ return Math.random().toString(36).slice(2,10) }
+
+  function setupWizard(){
+    return {
+      step: 0,
+      steps: [
+        {id:0, name:'Modelos & Tallas'},
+        {id:1, name:'Operaciones'},
+        {id:2, name:'Recursos'},
+        {id:3, name:'Asignación'},
+        {id:4, name:'Ruta'},
+        {id:5, name:'Preview'},
+      ],
+      notice: '',
+      error: '',
+
+      // DATA
+      operations: [],        // [{uid, name, code, description, links:[{uid, resource_uid, res_min, qty_required, role}]}]
+      resources: [],         // [{uid, name, kind, qty, shift_min, efficiency}]
+      storyboard: [],        // [{uid, groups:[{uid, ops:[op]}]}]  // paso -> grupos -> ops
+
+      async init(){
+        console.log('0.init')
+        this.fetchProducts()
+
+      },
+      // CATALOGO (mock). En producción lo llenas con tu API /products/designs
+      catalog: {
+        search:'',
+        models:[]
+      },
+
+      lines: [],
+      sublines: [],
+      targets:[],
+      collections: [],
+      products:[],
+      colors:[],
+
+      selected_product:'',
+      filters:{line:'', subline:'', target:'', product:''},
+      filteredItems:[],
+
+      selectProduct(id){
+        this.filteredItems = this.products.filter(product => product.id == id)
+        this.selected_product = id
+        this.fetchModels()
+      },
+
+      filterItems() {
+        const gf = (this.catalog.search || '').toString().toUpperCase();
+
+        this.filteredItems = this.products.filter(product => {
+            // 1) Global: define qué campos participan
+            const globalFields = ['name', 'code', 'description']; // ajusta a tus campos
+            const matchesGlobal = !gf || globalFields.some(f => {
+            const val = (product?.[f] ?? '').toString().toUpperCase();
+            return val.includes(gf);
+            });
+
+            // 2) Filtros por columna: this.filters = { name:'', code:'', line:'' }
+            const matchesCols = Object.entries(this.filters).every(([field, raw]) => {
+            const q = (raw ?? '').toString().toUpperCase();
+            if (!q) return true;
+            const val = (product?.[field].name ?? '').toString().toUpperCase();
+            return val.includes(q);
+            });
+
+            return matchesGlobal && matchesCols;
+        });
+        },
+
+
+      async fetchModels(){
+
+        const query = {
+                        product_id: this.selected_product,
+                    }
+
+        // Construir string de query (ignora null/undefined)
+        const qs = new URLSearchParams(
+        Object.entries(query).filter(([k,v]) => v != null && v !== '')
+        ).toString()
+
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-designs?${qs}`);
+
+        res.forEach(el => {
+            id=el.id,
+            code=el.code,
+            name=el.name,
+            selected=false,
+            sizes=el.variants
+        });
+        this.catalog.models=res
+        console.log('catalog.models', this.catalog.models)
+        
+      },
+
+      async fetchProducts(){
+        console.log('fetch Products')
+        let line_id;
+        let subline_id;
+        let target_id;
+        let collection_id;
+        if(this.filters.line) line_id=this.filters.line;
+        if(this.filters.subline) subline_id=this.filters.subline;
+        if(this.filters.target) target_id=this.filters.target;
+        if(this.filters.collection) collection_id=this.filters.collection;
+
+        const query = {
+                        line_id: line_id,
+                        subline_id: subline_id,
+                        target_id: target_id,
+                        collection_id: collection_id,
+                    }
+        // Construir string de query (ignora null/undefined)
+        const qs = new URLSearchParams(
+        Object.entries(query).filter(([k,v]) => v != null && v !== '')
+        ).toString()
+
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `products?${qs}`);
+        this.products = res;      
+        this.filteredItems = res;
+      },
+
+      resetModels(){
+        selected_product = '';
+        this.filters.line='';
+        this.filters.subline=''; 
+        this.filters.target=''; 
+        this.filters.product='';
+        this.filteredItems = this.products;
+      },
+
+      bulkSelectAllSizes: true,
+      allModelsSelected:false,
+
+      // FORMS
+      opForm: { name:'', code:'', description:'' },
+      resForm: { name:'', kind:'labor', qty:1, shift_min:480, efficiency:1.0 },
+      linkForm: { operation_uid:'', resource_uid:'', res_min:0.0, qty_required:1, role:'' },
+
+      // preview json
+      preview: '',
+
+      // NAV
+      goTo(n){ this.step = n },
+      next(){ if(this.step<this.steps.length-1) this.step++ },
+      back(){ if(this.step>0) this.step-- },
+      restart(){ this.step=0; this.notice=''; this.error=''; this.preview=''; },
+
+      
+      selectFiltered(allSizes){
+        this.catalog.models.forEach(m=>{
+          m.selected = true
+          if(allSizes) m.sizes.forEach(s=> s.selected = true)
+        })
+      },
+      deselectFiltered(){
+        this.filteredModels().forEach(m=>{
+          m.selected = false
+          m.sizes.forEach(s=> s.selected = false)
+        })
+      },
+      toggleSelectAllModels(){
+        this.allModelsSelected = !this.allModelsSelected
+        this.catalog.models.forEach(m=>{ m.selected = this.allModelsSelected; m.sizes.forEach(s=> s.selected = this.allModelsSelected) })
+      },
+      onModelToggle(mdl){ if(!mdl.selected) mdl.variants.forEach(s=> s.selected=false) },
+      selectAllSizes(mdl){ const val = !mdl.variants.every(s=>s.selected); mdl.selected = true; mdl.variants.forEach(s=> s.selected = val) },
+      clearSizes(mdl){ mdl.variants.forEach(s=> s.selected=false) },
+
+      // STEP 1
+      addOpPreset(){
+        if(this.operations.length>0){ this.notice='Ya tienes operaciones, agrega solo las que falten.'; return }
+        const presets = [
+          {name:'Corte', code:'C01'},
+          {name:'Aparado', code:'A01'},
+          {name:'Montaje', code:'M01'},
+          {name:'Terminado', code:'T01'},
+        ]
+        this.operations = presets.map(p=>({uid:uid(), ...p, description:'', links:[]}))
+        this.notice='Lista sugerida agregada. Puedes editar los nombres si deseas.'
+      },
+      addOperation(){
+        const f = this.opForm
+        if(!f.name){ this.error='Indica un nombre de operación'; return }
+        this.operations.push({uid:uid(), name:f.name, code:f.code||'', description:f.description||'', links:[]})
+        this.resetOpForm()
+      },
+      resetOpForm(){ this.opForm = {name:'', code:'', description:''}; this.error=''; },
+      removeOperation(i){ this.operations.splice(i,1) },
+
+      // STEP 2
+      addResource(){
+        const f = this.resForm
+        if(!f.name){ this.error='Indica un nombre de recurso'; return }
+        const item = {uid:uid(), name:f.name, kind:f.kind, qty:Number(f.qty||0), shift_min:Number(f.shift_min||0), efficiency:Number(f.efficiency||1)}
+        this.resources.push(item)
+        this.resForm = { name:'', kind:'labor', qty:1, shift_min:480, efficiency:1.0 }
+        this.error=''
+      },
+      removeResource(i){ this.resources.splice(i,1) },
+
+      // STEP 3 – asignar recursos a operaciones
+      addLink(){
+        const f = this.linkForm
+        if(!f.operation_uid || !f.resource_uid){ this.error='Selecciona operación y recurso'; return }
+        const op = this.operations.find(o=>o.uid===f.operation_uid)
+        if(!op){ this.error='Operación inválida'; return }
+        const lnk = { uid:uid(), resource_uid:f.resource_uid, res_min:Number(f.res_min||0), qty_required:Number(f.qty_required||1), role:f.role||'' }
+        op.links = op.links || []
+        op.links.push(lnk)
+        this.linkForm.resource_uid=''; this.linkForm.res_min=0.0; this.linkForm.qty_required=1; this.linkForm.role=''
+        this.error=''
+      },
+      removeLink(op, j){ op.links.splice(j,1) },
+      resourceName(uidv){ const r=this.resources.find(x=>x.uid===uidv); return r? r.name : '—' },
+
+      // STEP 4 – storyboard ruta
+      dragItem:null,
+      addStep(){ this.storyboard.push({uid:uid(), groups:[{uid:uid(), ops:[]}]} ) },
+      removeStep(idx){ this.storyboard.splice(idx,1) },
+      addGroup(st){ st.groups.push({uid:uid(), ops:[]}) },
+      removeGroup(st, gidx){ st.groups.splice(gidx,1) },
+      onDropToStep(st){ if(this.dragItem?.type==='op') { st.groups[0].ops.push(this.dragItem.data); this.dragItem=null } },
+      onDropToGroup(st, grp){ if(this.dragItem?.type==='op') { grp.ops.push(this.dragItem.data); this.dragItem=null } },
+      autofillRoute(){
+        if(this.operations.length===0){ this.error='Primero agrega operaciones'; return }
+        this.storyboard = []
+        this.operations.forEach(o=>{ this.storyboard.push({uid:uid(), groups:[{uid:uid(), ops:[o]}]}) })
+        this.error=''
+      },
+
+      // STEP 5 – PREVIEW & SUBMIT
+      buildPreview(){
+        // construir route como sequence 10,20,...; group_number por index
+        const routeDtos = []
+        this.storyboard.forEach((st, sidx)=>{
+          st.groups.forEach((grp, gidx)=>{
+            grp.ops.forEach(op=>{
+              routeDtos.push({ operation_uid: op.uid, sequence:(sidx+1)*10, group_number:(gidx+1) })
+            })
+          })
+        })
+
+        // operaciones + links
+        const opDtos = this.operations.map(op=>({
+          uid: op.uid,
+          name: op.name,
+          code: op.code,
+          description: op.description,
+          links: (op.links||[]).map(l=>({ resource_uid:l.resource_uid, res_min:l.res_min, qty_required:l.qty_required, role:l.role }))
+        }))
+
+        // modelos + tallas seleccionados
+        const selected = this.catalog.models
+          .filter(m=>m.selected)
+          .map(m=>({ id:m.id, code:m.code, sizes:m.sizes.filter(s=>s.selected).map(s=>s.value) }))
+
+        const payload = {
+          apply_to: selected,          // lista de modelos con tallas seleccionadas
+          operations: opDtos,
+          resources: this.resources,
+          route: routeDtos             // orden + paralelos
+        }
+        this.preview = JSON.stringify(payload, null, 2)
+      },
+      async submitAll(){
+        try{
+          this.buildPreview()
+          // await apiFetch('POST','setup/initial', JSON.parse(this.preview))
+          this.notice = 'Datos listos. Revisa el preview y confirma el guardado en tu backend.'
+          this.error = ''
+        }catch(e){ this.error = e?.message || 'Error guardando' }
+      },
+    }
+  }
+</script>
+{% endblock %}

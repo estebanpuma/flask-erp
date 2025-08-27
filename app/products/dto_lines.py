@@ -1,33 +1,34 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
+from ..core.dto_base import MyBase          # ← tu clase con validate_with_message
 
 
-class LineCreateDTO(BaseModel):
+class LineCreateDTO(MyBase):
     code: str = Field(..., min_length=1, max_length=10, strip_whitespace=True)
     name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
     description: Optional[str] = None
     
 
-class LineUpdateDTO(BaseModel):
+class LineUpdateDTO(MyBase):
     name: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
 
 
-class SublineCreateDTO(BaseModel):
+class SublineCreateDTO(MyBase):
     code: str = Field(..., min_length=1, max_length=10, strip_whitespace=True)
     name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
     description: Optional[str] = None
     
 
-class SublineUpdateDTO(BaseModel):
+class SublineUpdateDTO(MyBase):
     name: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
 
 
 
-class CollectionCreateDTO(BaseModel):
+class CollectionCreateDTO(MyBase):
     
     line_id: int = Field(..., gt=0)
     subline_id: Optional[int] = None
@@ -36,7 +37,8 @@ class CollectionCreateDTO(BaseModel):
     description: Optional[str] = None
     
 
-class CollectionUpdateDTO(BaseModel):
+class CollectionUpdateDTO(MyBase):
     name: Optional[str] = None
     description: Optional[str] = None
+    n_hormas: Optional[int] = None
     is_active: Optional[bool] = None

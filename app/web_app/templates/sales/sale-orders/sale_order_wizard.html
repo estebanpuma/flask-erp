@@ -1,0 +1,48 @@
+<!-- templates/sales/wizard.html -->
+<div x-data="salesWizard()" class="container py-4" x-cloak>
+  <!-- Navigation Steps -->
+
+  <div class="d-flex flex-row-reverse">
+    <button type="button" @click="step=3" class="p-0 btn btn-back position-relative" >
+        <i class="fs-3 bi bi-cart">
+        
+        </i>
+        <template x-if="designs_request.length>0">
+          <span class="position-absolute top-75 start-75 translate-middle badge rounded-pill bg-dark"
+           x-text="designs_request.length">
+            <span class="visually-hidden">Modelos</span>
+          </span>
+        </template>
+      </button>
+  </div>
+
+    
+
+  <!-- Step Partials -->
+ 
+  <template x-if="step===1">
+    {% include 'sales/sale-orders/steps/step1_catalog.html' %}
+  </template>
+  <template x-if="step===2">
+    {% include 'sales/sale-orders/steps/step2_design.html' %}
+  </template>
+  <template x-if="step===3">
+    {% include 'sales/sale-orders/steps/step3_cart.html' %}
+  </template>
+  <template x-if="step===4">
+    {% include 'sales/sale-orders/steps/_checkout.html' %}
+  </template>
+  <template x-if="step===5">
+    {% include 'sales/sale-orders/steps/_checkout.html' %}
+  </template>
+  <template x-if="step===6">
+    {% include 'sales/sale-orders/steps/_checkout.html' %}
+  </template>
+  <template x-if="step===7">
+    {% include 'sales/sale-orders/steps/_checkout.html' %}
+  </template>
+  <template x-if="step===8">
+    {% include 'sales/sale-orders/steps/_checkout.html' %}
+  </template>
+
+</div>

@@ -10,6 +10,7 @@ from .utils import success_response, error_response, validation_error_response
 from ..common.utils import ExcelImportService
 import psycopg2
 
+
 class HealthCheckResource(Resource):
     """
     Endpoint sencillo para probar si la API está corriendo.
@@ -68,31 +69,50 @@ class BaseGetResource(Resource):
 
 
 class BasePostResource(Resource):
-    schema = None               #que campos deben ingresar 
-    service_create = None       #servcio que creará un nuevo elemento
-    output_fields = None        #que campos devolver
+    
+    schema           = None
+    service_create   = None
+    output_fields    = None
+    file_fields      = None    # <-- nuevo
+    
 
     def post(self):
+        from ..media.services import ImageService
         try:
-            data = request.get_json()
-            if not data:
-                return error_response("No se enviaron datos", 400)
+            # 1) Diferenciar JSON vs multipart
+            content_type = request.content_type or ''
+            if 'multipart/form-data' in content_type:
+                data  = request.form.to_dict()
+                files = request.files
+            else:
+                data  = request.get_json() or {}
+                files = None
 
-            if self.schema:
+            # 2) Validar JSON si aplica
+            if not data and not files:
+                return error_response("No se enviaron datos", 400)
+            if self.schema and data:
                 errors = self.schema(data)
                 if errors:
                     return validation_error_response(errors)
 
-            
-            # 🔒 Contracto claro: data como dict completo
+            # 3) Crear la entidad
             instance = self.service_create(data)
-
             if not instance:
                 return error_response("No se pudo crear el recurso", 400)
+            
+            # 4) Orquestar subida de ficheros si los hay
+            if files and getattr(self, 'file_fields', None):
+                img_svc = ImageService()
+                # para cada campo declarado
+                for field_name, module in self.file_fields.items():
+                    for fs in files.getlist(field_name):
+                        img_svc.upload(module, instance.id, fs,
+                                       is_primary=(fs.filename == request.form.get('primary')))
 
-            if self.output_fields is None:
-                return success_response(instance, 201)
-            return success_response(marshal(instance, self.output_fields), 201)
+            # 5) Devolver respuesta estándar
+            payload = marshal(instance, self.output_fields) if self.output_fields else instance
+            return success_response(payload, 201)
             
 
         except ValidationError as e: # ¡Primero las excepciones más específicas!
@@ -188,9 +208,9 @@ class BasePatchResource(Resource):
             # Aplicar actualización
             updated = self.service_patch(instance, data)
 
+            response = marshal(updated, self.output_fields) if self.output_fields else updated
             
-            
-            return success_response(marshal(updated, self.output_fields))
+            return success_response(response) 
 
 
         

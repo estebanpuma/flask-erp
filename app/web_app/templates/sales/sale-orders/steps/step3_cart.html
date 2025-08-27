@@ -1,0 +1,99 @@
+<div class="mb-4" style="max-width:1100px;margin:auto;">
+  <!-- Botón Volver -->
+  <button class="btn btn-lg btn-back mb-3" @click="step=1">
+    <i class="bi bi-chevron-left"></i> Carrito de Compras
+  </button>
+
+  <div class="row g-4">
+    <!-- Carrito de productos -->
+    <div id="cart" class="col-lg-7 col-12">
+      <div class="card shadow-sm border-0 mb-0">
+        <div class="card-body px-3 pb-1">
+          <h4 class="fw-semibold mb-3">Tus Productos</h4>
+          <template x-if="designs_request.length === 0">
+            <div class="alert alert-secondary text-center small">Aún no se ha seleccionado ningún producto.</div>
+          </template>
+          <ul class="list-group list-group-flush mb-0">
+            <template x-for="d in designs_request" :key="d.id">
+              <li class="list-group-item px-0 border-0">
+                <div class="row g-0 align-items-center">
+                  <div class="col-5 col-md-5">
+                    <img :src="getPrimaryImageUrl(d.design.images)" class="img-fluid rounded shadow-sm" style="height: 60px; object-fit:cover;" alt="Producto">
+                  </div>
+                  <div class="col-7 col-md-6">
+                    <div class="fw-semibold" x-text="d.design.name"></div>
+                    <div class="text-muted small" x-text="d.design.code"></div>
+                    <div class="small text-muted" x-text="d.design.color_names"></div>
+                  </div>
+                  <div class="col-12 mt-2">
+                    <!-- Variantes -->
+                    <template x-for="v in d.lines" :key="v.variant_id">
+                      <div class="d-flex align-items-center justify-content-between bg-light rounded px-2 py-1 mb-1">
+                        <div>
+                          <span class="fw-semibold" x-text="v.code"></span>
+                        </div>
+                        <div>
+                          <span class="badge bg-dark-subtle text-dark me-1" x-text="`x${v.quantity}`"></span>
+                        </div>
+                        <div>
+                          <span class="fw-bold" x-text="`$${decimalUtils.decimalFormat(v.subtotal, 2)}`"></span>
+                        </div>
+                        <div>
+                          <button type="button"
+                                  class="btn btn-link text-danger p-0 fs-5"
+                                  title="Quitar"
+                                  @click="removeFromCart(v, d)">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end align-items-center mt-2">
+                  <span class="small text-muted me-2">Subtotal:</span>
+                  <span class="fw-bold fs-6" x-text="designSubtotal(d)"></span>
+                </div>
+                <hr class="my-2"/>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen de la orden -->
+    <div id="summary" class="col-lg-5 col-12" x-init="updateSubtotal()">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h4 class="fw-semibold mb-3">Resumen de la orden</h4>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Items Subtotal</span>
+            <span class="fw-bold" x-text="subtotal"></span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Envío</span>
+            <span class="fw-bold" x-text="`$${decimalUtils.decimalFormat(shipping.cost,2)}`"></span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Impuestos</span>
+            <span class="fw-bold" x-text="`%${taxes}`"></span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between mb-3">
+            <span class="fw-bold fs-5">Total</span>
+            <span class="fw-bold fs-5 text-success" x-text="`$${decimalUtils.decimalFormat(calculateTotal(),2)}`"></span>
+          </div>
+          <div class="d-grid">
+            <button type="button" @click="step=4"
+              class="btn btn-dark w-100 rounded-pill py-2 fs-5 fw-semibold"
+              :disabled="designs_request.length === 0">
+              Continuar
+            </button>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

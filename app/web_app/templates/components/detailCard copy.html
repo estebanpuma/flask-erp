@@ -1,67 +1,130 @@
-<template x-if="error">
-  <div class="alert alert-danger text-center my-4" x-text="error"></div>
-</template>
+{% macro detail_card(error, loading,  title, desc) %}
+<div style="max-width: 560px;">
+  <template x-if="{{error}}">
+    <div class="alert alert-danger text-center my-4" x-text="error"></div>
+  </template>
 
-<template x-if="!error && loading">
-  <div class="text-center text-muted my-5">
-    <div class="spinner-border text-dark" role="status">
-      <span class="visually-hidden">Cargando...</span>
+  <template x-if="!{{error}} && {{loading}}">
+    <div class="text-center text-muted my-5">
+      <div class="spinner-border text-dark" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <div class="mt-2">Cargando información...</div>
     </div>
-    <div class="mt-2">Cargando información...</div>
-  </div>
-</template>
+  </template>
 
-<template x-if="!error && !loading">
-  <div class="card border-0 shadow rounded-4 p-3" style="background-color: #fff;">
+  <template x-if="!loading">
+    <div class="card border- 1 rounded-4 p-3 bg-white">
 
-    <div class="d-flex">
-      <!-- Imagen o Emoji a la izquierda -->
-      <div class="me-4 flex-shrink-0">
-        <template x-if="item.image_url">
-          <img :src="item.image_url"
-               alt="Imagen"
-               class="rounded-circle shadow-sm"
-               style="width: 100px; height: 100px; object-fit: cover;">
-        </template>
-        <template x-if="!item.image_url">
-          <div class="rounded-circle bg-light text-white d-flex justify-content-center align-items-center"
-               style="width: 100px; height: 100px; font-size: 2rem;">
-              <template x-if="icon">
-                    <span class="me-2" x-text="icon"></span>
+      <!-- Header: imagen + código/nombre/estado -->
+      <div class="d-flex align-items-center mb-4">
+        <!-- Imagen o Emoji -->
+        <div class="me-3 flex-shrink-0">
+          <template x-if="item.image">
+            <img :src="item.image"
+                alt="Imagen"
+                class="rounded-circle shadow-sm"
+                style="width: 120px; height: 120px;">
+          </template>
+          <template x-if="!item.image">
+            <div class="rounded-circle bg-light text-white d-flex justify-content-center align-items-center"
+                style="width: 100px; height: 100px; font-size: 2rem;">
+                <template x-if="icon">
+                      <span class="me-2" x-text="icon"></span>
+                </template>
+            </div>
+          </template>
+        </div>
+
+        <!-- Código, Nombre y Estado -->
+        <div class="flex-grow-1">
+          <div class="d-flex flex-nowrap flex-column flex-sm-row align-items-sm-start justify-content-between">
+            <div class="order-sm-1 order-2">
+                <!-- Nombre -->
+                <template x-if="item.name">
+                  <div class="mb-2">
+                    <span class="text-muted small">Nombre</span>
+                    <div class="fw-semibold fs-6" x-text="item.name || '—'"></div>
+                  </div>
+                </template>
+                <!-- Código -->
+                <template x-if="item.code">
+                <div class="mb-2 mb-sm-0">
+                  <span class="text-muted small">Código</span>
+                  <div class="fw-semibold fs-6" x-text="item.code"></div>
+                </div>
               </template>
+            </div>
+            <!-- Estado -->
+            <div class="order-sm-2 order-1 ms-auto">
+                <span x-data="statusBadge({ kind:'is_active' })"
+                  x-modelable="value"
+                  x-model="item.is_active">
+                </span>   
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campos secundarios -->
+      <div class="row">
+        <template x-for="field in fields" :key="field.label">
+          <template x-if="!['is_active','name','image_url','code', 'description'].includes(field.field)">
+            <div class="col-12 col-sm-6 col-md-4 mb-3">
+              <div class="small text-muted mb-1 d-flex align-items-start">
+
+                <template x-if="field.icon">
+                  <span class="me-2" x-text="field.icon"></span>
+                </template>
+                <span x-text="field.label"></span>
+              </div>
+
+              <template x-if="field.isList">
+                <ul class="list-unstyled mb-0">
+                  <template x-for="(text, idx) in item[field.field]" :key="idx">
+                    <li x-text="text"></li>
+                  </template>
+                  <!-- Si el array está vacío -->
+                  <template x-if="!item[field.field] || item[field.field].length === 0">
+                    <li class="text-muted">—</li>
+                  </template>
+                </ul>
+              </template>
+
+              <template x-if="!field.isList">
+                <div class="fw-semibold text-dark"
+                    x-text="item[field.field] ?? '—'">
+                </div>
+              </template>
+
+            </div>
+          </template>
+        </template>
+      </div>
+
+      <!--Descripcion-->
+      <div>
+        <template x-if="item.description">
+          <div class="mb-3">
+            <span class="text-muted small">Descripción</span>
+            <div x-text="item.description"></div>
           </div>
         </template>
       </div>
-
-      <!-- Datos principales y demás campos -->
-      <div class="w-100">
-        <!-- Nombre y estado arriba -->
-        <div class="d-flex align-items-center justify-content-between mb-3">
-          <h4 class="fw-bold mb-0" x-text="item.name || 'Sin nombre'"></h4>
-          <span class="badge rounded-pill px-3 py-2"
-                :class="item.is_active ? 'bg-success' : 'bg-secondary'"
-                x-text="item.is_active ? 'Activo' : 'Inactivo'">
-          </span>
+      
+      <div class="d-flex mt-5">
+        <div class="w-75 me-2" x-data="actionBtn({label:'Editar', variant:'dark'})" @click="editObj" >
+          
         </div>
-
-        <!-- Campos secundarios en dos columnas -->
-        <div class="row">
-          <template x-for="field in fields" :key="field.label">
-            <template x-if="!['is_active','name','image_url'].includes(field.field)">
-              <div class="col-6 mb-3">
-                <div class="small text-muted mb-1 d-flex align-items-center">
-                  <template x-if="field.icon">
-                    <span class="me-2" x-text="field.icon"></span>
-                  </template>
-                  <span x-text="field.label"></span>
-                </div>
-                <div class="fw-semibold text-dark" x-text="item[field.field] ?? '—'"></div>
-              </div>
-            </template>
-          </template>
+        <div class="w-25" x-data="actionBtn({label:'Borrar', variant:'outline-danger'})" @click="deleteObj">
+          
         </div>
+        
       </div>
-    </div>
+      
 
   </div>
-</template>
+  </template>
+
+</div>
+{% endmacro %}

@@ -21,14 +21,26 @@ from .models import (
     ManHourEstimate,
     ProductionRework,
     ProductionMaterialDetailForRework,
-    ProductionMaterialSummary
+    ProductionMaterialSummary,
+    Operations,
+    ProductionResource,
+    VariantOperationResource,
+
 )
 
 from ..products.models import ProductVariantMaterialDetail
 
-from .dto import ProductionOrderCreateDTO, ProductionOrderLineDTO
+from .dto import (ProductionOrderCreateDTO, 
+                  ProductionOrderLineDTO, 
+                  OperationDTO,
+                  OperationPatchDTO,
+                  OperationStatusDTO)
+
+from .dto_production_resources import ProductionResourceDTO, ProductionResourcePatchDTO
 
 from ..core.enums import OrderStatus
+
+from decimal import Decimal
 
 from datetime import datetime, date
 
@@ -291,3 +303,354 @@ class ProductionMaterialService:
             production_material_summary.append(material_summary)
 
         return production_material_summary
+
+
+class OperationService:
+    
+    @staticmethod
+    def create_obj(data:dict)->Operations:
+        with db.session.begin():
+            dto = OperationDTO(**data)
+            op = OperationService.create_op(name=dto.name,
+                                            goal = dto.goal,
+                                            kpi = dto.kpi,
+                                            #responsible = dto.responsible,
+                                            job_id = dto.job_id)
+
+            return op 
+        
+    @staticmethod
+    def create_op(  name:str,
+                    #code:str,
+                    #responsible:str,
+                    job_id,
+                    goal:str=None,
+                    kpi:str=None)->Operations:
+        from ..admin.models import Job
+        job = Job.query.get(job_id)
+        if not job:
+            raise ValidationError(f'No existe el puesto de trabajo con ID: {job_id}')
+        op_number = str(OperationService.get_next_number())
+        code = f'P{op_number.zfill(3)}'
+        op = Operations(name = name,
+                                  code = code,
+                                    responsible_id = job_id,
+                                    goal = goal,
+                                    kpi = kpi,
+                                  )
+        db.session.add(op)
+        return op
+    
+    def get_next_number()->int:
+        from ..common.models import AppSetting
+
+        prefix = 'operation_code_counter'
+
+        counter = AppSetting.query.filter(AppSetting.key == prefix).first()
+
+        if counter:
+            n= int(counter.value) + 1
+            counter.value = n
+            return int(n)
+        else:
+            new_setting = AppSetting(key = prefix, 
+                                     value = 1)
+            db.session.add(new_setting)
+            return 1
+    
+    
+
+    @staticmethod
+    def get_obj(id)->Operations:
+        ws = db.session.query(Operations).get(id)
+        if not ws:
+            raise NotFoundError('Estacion de trabajo no ecnontrada')
+        return ws
+    
+
+    @staticmethod
+    def get_obj_list(filters:None)->list[Operations]:
+        
+        op = apply_filters(Operations, filters, True)
+        op = op.all()
+
+        return op
+    
+    @staticmethod
+    def patch_obj(obj:Operations, data:dict)->Operations:
+        dto = OperationPatchDTO(**data)
+        if dto.code:
+            obj.code = dto.code
+        if dto.name:
+            obj.name = dto.name
+        if dto.rate_hour:
+            obj.rate_hour = dto.rate_hour
+        if dto.mission:
+            obj.mission = dto.mission
+        if dto.kpi:
+            obj.kpi = dto.kpi
+        if dto.responsible:
+            obj.responsible = dto.responsible
+        if dto.code is None and dto.name is None and dto.rate_hour is None and dto.mission is None and dto.kpi is None:
+            raise ValueError('No se proporsiono un campo valido')
+        
+        try:
+            db.session.commit()
+            return obj
+        except Exception:
+            db.session.rollback()
+            raise 
+
+    @staticmethod
+    def soft_delete(obj:Operations, data:dict)->Operations:
+        dto = OperationStatusDTO(**data)
+        obj.is_active = dto.is_active
+        try:
+            db.session.commit()
+            return obj
+        except Exception:
+            db.session.rollback()
+            current_app.logger.warning('Error al cambiar el estado de Operation')
+            raise 
+
+
+    @staticmethod
+    def delete_obj(obj:Operations)->bool:
+        try:
+            db.session.delete(obj)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            raise 
+
+
+class ProductionResourceService:
+
+    @staticmethod
+    def get_obj(id:int)->ProductionResource:
+        pr = ProductionResource.query.get(id)
+        if not pr:
+            raise NotFoundError(f"No existe el Recurso(id:{id})")
+        return pr
+    
+    @staticmethod
+    def get_obj_list(filters=None)->list[ProductionResource]:
+        query = apply_filters(model=ProductionResource, filters=filters, query_only=True)
+        q = query.all()
+        return q
+    
+    @staticmethod
+    def create_obj(data):
+        with db.session.begin():
+            dto = ProductionResourceDTO(**data)
+            new_obj = ProductionResourceService.create_production_resource(name=dto.name,
+                                                                           description=dto.description,
+                                                                           kind=dto.kind,
+                                                                           operation_id=dto.operation_id,
+                                                                           qty=dto.qty,
+                                                                           efficiency=dto.efficiency,
+                                                                           setup_min=dto.setup_min,
+
+                                                                           )
+            
+ 
+            return new_obj
+        
+
+    @staticmethod
+    def create_production_resource(name,
+                                   qty,
+                                   kind,
+                                   operation_id=None,
+                                   description=None,
+                                   efficiency=None,
+                                   setup_min=None 
+                                   )->ProductionResource:
+        
+        from ..common.services import SecuenceGenerator
+        sec = SecuenceGenerator.get_next_number('production_resource_sec')
+        code = f"R{sec:04d}"
+
+        print('production resource code', code)
+        
+        pr = ProductionResource(
+            name = name,
+            code = code,
+            qty = qty,
+            kind = kind,
+            operation_id = operation_id,  
+            description = description,
+            efficiency = efficiency,
+            setup_min = setup_min
+        )
+        db.session.add(pr)
+        print('resource', pr)
+        return pr
+    
+    @staticmethod
+    def patch_obj(obj:ProductionResource, data:dict):
+            
+        dto = ProductionResourcePatchDTO(**data)
+
+        print(dto)
+        if dto.name:
+            obj.name = dto.name
+
+        if dto.qty:
+            obj.qty = dto.qty
+
+        if dto.description:
+            obj.description = dto.description
+
+        if dto.efficiency:
+            obj.efficiency = dto.efficiency
+
+        if dto.is_active is not None:
+            obj.is_active = dto.is_active
+
+        if dto.setup_min:
+            obj.setup_min = dto.setup_min
+
+        try:
+            db.session.commit()
+            return obj
+        except Exception:
+            db.session.rollback()
+            raise
+
+    @staticmethod
+    def delete_obj(obj:ProductionResource)->bool:
+        try:
+            db.session.delete(obj)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            return False
+        
+
+
+class VariantResourceUsageService:
+
+    @staticmethod
+    def create_obj(data:dict):
+        from .dto_production_resources import VariantResourceUsageDTO
+        with db.session.begin():
+            dto = VariantResourceUsageDTO(**data)
+            new_reg = VariantResourceUsageService.upsert_variant_resource_usage(variant_ids=dto.variant_ids,
+                                                                                resource_id=dto.resource_id,
+                                                                                operation_id=dto.operation_id,
+                                                                                std_min_unit=dto.std_min_unit)
+            return new_reg
+
+    @staticmethod
+    def create_variant_resource_usage(variant_ids:list[int],
+                                      resource_id:int,
+                                      operation_id:int,
+                                      std_min_unit:Decimal):
+        reg = []
+        for v in variant_ids:
+            
+            new_reg = VariantOperationResource(variant_id=v,
+                                        resource_id=resource_id,
+                                        operation_id=operation_id,
+                                        std_min_unit=std_min_unit)
+            db.session.add(new_reg)
+            reg.append(new_reg)
+        return reg
+
+
+    @staticmethod
+    def upsert_variant_resource_usage(
+        variant_ids: list[int],
+        resource_id: int,
+        operation_id: int,
+        std_min_unit
+    ) -> dict:
+        """
+        Crea o actualiza el tiempo estándar (min/unid) para
+        (operation_id, resource_id) aplicado a múltiples variantes.
+        """
+
+        # Existencia de entidades
+        if not ProductionResource.query.get(resource_id):
+            raise NotFoundError(f'Recurso {resource_id} no existe')
+        if not Operations.query.get(operation_id):
+            raise NotFoundError(f'Operación {operation_id} no existe')
+
+        # (Opcional) Verifica que las variantes existan
+        from ..products.models import ProductVariant
+        existing_variants = {v.id for v in ProductVariant.query
+                             .with_entities(ProductVariant.id)
+                             .filter(ProductVariant.id.in_(variant_ids)).all()}
+        missing = set(variant_ids) - existing_variants
+        if missing:
+            raise NotFoundError(f'Variantes inexistentes: {sorted(missing)}')
+
+        # Trae registros existentes para este (op, res) y ese set de variantes
+        existing_rows = (VariantOperationResource.query
+            .filter(
+                VariantOperationResource.resource_id == resource_id,
+                VariantOperationResource.operation_id == operation_id,
+                VariantOperationResource.variant_id.in_(variant_ids)
+            ).all())
+
+        by_variant = {row.variant_id: row for row in existing_rows}
+
+        created, updated = [], []
+
+        for vid in variant_ids:
+            row = by_variant.get(vid)
+            if row is None:
+                row = VariantOperationResource(
+                    variant_id=vid,
+                    resource_id=resource_id,
+                    operation_id=operation_id,
+                    std_min_unit=std_min_unit
+                )
+                db.session.add(row)
+                created.append(vid)
+            else:
+                # Actualiza sólo si cambia (evita flush sucio)
+                if row.std_min_unit != std_min_unit:
+                    row.std_min_unit = std_min_unit
+                    updated.append(vid)
+
+        # Deja IDs listos sin cerrar transacción
+        db.session.flush()
+
+        return {
+            "created_variant_ids": created,
+            "updated_variant_ids": updated,
+            "count_created": len(created),
+            "count_updated": len(updated),
+            "operation_id": operation_id,
+            "resource_id": resource_id,
+            "std_min_unit": str(std_min_unit)
+        }
+    
+
+    @staticmethod
+    def get_obj(id:int):
+        obj = VariantOperationResource.query.get(id)
+        if obj is None:
+            return NotFoundError('Registro no encontrado')
+        return obj
+
+    @staticmethod
+    def get_obj_list(filters:dict=None):
+        query=  apply_filters(model=VariantOperationResource, filters=filters, query_only=True)
+        return query.all()
+    
+    @staticmethod
+    def patch_obj(obj:VariantOperationResource, std_time):
+        from .dto_production_resources import VariantResourceUsagePatchDTO
+        dto = VariantResourceUsagePatchDTO(**std_time)
+        obj.std_min_unit = dto
+        try:
+            db.session.commit()
+            return obj
+        except Exception:
+            raise
+    

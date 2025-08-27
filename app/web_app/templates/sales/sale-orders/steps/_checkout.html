@@ -1,0 +1,89 @@
+<section id="checkout_order">
+    <div>
+        
+        <button class="btn btn-back" type="button" @click="step=1">
+            <h5>
+                <i class="bi bi-chevron-left"></i><span>Checkout</span>
+            </h5>
+        </button>
+
+        <div class="d-flex flex-row mb-2 justify-content-between align-items-center">
+            <button class='btn btn-back px-1' @click="step=4" 
+            :class="{ 'text-decoration-underline': step === 4 }">Datos</button>
+            <button class='btn btn-back px-1' @click="step=5" 
+            :class="{ 'text-decoration-underline': step === 5 }">Cliente</button>
+            <button class='btn btn-back px-1' @click="step=6" 
+            :class="{ 'text-decoration-underline': step === 6 }">Envío</button>
+            <button class='btn btn-back px-1' @click="step=7"
+            :class="{ 'text-decoration-underline': step === 7 }" >Pago</button>
+            <button class='btn btn-back px-1' @click="step=8" 
+            :class="{ 'text-decoration-underline': step === 8 }">Resumen</button>
+        </div>
+
+        <div class="card" id="checkout_steps">
+            <template x-if="step===4">
+                {% include 'sales/sale-orders/steps/step4_order.html' %}
+            </template>
+
+            <template x-if="step===5">
+                {% include 'sales/sale-orders/steps/step5_customer.html' %}
+            </template>
+            
+            <template x-if="step===6">
+                {% include 'sales/sale-orders/steps/step6_shipping.html' %}
+            </template>
+
+            <template x-if="step===7">
+                {% include 'sales/sale-orders/steps/step7_payment.html' %}
+            </template>
+
+            <template x-if="step===8">
+                {% include 'sales/sale-orders/steps/step8_review.html' %}
+            </template>
+
+            <template x-if="error">
+                <div class="alert alert-danger small" x-text="error"></div>
+            </template>
+
+            <div class="card-body">
+                <div class="container" style="max-width: 480px;">
+                    <div class="d-grid">
+                        <template x-if="step!==8">
+                            <button type="button" class="btn btn-lg btn-dark w-100 rounded-pill py-2 fw-semibold" @click="nextStep()">Siguiente</button>        
+                        </template>
+
+                        <template x-if="formLoading">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="step===8">
+                            <template x-if="!formLoading">
+                                <div class="d-grid mt-4" style="max-width: 480px;">
+                                    <button type="button" class="btn btn-dark btn-lg rounded-pill fw-semibold py-2" @click="confirmOrder">
+                                    Confirmar Pedido
+                                    </button>
+                                </div>
+                            </template>
+                        </template>
+                          <!-- Botón de confirmación -->
+
+                        
+                        <button class="btn btn-lg btn-back" @click="step=step-1">
+                            <i class="bi bi-chevron-left"></i><span>Regresar</span>
+                        </button>   
+                    
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+        
+        
+    </div>
+
+</section>

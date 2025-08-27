@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from 'components/detailCard.html' import detail_card %}
+{% block title %}Detalle de Línea{% endblock %}
+
+{% block content %}
+<div class="container mt-3" >
+
+  <div x-data="{ href: '/sales/sale-orders', title: 'Detalle de ventas' }">
+    {% include 'components/_pageHeader.html' %}
+  </div>
+
+    <div x-data="orderDetail()" x-init="fetchOrder()">
+      <!-- Encabezado -->
+      <h4>
+        Orden <span x-text="order.order_number"></span>
+        <span :class="badgeClass(order.status)" class="ms-2" x-text="order.status"></span>
+      </h4>
+
+      <!-- …datos cliente, líneas, totales… -->
+
+      <!-- Botones acción (solo si Pendiente y rol Supervisor) -->
+      <template x-if="order.status === 'Pendiente'">
+        <div class="d-flex gap-2 mt-3">
+          <button class="btn btn-success"
+                  @click="changeStatus('Aprobada')">Aprobar</button>
+          <button class="btn btn-outline-danger"
+                  @click="changeStatus('Rechazada')">Rechazar</button>
+        </div>
+      </template>
+    </div>
+
+    <div
+      x-data="genericDetail(
+        '/api/v1/sale-orders/{{ order_id }}',
+        
+          [
+            { field:'order_number',        label:'N.Orden' },
+            { field:'client.name',        label:'Cliente' },
+            { field: 'client.ruc_or_ci',  label: 'RUC/CI'},
+            { field: 'status',  label: 'Estado'},
+            { field: 'payment_status',  label: 'Pago'},
+            { field: 'total',  label: 'Total'},
+            { field:'notes', label:'Notas' },
+          ],
+
+          '👟'
+        
+      )"
+    >
+    <div class="d-flex gap-2 mt-3">
+          <button class="btn btn-success"
+                  @click="changeStatus('Aprobada')">Aprobar</button>
+          <button class="btn btn-outline-danger"
+                  @click="changeStatus('Rechazada')">Rechazar</button>
+        </div>
+    {% include "components/detailCard.html" %}
+    
+    <!-- Mensaje de error -->
+    <template x-if="error">
+      <div class="alert alert-danger" x-text="error"></div>
+    </template>
+
+  </div>
+
+
+  <!-- Una vez que llega `item`, mostramos la lista de variantes  -->
+  <div>
+    <div
+        x-data="genericList(
+          `/api/v1/sale-orders/{{order_id}}/lines`,
+          '/sales/{{order_id}}/lines',
+          [
+            { field: 'variant.code',        label: 'Código',      filterable: true  },
+            { field: 'variant.size.value',  label: 'Talla',      filterable: true  },
+            { field: 'quantity',   label: 'Cantidad',      filterable: true  },
+            { field: 'subtotal',   label: 'Subtotal',      filterable: true  },
+            
+          ]
+        )"
+        class="table-responsive"
+      >
+        {% include 'components/listTable.html' %}
+    </div>
+  </div>
+
+ 
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}
+
+<script>
+function orderDetail() {
+  return {
+    order: {}, loading:false,
+    async fetchOrder() { /* GET /sale-orders/:id */ },
+    async changeStatus(newStatus) {
+      if (!confirm(`¿Confirmar ${newStatus.toLowerCase()} la orden?`)) return;
+      this.loading = true;
+      try {
+        await fetch(`/api/v1/sale-orders/${this.order.id}`, {
+          method:'PATCH',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({status:newStatus})
+        });
+        this.order.status = newStatus;
+        helpers.showToast(`Orden ${newStatus.toLowerCase()} correctamente`, 'success');
+      } catch(e) {
+        helpers.showToast('Error al actualizar', 'danger');
+      } finally { this.loading = false; }
+    }
+  }
+}
+
+</script>

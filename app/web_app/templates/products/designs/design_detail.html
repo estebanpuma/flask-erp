@@ -5,10 +5,13 @@
 {% block content %}
 <div class="container mt-3" >
 
-  <div x-data="{ href: '/products', title: 'Detalle de colores/diseños de productos' }">
+  <div x-data="{ href: '/products/{{product_id}}', title: 'Detalle de colores/diseños de productos' }">
     {% include 'components/_pageHeader.html' %}
   </div>
+  <div>
+    <a href="/products/{{product_id}}/designs/{{design_id}}/images/create">Crar imagenes</a>
 
+  </div>
     <div
       x-data="genericDetail(
         '/api/v1/product-designs/{{ design_id }}',
@@ -18,6 +21,7 @@
             { field:'product.collection.name', label:'Colección'},
             { field:'code',        label:'Código' },
             { field:'name',        label:'Nombre' },
+            { field: 'color_names',  label: 'Colores', isList: true},
             { field:'description', label:'Descripción' },
           ],
 
@@ -39,7 +43,7 @@
     <div
         x-data="genericList(
           `/api/v1/product-variants?design_id={{design_id}}`,
-          '/products/variants',
+          '/products/{{product_id}}/designs/{{design_id}}/variants',
           [
             { field: 'code',        label: 'Código',      filterable: true  },
             { field: 'size.value',  label: 'Talla',      filterable: true  },

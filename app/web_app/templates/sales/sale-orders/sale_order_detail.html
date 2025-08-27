@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ╭─────────────────────────── ORDER HEADER ─────────────────────────╮ -->
+<div x-data="{
+        order: {{ order | tojson | safe }},              // dict del backend
+        editMode: false,
+
+        /* helpers */
+        canEdit()   { return this.order.status === 'Pendiente' },
+        setStatus(s){ this.order.status = s; this.editMode=false }
+     }"
+     class="container-xl my-4">
+
+  <!-- Breadcrumb + Acción flotante ------------------------------------ -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+      <li class="breadcrumb-item"><a href="/ventas">Ventas</a></li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Pedido #<span x-text="order.code"></span>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Botón flotante “Volver” (ejemplo de createBtn variante) --------- -->
+  <div x-html="window.guifer.components.actionBtn({
+                label:'Volver',
+                href:'/ventas',
+                variant:'secondary',
+                icon:'arrow-left',
+                float:true
+              })"></div>
+
+  <!-- Card principal --------------------------------------------------- -->
+  <div class="card shadow-sm">
+    <div class="card-body d-flex flex-column flex-md-row gap-4">
+
+      <!-- Bloque datos cabecera --------------------------------------- -->
+      <div class="flex-fill">
+        <!-- Nº + badge -->
+        <h2 class="h4 d-flex align-items-center gap-2">
+          Pedido <span x-text="order.code"></span>
+          <span x-html="window.guifer.ui.statusBadge(order.status,'sale_order')"></span>
+        </h2>
+
+        <!-- Datos cliente -->
+        <dl class="row small mb-1">
+          <dt class="col-4 col-md-3">Cliente</dt>
+          <dd class="col-8 col-md-9" x-text="order.customer.name"></dd>
+
+          <dt class="col-4 col-md-3">Fecha</dt>
+          <dd class="col-8 col-md-9" x-text="order.date"></dd>
+
+          <template x-if="editMode">
+            <!-- selector editable -->
+            <dt class="col-4 col-md-3">Referencia</dt>
+            <dd class="col-8 col-md-9">
+              <input x-model="order.reference"
+                     class="form-control form-control-sm">
+            </dd>
+          </template>
+
+          <template x-if="!editMode">
+            <dt class="col-4 col-md-3">Referencia</dt>
+            <dd class="col-8 col-md-9" x-text="order.reference || '—'"></dd>
+          </template>
+        </dl>
+
+        <!-- Botón “Editar” visible sólo si se puede -->
+        <button class="btn btn-outline-primary btn-sm"
+                x-show="canEdit() && !editMode"
+                @click="editMode=true">
+          <i class="bi bi-pencil me-1"></i> Editar cabecera
+        </button>
+        <button class="btn btn-success btn-sm"
+                x-show="editMode"
+                @click="/* llama API guardar */ editMode=false">
+          Guardar
+        </button>
+        <button class="btn btn-secondary btn-sm ms-2"
+                x-show="editMode"
+                @click="editMode=false">
+          Cancelar
+        </button>
+      </div>
+
+      <!-- Totales ------------------------------------------------------ -->
+      <div class="border-start ps-3">
+        <h5 class="text-muted">Totales</h5>
+        <p class="fs-4 mb-0"
+           x-text="`US$ ${Number(order.total).toFixed(2)}`"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╭──────────────────── TABLA DE LÍNEAS DE PRODUCTO ────────────────╮ -->
+  {% set cols = [
+        {'field':'code','label':'Código'},
+        {'field':'name','label':'Producto','filterable':True},
+        {'field':'qty','label':'Cant.'},
+        {'field':'price','label':'Precio', 'formatter': moneyFmt},
+        {'field':'subtotal','label':'Subtotal', 'formatter': moneyFmt}
+  ] %}
+  <div class="card shadow-sm mt-4">
+    <div class="card-body p-0">
+      <div x-data="genericList('/api/v1/sale-orders/{{ order.id }}/items',
+                               null,
+                               {{ cols|tojson|safe }})"
+           x-init="init()"
+           class="table-responsive">
+        <!-- tu plantilla de tabla reutilizable -->
+        <table class="table table-sm mb-0">
+          <thead><tr>
+            <template x-for="c in columns" :key="c.field">
+              <th x-text="c.label"></th>
+            </template>
+          </tr></thead>
+          <tbody>
+            <template x-for="row in filteredItems" :key="row.id">
+              <tr>
+                <template x-for="col in columns" :key="col.field">
+                  <td x-html="cellHtml(row, col)"></td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╭──────────────────────────── ACCIONES ──────────────────────────╮ -->
+  <div class="d-flex gap-2 justify-content-end mt-4"
+       x-show="order.status === 'Pendiente'">
+    <!-- Reutiliza actionBtn -->
+    <div x-html="window.guifer.components.actionBtn({
+            label:'Rechazar',
+            variant:'danger',
+            icon:'x-circle',
+            tooltip:'Marcar como rechazada',
+            href:'#'   /* o @click="setStatus('Rechazada')" */
+          })"></div>
+
+    <div x-html="window.guifer.components.actionBtn({
+            label:'Cancelar',
+            variant:'secondary',
+            icon:'slash-circle',
+            tooltip:'Cancelar sin procesar',
+            href:'#'
+          })"></div>
+
+    <div x-html="window.guifer.components.actionBtn({
+            label:'Aprobar',
+            variant:'success',
+            icon:'check-circle',
+            tooltip:'Aprobar y continuar al despacho',
+            href:'#'
+          })"></div>
+  </div>
+
+</div> <!-- /container -->
+{% endblock %}

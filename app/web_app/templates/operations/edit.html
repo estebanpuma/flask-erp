@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Crear Proceso{% endblock %}
+
+{% block content %}
+<div x-data="{ href: '/production/operations', title: ' Crear nuevo proceso' }">
+    {% include 'components/_pageHeader.html' %}
+</div>
+
+<div class="container mt-3" >
+  
+  {% include 'operations/_form.html'%}
+</div>
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}

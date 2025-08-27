@@ -1,0 +1,131 @@
+<!-- ====== FORMULARIO: Editar Recurso ====== -->
+<div x-data="editResourceForm({{id}})" class="container my-4" style="max-width: 560px;">
+  
+  {{ pageHeader(href='/production/resources/' ~ id, title='Editar Recurso') }}
+
+  <template x-if="error"><div class="alert alert-danger" x-text="error"></div></template>
+  <template x-if="notice"><div class="alert alert-info" x-text="notice"></div></template>
+  <!-- inputs  -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <h2 class="h6 mb-3">Datos del recurso</h2>
+        
+      <form @submit.prevent="submit" novalidate class="d-grid gap-3">
+
+        <div x-data="inputText({ id:'name', label:'Nombre', required:true })"
+          x-modelable="value" x-model="form.name"></div>
+
+        <!-- Estado (boolSwitch) -->
+        <div class="d-flex align-items-center justify-content-between">
+          <label class="me-3 m-0">Estado</label>
+
+          <div x-data="boolSwitch({
+                    label: '',
+                    initial: form.is_active,
+                    label: '',
+                    showState: true,   /* muestra Activo/Inactivo */
+                    onText: 'Activo',
+                    offText:'Inactivo',
+                  })"
+              x-modelable="value"
+              x-model="form.is_active">
+          </div>
+        </div>
+
+        <!-- Cantidad (inputQty) -->
+        <div class="d-flex align-items-center justify-content-between">
+          <label class="me-3 m-0">Cantidad</label>
+
+          <div  x-data="inputQty({ initial: form.qty, step: 1, min: 0, max: null })"
+                x-modelable="value"
+                x-model="form.qty"
+                class="d-flex gap-1">
+            <!-- La plantilla interna la injecta el componente en init() -->
+          </div>
+        </div>
+
+        <!-- Descripción -->
+        <div x-data="inputTextArea({
+            label:'Descripción',
+              maxLength:200,
+              rows:3,
+              required:false,
+              help:'Máx. 200 caracteres',})"
+              x-model="form.description"
+              x-modelable="value"></div>
+
+        <!-- Acciones -->
+        <div class="d-flex gap-2">
+          <div class="flex-grow-1" x-data="actionBtn({ label:'Guardar', variant:'dark', size:'md', icon:'floppy' })"
+                @action="submit">
+            </div>
+            <div class="" x-data="actionBtn({ label:'Cancelar', variant:'outline-secondary', size:'md' })"
+              @action="reset">
+            </div>
+        </div>
+      </form>
+
+  <!-- Debug opcional (activar si lo necesitas) -->
+  <!-- <pre class="small mt-3 bg-light p-2 rounded" x-text="JSON.stringify(form, null, 2)"></pre> -->
+    </div>
+  </div>
+</div>
+<script>
+function editResourceForm(id){
+    return{
+    id: id,
+    form: {
+      name:'',
+      namer:'',
+      qty:'',
+      is_active:null,
+      description:''
+    },
+    loading: false,
+    tried: false,
+    descCount: '',
+
+    get isValid () {
+      return this.form.name.trim().length > 0
+          && Number.isFinite(this.form.qty)
+    },
+
+
+    reset () {
+      this.form = JSON.parse(JSON.stringify(this.$data._initial)); // simple reset
+      this.descCount = this.form.description.length;
+      this.tried = false;
+    },
+
+    async init() {
+      // guardo snapshot para reset()
+      const res = await window.guifer.helpers.fetch.apiFetch('GET', `production-resources/${id}`)
+        console.log(res)
+        this.form = res
+      this._initial = JSON.parse(JSON.stringify(this.form));
+    },
+
+    async submit () {
+      this.tried = true;
+      if (!this.isValid) return;
+
+      this.loading = true;
+      try {
+        const payload = { ...this.form };
+        console.log('submit payload', payload);
+        
+        const res = await window.guifer.helpers.fetch.apiFetch('PATCH', `production-resources/${id}`, payload);
+        if(res) {
+            window.guifer.components.alert.showToast?.('Guardado', 'success')
+            window.location.href = `/production/resources/${id}`
+        }
+      } catch (err) {
+        console.error(err);
+        window.guifer.components.alert.showToast?.(err.message, 'danger')
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+}
+</script>

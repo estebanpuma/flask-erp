@@ -1,6 +1,6 @@
 from datetime import datetime
 from ..core.exceptions import ValidationError
-from flask import flash
+from flask import flash, current_app
 
 def parse_str(value, field=None, nullable=False, default=None):
     if value is None or str(value).strip().lower() in ["", "none", "nan"]:
@@ -117,9 +117,10 @@ def parse_ruc_or_ci(value):
 
 def parse_ids_list(value, nullable=False, field=None, default=None, min_value=None, max_value=None):
 
-    flash(value)
+    current_app.logger.info(f'Entry point: {value} vs tyip{type(value)}')
     
     if not isinstance(value, list) or not value:
+            current_app.logger.info(f'Eso es inside: ')
             raise ValidationError(f"{field}. No debe ser una lista vacia")
     
     if value is None or str(value).lower() in ["none", "nan", ""]:

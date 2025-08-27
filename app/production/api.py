@@ -14,6 +14,20 @@ from .resources import (
     
     ProductionMaterialDetailsGetResource, 
     ProductionMaterialSummaryGetResource, 
+
+    OperationPatchResource,
+    OperationDeleteResource,
+    OperationGetResource,
+    OperationPostResource,
+
+    ProductionResourcePostResource,
+    ProductionResourceDeleteResource,
+    ProductionResourcePatchResource,
+    ProductionResourceGetResource,
+
+    VariantUseResourceGetResource,
+    VariantUseResourcePatchResource,
+    VariantUseResourcePostResource
    
 )
 
@@ -48,6 +62,23 @@ production_api.add_resource(ProductionOrderLineGetResource, '/production-order/<
 
 production_api.add_resource(ProductionMaterialSummaryGetResource, '/production-order/<int:resource_id>/material-summary' )
 production_api.add_resource(ProductionMaterialDetailsGetResource, '/production-line/<int:resource_id>/material-details')
+
+
+production_api.add_resource(OperationPostResource, '/operations')
+production_api.add_resource(OperationGetResource, '/operations', '/operations/<int:resource_id>')
+production_api.add_resource(OperationDeleteResource, '/operations/<int:resource_id>')
+production_api.add_resource(OperationPatchResource, '/operations/<int:resource_id>')
+
+
+production_api.add_resource(ProductionResourcePostResource, '/production-resources')
+production_api.add_resource(ProductionResourceGetResource, '/production-resources', '/production-resources/<int:resource_id>')
+production_api.add_resource(ProductionResourceDeleteResource, '/production-resources/<int:resource_id>')
+production_api.add_resource(ProductionResourcePatchResource, '/production-resources/<int:resource_id>')
+
+
+production_api.add_resource(VariantUseResourcePostResource, '/operations-sheet')
+production_api.add_resource(VariantUseResourceGetResource, '/operations-sheet', '/operations-sheet/<int:resource_id>')
+production_api.add_resource(VariantUseResourcePatchResource, '/operations-sheet/<int:resource_id>')
 
 """
 

@@ -20,6 +20,11 @@
     </div>
   </div>
 
+   <!-- Mensaje de error si el diseño ya existe -->
+  <template x-if="error">
+    <div class="alert alert-danger" x-text="error"></div>
+  </template>
+
   <!-- Colores seleccionados (en orden) -->
   <div class="mt-4">
     <h6 class="mb-2">🎨 Colores seleccionados:</h6>
@@ -49,6 +54,6 @@
   <!-- Acciones -->
   <div class="d-flex justify-content-between mt-4">
     <button class="btn btn-outline-secondary" @click="prevStep">← Atrás</button>
-    <button class="btn btn-dark" @click="nextStep" :disabled="selectedColors.length === 0">Siguiente →</button>
+    <button class="btn btn-dark" @click="nextStep" :disabled="isDuplicateDesign || selectedColors.length<1" >Siguiente →</button>
   </div>
 </div>

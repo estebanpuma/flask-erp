@@ -61,5 +61,15 @@ class WarehouseService:
         except Exception as e:
             db.session.rollback()
             raise
-    
+
+    @staticmethod
+    def delete_obj(obj:Warehouse)->bool:
+
+        try:
+            db.session.delete(obj)
+            db.session.commit()
+            return True
+        except Exception as e:
+            raise
+
     

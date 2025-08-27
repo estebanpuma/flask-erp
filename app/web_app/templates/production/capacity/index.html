@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from 'components/entryCard.html' import entry_card %}
+{% block content %}
+  {% set title = 'Capacidad instalada' %}
+  {% include 'components/pageHeader.html' %}
+  <div class="row g-3">
+    {{ entry_card('/production-orders', '📋 Ficha de operaciones', 'Operaciones y recursos por variante') }}
+    {{ entry_card('/production/operations', '🏭 Procesos', 'Procesos de producción') }}
+    {{ entry_card('/production/resources', '⚙️ Recursos', 'Definir recursos de producción.') }}
+  </div>
+{% endblock %}

@@ -1,0 +1,42 @@
+
+
+    <div class="card-body" id="shipping">
+        <h2 class="fs-5 fw-bold mb-4 text-center">Confirmar dirección de envío</h2>
+
+        <div x-init="loadCantons(shipping.province_id)">
+            <!-- Provincia -->
+            <div class="form-floating mb-3">
+                <select class="form-select" id="province" x-model="shipping.province_id" @change="loadCantons(shipping.province_id)" required>
+                <option value="" disabled>Seleccione provincia</option>
+                <template x-for="p in provinces" :key="p.id">
+                    <option :value="p.id" x-text="p.name" :selected="shipping.province_id===p.id"></option>
+                </template>
+                </select>
+                <label for="province">Provincia</label>
+            </div>
+
+            <!-- Cantón -->
+            <div class="form-floating mb-3">
+                <select class="form-select" id="canton" x-model="shipping.canton_id"  required>
+                <option value="" disabled>Seleccione cantón</option>
+                <template x-for="c in cantons" :key="c.id">
+                    <option :value="c.id" x-text="c.name" :selected="c.id===shipping.canton_id"></option>
+                </template>
+                </select>
+                <label for="canton">Cantón</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="address" x-model="shipping.address">
+                <label for="address">Dirección(calles)</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="address" x-model="shipping.reference">
+                <label for="address">Referencia</label>
+            </div>
+        </div>
+        
+        
+    </div>
+

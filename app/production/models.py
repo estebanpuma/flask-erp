@@ -8,6 +8,11 @@ from datetime import datetime
 
 from ..core.origin_factory import OriginFactory
 
+from sqlalchemy.ext.hybrid import hybrid_property
+
+from decimal import Decimal
+
+from datetime import date
 
 
 # Tabla intermedia para relación muchos a muchos
@@ -123,9 +128,52 @@ class ProductionRequest(BaseModel):
 
     created_by = db.relationship("User")
 
+    lines = db.relationship("ProductionRequestLine",
+                            back_populates="request",
+                            cascade="all, delete-orphan")
+
+    # Totales calculados al vuelo (se mantienen consistentes)
+    @hybrid_property
+    def total_items(self):
+        return sum(l.quantity for l in self.lines)
+
+    @hybrid_property
+    def total_time(self):
+        return sum(l.quantity * l.variant.standar_time for l in self.lines)
+
+    @hybrid_property
+    def total_cost(self):
+        return sum(l.quantity * l.variant.unit_cost for l in self.lines)
+
+    # acceso opcional a la orden original (sigue siendo útil)
     @property
     def origin_obj(self):
         return OriginFactory.get_origin(self.origin_type, self.origin_id)
+
+    @property
+    def origin_obj(self):
+        return OriginFactory.get_origin(self.origin_type, self.origin_id)
+    
+
+class ProductionRequestLine(BaseModel):
+    __tablename__ = "production_request_lines"
+
+    id         = db.Column(db.Integer, primary_key=True)
+    request_id = db.Column(db.Integer,
+                           db.ForeignKey("production_requests.id"),
+                           nullable=False)
+    # Para trazabilidad:  ↴
+    origin_line_id = db.Column(db.Integer)            # opcional
+    origin_line_type = db.Column(db.String(50))       # 'sale_order_line', …
+
+    variant_id = db.Column(db.Integer,
+                           db.ForeignKey("product_variants.id"),
+                           nullable=False)
+    quantity   = db.Column(db.Integer, nullable=False)
+
+    request = db.relationship("ProductionRequest", back_populates="lines")
+    variant = db.relationship("ProductVariant")
+
     
 
 class ProductionMaterialDetail(db.Model):
@@ -228,3 +276,84 @@ class ProductionEvent(db.Model):
     event_type = db.Column(db.String(50))  # Ej: 'material_shortage', 'machine_breakdown'
     description = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.today)
+
+
+class Operations(BaseModel, SoftDeleteMixin):
+    __tablename__       = "operations"
+    id                  = db.Column(db.Integer, primary_key=True)
+    code                = db.Column(db.String(10), nullable=True)
+    code_doc            = db.Column(db.String(20), nullable=True)
+    name                = db.Column(db.String(50))
+    description         = db.Column(db.String(), nullable=True)
+    goal                = db.Column(db.String, nullable=True)
+    scoope              = db.Column(db.String, nullable=True)
+    kpi                 = db.Column(db.String, nullable=True)
+    responsible_id      = db.Column(db.Integer, db.ForeignKey('jobs.id'))
+
+
+    variant_operations   = db.relationship('ProductVariantOperationDetail', back_populates='operation')
+    responsible         = db.relationship('Job')
+    resources           = db.relationship('ProductionResource', 
+                                  back_populates='operation',
+                                    )
+
+    
+
+
+class ProductionResource(BaseModel, SoftDeleteMixin):
+    __tablename__ = "production_resources"
+
+    id            = db.Column(db.Integer, primary_key=True)
+    code          = db.Column(db.String(20), unique=True, nullable=False)   
+    code_doc      = db.Column(db.String(20), nullable=True)
+    name          = db.Column(db.String(60))
+    description   = db.Column(db.String(), nullable=True)
+    operation_id  = db.Column(db.Integer, db.ForeignKey('operations.id'), nullable=True)
+    kind          = db.Column(db.Enum('labor', 'machine', 'tool', name='resource_kind'))
+    qty           = db.Column(db.Integer, nullable=False, default=0)
+    shift_min     = db.Column(db.Numeric(10,2), nullable=False, default=480)
+    efficiency    = db.Column(db.Numeric(4,2), nullable=True, default=1)
+    setup_min     = db.Column(db.Numeric(10,2), nullable=True, default=0)
+    rate_per_hour = db.Column(db.Numeric(10,4), nullable=True)   # para costo
+
+        
+    operation     = db.relationship('Operations', back_populates='resources')
+    variant_operation_resource = db.relationship('VariantOperationResource', back_populates='resource')
+
+    @property
+    def min_available(self):
+        """Minutos totales que el recurso/s esta disponible por dia/turno"""
+        return (self.qty or 0) * (self.shift_min or 0) * (self.efficiency or 1) 
+
+    # opcional: costo hora, tasa de depreciación, etc.
+
+
+class VariantOperationResource(db.Model):#nuevo 
+    __tablename__ = "variant_operation_resources"
+
+    id                      = db.Column(db.Integer, primary_key=True)
+    variant_operation_id    = db.Column(
+                                            db.Integer,
+                                            db.ForeignKey("variant_operations.id", ondelete="CASCADE"),
+                                            nullable=False
+                                        )
+    resource_id             = db.Column(db.Integer, db.ForeignKey('production_resources.id'), nullable=False)
+
+    res_min      = db.Column(db.Numeric(10,4), nullable=False, default=0)  # min/u que consume este recurso
+    qty_required = db.Column(db.Numeric(10,4), nullable=False, default=1)  # si pides 2 operarios, etc.
+    role         = db.Column(db.String(20))  
+
+    resource      = db.relationship('ProductionResource', back_populates='variant_operation_resource')
+    variant_operation = db.relationship("ProductVariantOperationDetail", back_populates="resources")
+
+
+    @property
+    def resource_capacity(self):
+        """Piezas que cada recurso puede producir o procesar en un turno de trabajo"""
+        # minutos efectivos del pool * multiplicador por cantidad requerida
+        eff_minutes = float(self.resource.min_available)  # qty * shift_min * efficiency
+        per_unit_minutes = float(self.res_min) * float(self.qty_required or 1)
+        return 0.0 if per_unit_minutes <= 0 else eff_minutes / per_unit_minutes
+
+    
+

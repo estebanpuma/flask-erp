@@ -5,6 +5,7 @@ from flask_restful import Resource, marshal
 from ..core.resources import BaseGetResource, BasePatchResource, BaseDeleteResource, BasePostResource, BulkUploadBaseResource
 from ..core.utils import success_response
 from .services import MaterialGroupServices,  MaterialExcelImportService
+from .material_group_services import MaterialGroupService
 
 from .material_services import MaterialStockService, MaterialService
 
@@ -15,14 +16,13 @@ from .validations import validate_material_data, validate_material_patch_data
 
 
 class MaterialGroupGetResource(BaseGetResource):
-    schema_get = staticmethod(MaterialGroupServices.get_material_group)
-    schema_list = staticmethod( lambda: MaterialGroupServices.get_list(request.args.to_dict()))
+    schema_get = staticmethod(MaterialGroupService.get_obj)
+    schema_list = staticmethod( lambda: MaterialGroupService.get_obj_list(request.args.to_dict()))
     output_fields = material_group_output_fields
 
 
 class MaterialGroupPostResource(BasePostResource):
-    schema = staticmethod(validate_material_group_data)
-    service_create = staticmethod(MaterialGroupServices.create_material_group)
+    service_create = staticmethod(MaterialGroupService.create_obj)
     output_fields = material_group_output_fields
 
 
@@ -34,7 +34,8 @@ class MaterialGroupPatchResource(BasePatchResource):
 
 
 class MaterialGroupDeleteResource(BaseDeleteResource):
-    service_delete = staticmethod(MaterialGroupServices.delete)
+    service_get = staticmethod(MaterialGroupService.get_obj)
+    service_delete = staticmethod(MaterialGroupService.delete_obj)
 
 
 

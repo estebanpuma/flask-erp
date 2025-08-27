@@ -8,9 +8,9 @@
 
   <div class="row g-3">
     {{ entry_card('/clients', '👤 Clientes', 'Gestión de clientes y contactos.') }}
-    {{ entry_card('/sale-orders', '🛒 Órdenes de Venta', 'Registro y seguimiento de pedidos.') }}
-    {{ entry_card('/sale-orders/pending', '⏳ Pendientes de Aprobación', 'Revisión de pedidos pendientes.') }}
-    {{ entry_card('/approval-criteria', '📋 Criterios de Aprobación', 'Reglas para aprobación interna.') }}
+    {{ entry_card('/sales/sale-orders', '🛒 Órdenes de Venta', 'Registro y seguimiento de pedidos.') }}
+    {{ entry_card('sales/sale-orders/pending', '⏳ Pendientes de Aprobación', 'Revisión de pedidos pendientes.') }}
+    {{ entry_card('/sales/approval-criteria', '📋 Criterios de Aprobación', 'Reglas para aprobación interna.') }}
     {{ entry_card('/sales/indicators', '📈 Indicadores', 'Volumen, margen y efectividad.') }}
   </div>
 {% endblock %}

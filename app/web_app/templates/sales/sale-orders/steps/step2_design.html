@@ -1,0 +1,115 @@
+<!-- templates/sales/sale-orders/steps/step3_design.html -->
+
+<div class="mb-4">
+    <!-- Breadcrumb minimalista -->
+  <nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb small bg-transparent px-1 py-2 mb-0">
+      <li class="breadcrumb-item">
+        <button class="btn btn-back p-0 text-muted" @click="step=1">
+          <i class="bi bi-chevron-left"></i>
+          <span x-text="selectedDesign.product.collection.name"></span>
+        </button>
+      </li>
+      <li class="breadcrumb-item" x-show="selectedDesign.product.name">
+        <span x-text="selectedDesign.product.name"></span>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page"  x-show="selectedDesign.name">
+        <span x-text="selectedDesign.name"></span>
+      </li>
+    </ol>
+  </nav>
+
+
+  <div class="card mb-3" >
+    <div class="row g-0">
+      <div class="col-lg-7">
+        <img :src="getPrimaryImageUrl(selectedDesign.images)" class="img img-fluid rounded-start" alt="..." >
+
+        <!-- Info extra, solo visible en desktop -->
+        <div class="card-body d-none d-lg-block border-top">
+          <h6 class="fw-semibold mb-1">Información del producto</h6>
+          <p class="text-muted mb-0" x-text="selectedDesign.description || 'Sin descripción del producto'"></p>
+        </div>
+        
+
+      </div>
+      <div class="col-lg-5">
+        <div class="card-body">
+          <h6 class="text-muted mb-1" x-text="selectedDesign.product.collection.name"></h6>
+          <h3 class="card-title text-dark mb-1 fw-semibold fs-5" x-text="selectedDesign.name || selectedDesign.product.name"></h3>
+          <div class="mb-2 small text-secondary" x-text="selectedDesign.code"></div>
+          <div class="mb-2">
+            <span class="fw-bold fs-4 text-success">$<span x-text="Number(selectedDesign.current_price).toFixed(2)"></span></span>
+          </div>
+          <!-- Color actual -->
+          <div class="mb-2">
+            <span class="text-muted">Color:</span>
+            <template x-for="color in selectedDesign.colors" :key="color.id">
+              <span class="badge bg-light text-dark border mx-1" x-text="color.name"></span>
+            </template>
+          </div>
+
+          <!-- Color Selector -->
+          <div class="d-flex align-items-center mb-3" x-init="fetchProduct(selectedDesign.product.id)">
+            <template x-for="d in selectedProduct.designs" :key="d.id">
+              
+              <div @click="selectedDesign = d; onDesignChange()"
+
+                  class="rounded me-2"
+                  :class="selectedDesign && selectedDesign.id === d.id ? 'border border-dark border-5' : 'border-secondary'"
+                  style="cursor:pointer">
+    
+                <img :src="getPrimaryImageUrl(d.images)"
+                    class="img-fluid"
+                    style="width:60px;height:60px;object-fit:cover;">
+                
+              </div>
+            </template>
+          </div>
+
+          
+          <!-- Size & Quantity List -->
+          <div x-show="variants.length && selectedDesign">
+            <h6 class="small text-secondary mb-2">
+              Tallas: (<span x-text="variants.length"></span>)
+            </h6>
+            <div class="list-group list-group-flush mb-3">
+              <template x-for="v in variants" :key="v.id">
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6> <span class="fw-semibold badge text-bg-secondary" x-text="v.size.value"></span></h6>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="me-2">
+                      $<span class="text-muted" x-text="Number(selectedDesign.current_price).toFixed(2)"></span>
+                    </div>
+                    {% include 'components/_quantityInput.html' %}
+                  </div>
+                  
+                </div>
+              </template>
+            </div>
+            <div class="d-flex justify-content-end align-items-center mb-2">
+              <span class="me-2 text-muted">Subtotal:</span>
+              <span class="fw-bold" x-text="lineSubtotal()"></span>
+            </div>
+            <button class="btn btn-dark w-100 rounded-pill py-2 fw-semibold" type="button" @click="addToCart()">
+              Añadir al carrito
+            </button> 
+          </div>
+
+          
+        </div>
+      </div>
+
+      
+    <!-- Info extra, solo visible en móvil -->
+          <div class="mt-4 d-lg-none">
+            <h6 class="fw-semibold mb-1">Información del producto</h6>
+            <p class="text-muted small mb-0" x-text="selectedDesign.description || 'Sin descripción del producto'"></p>
+          </div>
+      
+
+    </div>
+  </div>
+</div>

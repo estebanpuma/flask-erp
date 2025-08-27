@@ -1,15 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Crear Línea{% endblock %}
+{% block title %}Crear Diseno{% endblock %}
 
 {% block content %}
-<div class="container mt-3" x-data="createCollection()" x-init="init()">
-  <div x-data="{ href: '/products/{{product_id}}', title: ' Crear nuevo diseño' }">
+<div x-data="{ href: '/products/{{product_id}}', title: ' Crear nuevo diseño' }">
     {% include 'components/_pageHeader.html' %}
-  </div>
-  {% include "products/collections/_collectionForm_create.html" %}
+</div>
+
+<div class="container mt-3" x-data="productWizard({ productId: {{ product_id }}, startStep: 2 })">
+  
+  {% include "products/products/product_wizard.html" %}
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/product_collections.js') }}"></script>
+<script src="{{ url_for('static', filename='js/productsForm.js') }}"></script>
 {% endblock %}
+

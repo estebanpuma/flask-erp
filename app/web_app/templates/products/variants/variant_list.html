@@ -2,7 +2,7 @@
 {% block title %}Líneas de Producto{% endblock %}
 {% block content %}
 
-<div x-data="{ href: '/products/designs', title: 'Variantes/Tallas de productos' }">
+<div x-data="{ href: '/products/{{product_id}}/designs/{{designs_id}}', title: 'Variantes/Tallas de productos' }">
     {% include 'components/_pageHeader.html' %}
 </div>
 
@@ -13,7 +13,7 @@
 <div
     x-data="genericList(
       `/api/v1/product-materials?variant_id={{variant_id}}`,
-      '/products/variants',
+      '/products/{{product_id}}/designs/{{designs_id}}/variants',
       [
         { field: 'code',        label: 'Código',      filterable: true  },
         { field: 'size',  label: 'Talla',      filterable: true  },

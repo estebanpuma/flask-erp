@@ -35,3 +35,34 @@ font-weight: 600;
 }
 }
 
+.btn-link{
+    color: black;
+}
+
+.btn-link:hover, .btn-link:focus {
+  color: #ffffff; /* o el color que prefieras */
+  text-decoration: none;
+  background: #565353; /* leve fondo al pasar el mouse, opcional */
+  border-radius: .5rem;
+}
+
+.btn-back{
+    color: none;
+    text-decoration: none;
+}
+
+.btn-back:hover, .btn-back:focus{
+    color: blue;
+    text-decoration: underline;
+    transform: scale(1.2);
+}
+
+@media print {
+    header, footer, .navbar, .btn, .footer { display: none !important; }
+  @page {
+    size: auto;   /* O usa A5, A6, dependiendo tu plantilla */
+    margin: auto;
+    
+  }
+  /* ...resto igual... */
+}

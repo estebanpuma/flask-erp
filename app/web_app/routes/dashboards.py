@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template
 import datetime
 
-dashboards_bp = Blueprint('dashboards', __name__, url_prefix='/', template_folder='templates')
+dashboards_bp = Blueprint('dashboards', __name__, url_prefix='/')
 
 
 MOTIVATIONAL_QUOTES = [

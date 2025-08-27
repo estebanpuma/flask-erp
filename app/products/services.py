@@ -2,7 +2,7 @@ from app import db
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload, aliased
 from flask import current_app
-from .models import Product, ProductLine, ProductSubLine, ProductVariant, ProductVariantMaterialDetail, ProductVariantImage
+from .models import Product, ProductLine, ProductSubLine, ProductVariant, ProductVariantMaterialDetail
 from .models import Color, SizeSeries, Size, ProductDesign, ProductCollection, ProductTarget
 from .entities import ProductEntity, ProductDesignEntity, ProductVariantEntity, PatchProductEntity, ProductVariantMaterialEntity
 from .services_size_series import SizeSeriesService, SizeService
@@ -208,22 +208,24 @@ class DesignService:
             raise
 
     @staticmethod
-    def create_obj(data):
+    def create_obj(data:dict):
         """Crea un diseño con sus variantes y materiales."""
+        current_app.logger.info(f'dara:{data}')
         with db.session.begin():
-            dto = ProductDesignCreateDTO(**data)
+            dto = ProductDesignCreateDTO(data)
             design = DesignService.create_design(product_id=dto.product_id,
                                                  color_ids=dto.color_ids,
-                                                 series_ids=dto.series_ids,
+                                                 #series_ids=dto.series_ids,
                                                  name=dto.name,
                                                  description=dto.description,
-                                                 variants=dto.variants)
+                                                 variants=dto.variants,
+                                                 materials=dto.materials)
             return design
         
     @staticmethod
     def create_design(product_id:int,
                        color_ids:list[int],
-                       series_ids:list[int],
+                       #series_ids:list[int],
                        variants:list,
                        materials:list,
                        name:str=None, 
@@ -243,15 +245,16 @@ class DesignService:
                 raise ValidationError(f'No existe el color con id: {str(color_id)}')
             colors.append(color)
 
-
+        colors_codes = [c.code.upper() for c in colors]
+        color_part = "".join(colors_codes)
+        c_code = f"{product.code}{str(color_part)}"
         # Genera el diseño
-        design = ProductDesignEntity({
-            "product_id": product_id,
-            "color_ids": color_ids,
-            "product_code": product.code,
-            "color_codes": [c.code for c in colors],
-            "series_ids": variants[0].series_ids
-        }).to_model
+        design = ProductDesign(
+            product_id = product_id,
+            name = name,
+            description = description,
+            code = c_code            
+        )
 
         db.session.add(design)
         print(f'hasta aqui los designs: {design}')
@@ -265,6 +268,15 @@ class DesignService:
             series_ids=variants[0].series_ids,
             materials=materials,
         )
+
+        from .pricing_service import PricingService
+
+        PricingService(db.session).calculate_price(
+                    design_id       = design.id,
+                    override_markup_pct = None,
+                    include_tax     = False,
+                    force_recalc    = True
+                )
      
         return design
 
@@ -515,25 +527,18 @@ class ProductVariantImageService:
 
     @staticmethod
     def get_images_by_variant(variant_id):
-        return ProductVariantImage.query.filter_by(variant_id=variant_id).all()
+        pass
+       # return ProductVariantImage.query.filter_by(variant_id=variant_id).all()
     
     @staticmethod
     def delete_image(image_id):
-        image = ProductVariantImage.query.get(image_id)
-        if not image:
-            raise NotFoundError("Imagen no encontrada.")
+        pass
+        #image = ProductVariantImage.query.get(image_id)
+        #if not image:
+        #    raise NotFoundError("Imagen no encontrada.")
 
         # Eliminar archivo físico (opcional)
-        try:
-            file_path = os.path.join(current_app.root_path, 'static', image.file_path.replace('/static/', ''))
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        except Exception as e:
-            current_app.logger.warning(f"No se pudo borrar archivo físico: {e}")
-
-        db.session.delete(image)
-        db.session.commit()
-        return True
+   
 
     @staticmethod
     def create_image(variant_id, file):
@@ -552,11 +557,8 @@ class ProductVariantImageService:
             raise ValidationError(str(e))
 
         # Registrar en base de datos
-        image = ProductVariantImage(
-            variant_id=variant_id,
-            file_name=file.filename,
-            file_path=public_path
-        )
+        image = None
+        
         db.session.add(image)
         db.session.commit()
         return image
@@ -741,7 +743,7 @@ class CollectionService:
             # Por cada clave, usa filter() dinámicamente
             for field, value in filters.items():
                 if value is None or value == '':
-                    if field is 'subline_id':
+                    if field == 'subline_id':
                         model_attr = getattr(ProductCollection, field, None)
                         query = query.filter(model_attr == value)
                     continue
@@ -861,20 +863,27 @@ class CollectionService:
     def patch_obj(obj:ProductCollection, data:dict)->ProductCollection:
         print('entra a patch obj')
         dto = CollectionUpdateDTO(**data)
-        col = CollectionService.patch_line(obj, dto.name, dto.description)
+        col = CollectionService.patch_line(obj, dto.name, dto.description, dto.n_hormas)
         return col
 
     @staticmethod
-    def patch_line(obj:ProductCollection, name:str=None, description:str=None):
-        print('entra a job')
+    def patch_line(obj:ProductCollection, name:str=None, description:str=None, n_hormas:int=None):
+        print(n_hormas)
+        print(obj)
+        print(obj.id)
         if name:
             if obj.name != name:
                 obj.name = name
         if description:
             obj.description = description
+        if n_hormas>=0:
+            obj.n_hormas = n_hormas
+        if not name and not description and not n_hormas:
+            raise ValueError('No se proporciono un campo permitido')
 
         try:
             db.session.commit()
+            return obj
         except Exception as e:
             current_app.logger.warning(f'error: {e}')
             db.session.rollback()
@@ -914,9 +923,9 @@ class ColorService:
         if Color.query.filter_by(code=data['code']).first():
             raise ConflictError("Ya existe un color con ese código.")
         
-        new_color = Color(code = data['code'],
+        new_color = Color(code = data['code'].upper(),
                         name = data['name'],
-                        hex_value = data.get('hex_value'),
+                        hex_value = data.get('hex_value').upper(),
                         description = data.get('description'))
         db.session.add(new_color)
         try:
@@ -951,13 +960,14 @@ class ColorService:
             raise
     
     @staticmethod
-    def delete_obj(id):
-        color = Color.query.get(id)
-        if not color:
-            raise NotFoundError("Color no encontrado.")
-        db.session.delete(color)
-        db.session.commit()
-        return True
+    def delete_obj(color):
+        
+        try:
+            db.session.delete(color)
+            db.session.commit()
+            return True
+        except Exception:
+            raise
 
 
 #**************************SIZE SERVICES*******************************************
