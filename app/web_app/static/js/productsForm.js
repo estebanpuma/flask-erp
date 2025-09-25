@@ -71,7 +71,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
 
     // --- Pasos comunes ---
     // Paso 1: Datos básicos (solo si startStep<=1)
- 
+
     async fetchLines() {
       try {
         this.lines = await (await fetch('/api/v1/product-lines')).json();
@@ -115,7 +115,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
               }
       }else{
         console.info('Debe escoger una linea y un target')
-      }    
+      }
     },
 
     // Genera el código completo (prefijo + auto-incremental)
@@ -125,7 +125,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
       if (this.productData.subline_id) params.append('subline_id', this.productData.subline_id);
       if (this.productData.target_id) params.append('target_id', this.productData.target_id);
       if (this.productData.collection_id) params.append('collection_id', this.productData.collection_id);
-      
+
 
       // Solo si hay prefijo válido
       if (!this.productData.line_id, !this.productData.target_id, !this.productData.collection_id) return console.info('seleccione params');
@@ -186,11 +186,11 @@ function productWizard({ productId = null, startStep = null } = {}) {
           if (this.existingDesignCodes.includes(this.newDesignCode)) {
             this.error = `El diseño "${this.newDesignCode}" ya existe.`;
             this.isDuplicateDesign = true;
-          } 
+          }
         }
-          
-        
-        
+
+
+
         this.productData.designs.push({
           color_ids: this.selectedColors.map(c => c.id),
           color_codes: this.selectedColors.map(c => c.code),
@@ -320,7 +320,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
       return !this.isDuplicateDesign && this.selectedColors.length>0;
     },
 
-    
+
 
 
     nextStep() {
@@ -330,7 +330,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
 
     prevStep() {
       if (this.step > 1 && this.step > startStep) this.step--;
-      
+
     },
 
     resetWizard() {
@@ -359,7 +359,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
           } else {
             alert(data.message || '❌ Error al crear Diseno');
           }
-          
+
 
         }else{
            /* crear producto y obtener productId */
@@ -376,9 +376,9 @@ function productWizard({ productId = null, startStep = null } = {}) {
             alert(data.message || '❌ Error al crear producto');
           }
         }
-        
 
-        
+
+
       } catch (e) {
         alert('❌ Error de conexión');
       }

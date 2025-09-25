@@ -1,8 +1,8 @@
 {# components/_quantityInput.html #}
 
 <div class="d-flex align-items-center">
-    <button 
-        @click="decrementVariant(v)" 
+    <button
+        @click="decrementVariant(v)"
         class="btn btn-outline-dark btn-sm me-1"
         :disabled="!v.quantity">
         &minus;
@@ -23,8 +23,8 @@
         "
         @change="updateLine(v)"
     >
-    <button 
-        @click="incrementVariant(v)" 
+    <button
+        @click="incrementVariant(v)"
         class="btn btn-outline-dark btn-sm ms-1">
         +
     </button>

@@ -63,7 +63,7 @@ function createLine() {
         const res = await fetch(`/api/v1/product-lines?code=${this.line.code.toUpperCase()}`);
         const data = await res.json();
         console.log('data:', data)
-        
+
         if (data.code){
           this.existing_code = true;
           return true
@@ -72,7 +72,7 @@ function createLine() {
           this.existing_code = false;
           return false
         }
-        
+
       }catch(err){
         console.error('Error: ',err)
       }
@@ -164,7 +164,7 @@ function createSubLine() {
         const res = await fetch(`/api/v1/product-sublines?code=${this.subline.code.toUpperCase()}`);
         const data = await res.json();
         console.log('data:', data)
-        
+
         if (data.length>0){
           console.log('esxr: ', this.existing_code)
           this.existing_code = true;
@@ -175,7 +175,7 @@ function createSubLine() {
           this.existing_code = false;
           return false
         }
-        
+
       }catch(err){
         console.error('Error: ',err)
       }

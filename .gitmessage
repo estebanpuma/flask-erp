@@ -1,0 +1,20 @@
+# Formato (Conventional Commits):
+# type(scope): breve descripción en imperativo, sin punto final
+# tipos: feat | fix | docs | style | refactor | perf | test | chore | ci | build | revert
+#
+# Ejemplos:
+# feat(products): crear CRUD de variantes
+# fix(inventory): corregir stock negativo al borrar movimiento
+#
+# --- CABECERA OBLIGATORIA ---
+type(scope): subject
+
+# --- CUERPO (opcional) ---
+# Explica el qué y el porqué (no el cómo). Líneas de ~72 chars.
+#
+# --- FOOTER (opcional) ---
+# Referencias a issues/tickets o breaking changes.
+# BREAKING CHANGE: describe el cambio incompatible
+# Closes #123
+
+# Co-authored-by: Nombre Apellido <email@dominio.com>

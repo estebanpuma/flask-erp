@@ -1,0 +1,67 @@
+{% from 'components/_qtyInput.html' import qtyInput %}
+<div x-data="detailLast({{id}})">
+    <div class="card px-0">
+        <div class="card-body">
+            <div class="mb-2">
+                <div class="text-muted">Nombre de la colleción</div>
+                <div class="bg-light rounded-2 form-control" disabled>
+                    <div x-text="last.name"></div>
+                </div>
+            </div>
+            <div class="mb-2">
+                <div class="text-muted">Código</div>
+                <div class="bg-light d-flex justify-content-between rounded-2 form-control" disabled @click="editField()">
+                    <div  x-text="last.code?last.code:'Sin codigo'"></div>
+                    <div> <i class="bi bi-chevron-right"></i></div>
+                </div>
+            </div>
+            <div>
+                <div class="text-muted">Tallas</div>
+                <ul class="list-group list-group-flush">
+                    <template x-for="row in last.lasts" :key="row.id ?? (row.size_value || row.size)">
+                        <li class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <span x-text="'Talla: '+row.size ?? row.size_value"></span>
+                                <span x-text="'Cant: '+row.qty"></span>
+
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function detailLast(id){
+        return{
+            last:{},
+            lasts:[],
+            error:'',
+
+            init(){
+                this.fetchLast(id)
+            },
+
+            async fetchLast(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `/lasts?collection_id=${id}`);
+
+                    this.lasts = res;
+                    console.log('res: ', res);
+                    this.setLast(res);
+                }catch(error){
+                    console.error('API error: ', error)
+                }
+            },
+
+            setLast(data){
+                this.last = {
+                    collection_id: id,
+                    name: this.lasts[0].collection_name,
+                    lasts: data
+                }
+            }
+        }
+    }
+</script>

@@ -1,6 +1,6 @@
 <section id="checkout_order">
     <div>
-        
+
         <button class="btn btn-back" type="button" @click="step=1">
             <h5>
                 <i class="bi bi-chevron-left"></i><span>Checkout</span>
@@ -8,15 +8,15 @@
         </button>
 
         <div class="d-flex flex-row mb-2 justify-content-between align-items-center">
-            <button class='btn btn-back px-1' @click="step=4" 
+            <button class='btn btn-back px-1' @click="step=4"
             :class="{ 'text-decoration-underline': step === 4 }">Datos</button>
-            <button class='btn btn-back px-1' @click="step=5" 
+            <button class='btn btn-back px-1' @click="step=5"
             :class="{ 'text-decoration-underline': step === 5 }">Cliente</button>
-            <button class='btn btn-back px-1' @click="step=6" 
+            <button class='btn btn-back px-1' @click="step=6"
             :class="{ 'text-decoration-underline': step === 6 }">Envío</button>
             <button class='btn btn-back px-1' @click="step=7"
             :class="{ 'text-decoration-underline': step === 7 }" >Pago</button>
-            <button class='btn btn-back px-1' @click="step=8" 
+            <button class='btn btn-back px-1' @click="step=8"
             :class="{ 'text-decoration-underline': step === 8 }">Resumen</button>
         </div>
 
@@ -28,7 +28,7 @@
             <template x-if="step===5">
                 {% include 'sales/sale-orders/steps/step5_customer.html' %}
             </template>
-            
+
             <template x-if="step===6">
                 {% include 'sales/sale-orders/steps/step6_shipping.html' %}
             </template>
@@ -49,7 +49,7 @@
                 <div class="container" style="max-width: 480px;">
                     <div class="d-grid">
                         <template x-if="step!==8">
-                            <button type="button" class="btn btn-lg btn-dark w-100 rounded-pill py-2 fw-semibold" @click="nextStep()">Siguiente</button>        
+                            <button type="button" class="btn btn-lg btn-dark w-100 rounded-pill py-2 fw-semibold" @click="nextStep()">Siguiente</button>
                         </template>
 
                         <template x-if="formLoading">
@@ -71,19 +71,19 @@
                         </template>
                           <!-- Botón de confirmación -->
 
-                        
+
                         <button class="btn btn-lg btn-back" @click="step=step-1">
                             <i class="bi bi-chevron-left"></i><span>Regresar</span>
-                        </button>   
-                    
+                        </button>
+
                     </div>
                 </div>
-                
+
             </div>
-            
+
         </div>
-        
-        
+
+
     </div>
 
 </section>

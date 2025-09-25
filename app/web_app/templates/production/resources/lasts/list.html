@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Hormas{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block content %}
+
+{{ pageHeader(href='/production/resources',
+              title='Hormas',
+              has_btn=False, ) }}
+
+<div class="" x-data="lastsList()">
+  <button type="button" class="btn btn-outline-primary" x-on:click="syncLasts()">🔄Sync</button>
+  <div class="">
+      <template x-if="error">
+        <div class="alert alert-danger" role="alert" x-text="error">
+
+          </div>
+      </template>
+    <h2 class="h6 mb-3">Lista de hormas</h2>
+
+    <div>
+  <div class="my-3" >
+  <div class="input-group">
+    <!-- Ícono de lupa -->
+    <span class="input-group-text bg-white border-end-0">
+      <i class="bi bi-search"></i>
+    </span>
+    <!-- Buscador global -->
+    <input
+      type="text"
+      class="form-control border-start-0"
+      placeholder="Buscar en toda la lista…"
+      x-model="globalFilter"
+      @input="filterItems()"
+    />
+  </div>
+</div>
+
+<ul class="list-group list-group-flush" >
+  <template x-for="fam in lastFamily" :key="fam.collection_id">
+    <li class="list-group-item list-group-item-action">
+      <div class="d-flex justify-content-between align-items-start btn" @click="redirectLast(fam.collection_id)">
+        <div class="ms-2 me-auto text-start" >
+          <div class="fw-bold ms-0" x-text="fam.collection_name"></div>
+          <span class="text-muted small ms-0" x-text="fam.code ? `Código: ${fam.code}` : 'Sin código'"></span>
+        </div>
+        <div>
+          <span class="badge text-bg-primary rounded-pill" x-text="'Total: '+0"></span>
+          <span class="ms-2"><i class="bi bi-chevron-down"></i></span>
+        </div>
+      </div>
+
+      <div>
+        <div x-show="false">
+          <ul class="list-group list-group-flush">
+            <template x-for="row in fam.sizes" :key="row.id ?? (row.size_value || row.size)">
+                <li class="list-group-item list-group-item-action">
+                  <div class="d-flex justify-content-between">
+                    <span x-text="'Talla: '+row.size ?? row.size_value"></span>
+                    <span x-text="row.pairs_of_lasts ?? row.qty"></span>
+                  </div>
+                </li>
+
+            </template>
+          </ul>
+        </div>
+      </div>
+    </li>
+  </template>
+</ul>
+
+<div class="table-responsive d-none d-md-block">
+      <table class="table table-hover">
+        <thead>
+          <th>Colleccion</th>
+          <th>Codigo</th>
+          <template x-for="i in pre_sizes">
+            <th x-text="i"></th>
+          </template>
+        </thead>
+        <tbody>
+          <template x-for="fam in lastFamily" :key="fam.collection_id">
+            <tr>
+              <td x-text="fam.collection_name"></td>
+              <td x-text="fam.code"></td>
+              <template x-for="i in pre_sizes">
+                <template x-for="size in fam.sizes">
+                  <th x-text="if(i == size){size.qty}"></th>
+                </template>
+              </template>
+            </tr>
+          </template>
+          <template x-if="empty">
+            <tr>No exsiten hormas registradas</tr>
+          </template>
+
+        </tbody>
+      </table>
+    </div>
+
+
+    <div class="d-sm-block d-md-none">
+      <template x-for="l in lasts" :key="l.id">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <div class="card-title" x-text="l.collection_name"></div>
+                <div class="card-subtitle" x-text="l.code"></div>
+                <div class="text-muted small"><div x-text="'Talla: '+l.size"></div></div>
+              </div>
+              <div>
+                <div class="text-muted small">Qty:</div>
+                <div x-text="l.qty"></div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </template>
+      <template x-if="empty">
+            <tr>No exsiten hormas registradas</tr>
+      </template>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function lastsList(){
+    return{
+      filtered:'',
+      lasts:[],
+      error:'',
+      msg:'',
+      empty: false,
+      pre_sizes: Array.from({ length: 31 }, (_, i) => i + 14),
+      lastFamily:[],
+      globalFilter:[],
+
+      init(){
+        this.fetchLasts()
+      },
+
+      async fetchLasts(){
+
+        try{
+          const res = await window.guifer.helpers.fetch.apiFetch('GET', '/lasts');
+          if(res){
+            this.setLasts(res);
+          }
+        }catch(error){
+          console.error('error consultando API: ', error)
+          this.error = 'Error consultando API' + String(error)
+        }
+
+
+      },
+
+      async syncLasts(){
+        try{
+          const res = await window.guifer.helpers.fetch.apiFetch('GET', '/lasts/sync');
+          if(res){
+            this.setLasts(res);
+            this.msg = 'Sincronizacion exitosa';
+          }
+
+        }catch{
+          this.error = 'Error de sincronizacion'
+        }
+
+
+
+      },
+
+
+
+      setLasts(data){
+          this.lasts = data;
+          if(!this.lasts.length>0) this.empty = true
+          this.setLastFamily()
+      },
+
+
+
+      setLastFamily() {
+        const list = this.lasts ?? [];
+        const groups = new Map(); // { collection_id -> {collection_id, collection_name, sizes: []} }
+
+        for (const it of list) {
+          const id = String(it.collection_id);      // normaliza (evita '10' vs 10)
+          if (!id) continue;
+
+          if (!groups.has(id)) {
+            groups.set(id, {
+              collection_id: id,
+              collection_name: it.collection_name ?? `Colección ${id}`,
+              sizes: []
+            });
+          } else if (!groups.get(id).collection_name && it.collection_name) {
+            // si en el primer item faltó el nombre, intenta llenarlo luego
+            groups.get(id).collection_name = it.collection_name;
+          }
+
+          groups.get(id).sizes.push(it);
+        }
+
+        // (opcional) ordena tallas dentro de cada grupo
+        for (const g of groups.values()) {
+          g.sizes.sort((a, b) => {
+            const sa = Number(a.size_value ?? a.size ?? 0);
+            const sb = Number(b.size_value ?? b.size ?? 0);
+            return sa - sb;
+          });
+        }
+
+        // Asigna una sola vez
+        this.lastFamily = Array.from(groups.values());
+        console.log('family', this.lastFamily)
+      },
+
+      redirectLast(id){
+        window.location.href = `/production/resources/lasts/${id}`
+      }
+
+
+    }
+  }
+</script>
+
+
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}

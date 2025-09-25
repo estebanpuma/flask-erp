@@ -6,7 +6,7 @@ function genericList(apiUrl,baseHref, columns) {
     items: [],          // datos traídos
     filteredItems: [],  // datos tras filtro
     filters: {},        // { field1: '', field2: '', … }
-    globalFilter: '',   
+    globalFilter: '',
     baseHref,    // prefijo para los enlaces, e.g. '/products/collections'
     loading: true,   // ← cargando al inicio
     error: '',       // ← mensaje de error
@@ -25,9 +25,9 @@ function genericList(apiUrl,baseHref, columns) {
     },
 
     cellHtml (row, col) {
-      
+
         const raw = this.deepValue(row, col.field)
-        
+
         /* ① Mini-componente global (badge, botón, etc.) */
         if (typeof col.component === 'string') {
           const comp = window.guifer?.components?.[col.component]
@@ -40,7 +40,7 @@ function genericList(apiUrl,baseHref, columns) {
 
         /* ② Función pasada directamente en columns */
         if (typeof col.component === 'function') {
-          
+
           return col.component(raw, col.props || {})
 
         }

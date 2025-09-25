@@ -10,7 +10,7 @@
     <template x-if="existing_code" >
         <span id="codeFeedback" class="text-danger">
              🚫 El código ya existe.
-        </span>        
+        </span>
     </template>
   </div>
   <span x-text="existing_code"></span>
@@ -25,7 +25,7 @@
     <template x-if="existing_name" >
         <span id="codeFeedback" class="text-danger">
              🚫 El nombre ya existe.
-        </span>        
+        </span>
     </template>
   </div>
 
@@ -36,7 +36,7 @@
     <label for="description">Descripción (opcional)</label>
   </div>
 
- 
+
 
   <div class="d-flex justify-content-end mt-4">
     <button type="submit" class="btn btn-dark" :disabled="existing_code">Guardar Serie</button>

@@ -1,3 +1,1 @@
-from flask import Blueprint
-
-from . import api
+from . import api as api

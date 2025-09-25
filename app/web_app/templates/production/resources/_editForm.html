@@ -1,6 +1,6 @@
 <!-- ====== FORMULARIO: Editar Recurso ====== -->
 <div x-data="editResourceForm({{id}})" class="container my-4" style="max-width: 560px;">
-  
+
   {{ pageHeader(href='/production/resources/' ~ id, title='Editar Recurso') }}
 
   <template x-if="error"><div class="alert alert-danger" x-text="error"></div></template>
@@ -9,7 +9,7 @@
   <div class="card border-0 shadow-sm">
     <div class="card-body">
       <h2 class="h6 mb-3">Datos del recurso</h2>
-        
+
       <form @submit.prevent="submit" novalidate class="d-grid gap-3">
 
         <div x-data="inputText({ id:'name', label:'Nombre', required:true })"
@@ -113,7 +113,7 @@ function editResourceForm(id){
       try {
         const payload = { ...this.form };
         console.log('submit payload', payload);
-        
+
         const res = await window.guifer.helpers.fetch.apiFetch('PATCH', `production-resources/${id}`, payload);
         if(res) {
             window.guifer.components.alert.showToast?.('Guardado', 'success')

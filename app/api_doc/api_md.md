@@ -102,4 +102,3 @@ Authorization: Bearer <access_token>
 - El campo `canton_id` es validado para pertenecer a la provincia enviada (`province_id`).
 - Validaciones de tipo y formato están incluidas en el backend.
 - Se recomienda validar los datos desde el frontend antes de enviar la solicitud.
-

@@ -8,22 +8,22 @@
   <div x-data="{ href: '/products/{{product_id}}/designs/{{design_id}}', title: 'Detalle de variante' }">
     {% include 'components/_pageHeader.html' %}
   </div>
-  
+
   <div
       x-data="genericDetail(
         '/api/v1/product-variants/{{ variant_id }}',
-        
+
           [
             { field:'code',        label:'Código' },
 
           ],
 
           '👟'
-        
+
       )"
     >
     {% include "components/detailCard.html" %}
-    
+
     <!-- Mensaje de error -->
     <template x-if="error">
       <div class="alert alert-danger" x-text="error"></div>
@@ -44,14 +44,14 @@
             { field: 'material.unit',        label: 'Unidad',      filterable: true  },
           ]
         )"
-       
+
         class="table-responsive"
       >
         {% include 'components/listTable.html' %}
     </div>
   </div>
 
-  
+
 
 </div>
 {% endblock %}

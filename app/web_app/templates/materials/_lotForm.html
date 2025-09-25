@@ -1,6 +1,6 @@
 <div x-data="lotForm({{ material_id | default('null') }})" x-init="init()" x-ref="materialLotForm" class="card p-4 shadow-sm">
 
- 
+
   <!--  Proveedor-->
 <div class="mb-3" x-data="{ showDropdown: false }">
   <label for="supplierSearch" class="form-label fw-semibold">Proveedor</label>
@@ -12,8 +12,8 @@
     </span>
 
     <!-- Campo de búsqueda -->
-     
-    <input 
+
+    <input
       type="text"
       class="form-control border-start-0"
       id="supplierSearch"
@@ -31,7 +31,7 @@
         </button>
     </div>
 
-   </div> 
+   </div>
   <!-- Offcanvas para crear nuevo proveedor -->
   <div class="offcanvas offcanvas-end" tabindex="-1" id="newSupplierOffcanvas" aria-labelledby="newSupplierOffcanvasLabel">
     <div class="offcanvas-header">
@@ -45,13 +45,13 @@
 
 
   <!-- Dropdown -->
-  <ul 
+  <ul
     class="list-group shadow-sm mt-1 position-absolute w-100 z-3"
     style="max-height: 200px; overflow-y: auto;"
     x-show="showDropdown && filteredSuppliers.length"
   >
     <template x-for="s in filteredSuppliers" :key="s.id">
-      <li 
+      <li
         class="list-group-item list-group-item-action"
         @click="
           selectedSupplier = s;

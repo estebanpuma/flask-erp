@@ -50,12 +50,12 @@
               <template x-if="loading">
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               </template>
-              
+
                 <span>
                   <template x-if="icon"><i :class="'bi bi-' + icon" class="me-1"></i></template>
                   <span class="small">${label}</span>
                 </span>
-              
+
             </button>
           `}
         `;

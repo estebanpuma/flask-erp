@@ -1,15 +1,13 @@
-from datetime import datetime, date
+from datetime import datetime
 
+import pandas as pd
 import pytz
 
-import pandas as pd
-
-# utils/excel_import_service.py
-
-import pandas as pd
-from ..core.exceptions import ValidationError
 from app import db
 
+from ..core.exceptions import ValidationError
+
+# utils/excel_import_service.py
 
 
 class ExcelImportService:
@@ -45,23 +43,23 @@ class ExcelImportService:
                 results.append({**data, "status": "error", "error": str(e)})
 
             from app import db
+
             if any(r.get("status") == "ok" for r in results):
                 db.session.commit()
-                
+
         return results
 
 
-
-guayaquil_tz = pytz.timezone('America/Guayaquil')
+guayaquil_tz = pytz.timezone("America/Guayaquil")
 
 
 def utc_now():
-    return datetime.now(pytz.utc).astimezone(guayaquil_tz).strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.now(pytz.utc).astimezone(guayaquil_tz).strftime("%Y-%m-%d %H:%M:%S")
+
 
 def get_today():
-    date = datetime.today().astimezone(guayaquil_tz).strftime('%Y-%m-%d')
+    date = datetime.today().astimezone(guayaquil_tz).strftime("%Y-%m-%d")
     return date
-
 
 
 def validate_foreign_key(model, obj_id, field_name="ID"):
@@ -71,28 +69,28 @@ def validate_foreign_key(model, obj_id, field_name="ID"):
     return instance
 
 
-
 def get_next_sequence_number(sequence_key: str) -> int:
-        """
-        Obtiene y autoincrementa un número de secuencia en la base de datos.
-        Esta operación DEBE ser parte de la transacción principal que guarda la orden.
-        """
-        # (El código de esta función es el mismo que te di antes)
-        # Asegúrate de que setting.value = str(next_value) y setting se añade/actualiza
-        # en la sesión, pero el COMMIT se hace FUERA de esta función.
-        from ..common.models import AppSetting
-        # Simulación de lectura/escritura en AppSetting
-     
-        setting = AppSetting.query.filter(AppSetting.key == sequence_key).first()
+    """
+    Obtiene y autoincrementa un número de secuencia en la base de datos.
+    Esta operación DEBE ser parte de la transacción principal que guarda la orden.
+    """
+    # (El código de esta función es el mismo que te di antes)
+    # Asegúrate de que setting.value = str(next_value) y setting se añade/actualiza
+    # en la sesión, pero el COMMIT se hace FUERA de esta función.
+    from ..common.models import AppSetting
 
-        if not setting:
-            setting = AppSetting(key=sequence_key, value='0')
-            db.session.add(setting)
-            # self.db_session.flush() # Importante si necesitas el ID antes del commit
+    # Simulación de lectura/escritura en AppSetting
 
-        current_value = int(setting.value)
-        next_value = current_value + 1
-        setting.value = str(next_value)
-        
-        # OJO: NO HAGA commit aquí. El commit lo hace la función que crea la orden.
-        return next_value
+    setting = AppSetting.query.filter(AppSetting.key == sequence_key).first()
+
+    if not setting:
+        setting = AppSetting(key=sequence_key, value="0")
+        db.session.add(setting)
+        # self.db_session.flush() # Importante si necesitas el ID antes del commit
+
+    current_value = int(setting.value)
+    next_value = current_value + 1
+    setting.value = str(next_value)
+
+    # OJO: NO HAGA commit aquí. El commit lo hace la función que crea la orden.
+    return next_value

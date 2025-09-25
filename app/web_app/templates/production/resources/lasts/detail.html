@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}Hormas{% endblock %}
+
+{% block content %}
+
+<div class="mt-3" >
+    {{ pageHeader(href='/production/resources/lasts', title='Detalle de horma')}}
+
+    {% include 'production/resources/lasts/_detail.html' %}
+
+
+</div>
+{% endblock %}

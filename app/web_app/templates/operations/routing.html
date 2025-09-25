@@ -1,0 +1,593 @@
+{% extends 'base.html' %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}Rutas — Wizard{% endblock %}
+
+{% block head %}
+<style>
+  .stepper .btn { border:0; }
+  .offcanvas-end { width: 360px; }
+
+  .lvl-col    { min-width: 260px; }
+  .ct-numeric { font-variant-numeric: tabular-nums; }
+  .graph-wrap { position: relative; max-height: 70vh; overflow-y: auto; }
+    .graph-svg  { width: 100%; height: auto; }
+    .ct-numeric { font-variant-numeric: tabular-nums; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+{{ pageHeader(href='/production',
+              title='Rutas de producción',
+              has_btn=False) }}
+
+
+<div x-data="routingWizard()" x-init="init()">
+
+  <!-- Stepper -->
+  <div class="stepper nav nav-underline justify-content-evenly mb-3" role="tablist" aria-label="Pasos" >
+    <li class="nav-item">
+        <button class="nav-link " :class="{'active':step===1, 'text-muted':step!==1}" :aria-current="step===1" @click="go(1)">Modelo</button>
+    </li>
+    <li>
+        <button class="nav-link text-muted" :class="{'active':step===2, 'text-muted':step!==2}" :aria-current="step===2" @click="go(2)" :disabled="!modelId">Pasos</button>
+    </li>
+    <li>
+        <button class="nav-link text-muted" :class="{'active':step===3, 'text-muted':step!==3}" :aria-current="step===3" @click="go(3)" :disabled="!canGoPreview">Preview</button>
+    </li>
+  </div>
+
+  <!-- Paso 1: Modelo -->
+  <section x-show="step===1">
+    <div class="card">
+      <div class="card-header">Selecciona un modelo</div>
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-8">
+
+            <div>
+                <label class="form-label" for="q">Buscar</label>
+                <div class="input-group">
+                    <!-- Ícono de lupa -->
+                    <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search"></i>
+                    </span>
+                    <!-- Buscador global -->
+                    <input
+                    type="text"
+                    class="form-control border-start-0"
+                    placeholder="Buscar en toda la lista…"
+                    x-model="filters.q"
+                    @input="loadModels()"
+                    />
+                </div>
+            </div>
+
+          </div>
+          <div class="col-12 col-md-4">
+                <div>
+                    <label class="form-label" for="st">Estado</label>
+                    <select id="st" class="form-select" x-model="filters.status" @change="loadModels()">
+                    <option value="">(todos)</option>
+                    <option value="registered">Registrado</option>
+                    <option value="routing_draft">Borrador</option>
+                    <option value="routing_published">Vigente</option>
+                    </select>
+                </div>
+          </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-2 mt-2">
+          <template x-for="m in paged" :key="m.id">
+            <div class="col">
+              <div class="card h-100">
+                <div class="card-body d-flex justify-content-between">
+                  <div>
+                    <div class="fw-semibold" x-text="m.code"></div>
+                    <div class="small text-muted" x-text="m.name||'—'"></div>
+                  </div>
+                  <button class="btn btn-sm btn-dark" @click="selectModel(m)">Elegir</button>
+                </div>
+              </div>
+            </div>
+          </template>
+          <div class="col" x-show="paged.length===0">
+            <div class="text-muted">Sin resultados</div>
+          </div>
+        </div>
+
+        <nav class="d-flex justify-content-center align-items-center gap-2 mt-2">
+          <button class="btn btn-sm btn-simple" :disabled="page===1" @click="page--">◀</button>
+          <span class="small">Página <span x-text="page"></span>/<span x-text="pages"></span></span>
+          <button class="btn btn-sm btn-simple" :disabled="page===pages" @click="page++">▶</button>
+        </nav>
+
+        <div class="text-end mt-3">
+          <button class="btn btn-dark" @click="go(2)" :disabled="!modelId">Siguiente ▷</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Paso 2: Pasos -->
+   <template x-if="true">
+      <section x-show="step===2">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="small text-muted">Modelo:</div>
+            <strong x-text="model?.code"></strong>
+            <button class="btn btn-link btn-sm" @click="go(1)">Cambiar</button>
+            </div>
+
+            <div class="card">
+            <div class="card-header">Definir pasos</div>
+            <div class="card-body">
+                <div class="ms-auto mb-3">
+                    <button class="btn btn-dark" data-bs-toggle="offcanvas" data-bs-target="#drawerStep">+ Operación</button>
+                </div>
+                <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Operación</th>
+                        <th style="width:140px">CT (min)</th>
+                        <th>Predecesores</th>
+                        <th style="width:70px"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <template x-for="(n,i) in nodes" :key="n.id">
+                        <tr>
+                        <td x-text="n.name||opName(n.operation_id)"></td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" min="0.1" step="0.1"
+                                x-model.number="n.ct" @input="recalc()" :aria-invalid="n._err?'true':'false'">
+                                <template x-if="n._err">
+                                    <div class="invalid-feedback d-block" x-show="n._err===true">CT &gt; 0</div>
+                                </template>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-1">
+                            <template x-for="pid in n.preds" :key="pid">
+                                <span class="badge text-bg-light" x-text="nodeName(pid)"></span>
+                            </template>
+                            <span x-show="n.preds.length===0" class="text-muted small">—</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" @click="openDrawer(n)">Editar</button>
+                            <button class="btn btn-outline-danger" @click="removeNode(n)">✕</button>
+                            </div>
+                        </td>
+                        </tr>
+                    </template>
+                    <tr x-show="nodes.length===0"><td colspan="4" class="text-center text-muted">Añade tu primer paso</td></tr>
+                    </tbody>
+                </table>
+                </div>
+
+                <div class="alert alert-danger py-2 small" x-show="hasCycle">Hay un <strong>ciclo</strong> en predecesores.</div>
+
+                <div class="d-flex justify-content-between mt-2">
+                <button class="btn btn-outline-secondary" @click="go(1)">◁ Anterior</button>
+                <button class="btn btn-dark" @click="go(3)" :disabled="!canGoPreview">Siguiente ▷</button>
+                </div>
+            </div>
+            </div>
+        </section>
+   </template>
+
+
+  <!-- Paso 3: Preview -->
+   <template x-if="true">
+    <section x-show="step===3">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Preview</strong>
+        <div class="text-muted small">LT: <span class="ct-numeric fw-semibold" x-text="totalLT.toFixed(2)"></span> min</div>
+      </div>
+      <div class="card-body">
+        <div class="graph-wrap">
+            <svg class="graph-svg" x-ref="gsvg" aria-label="Vista gráfica de la ruta (vertical)"></svg>
+        </div>
+        <div class="small text-muted mt-2">
+            <span style="color:#0d6efd">Azul</span> = ruta crítica,
+            <span style="color:#dc3545">Rojo</span> = cuello de botella.
+        </div>
+
+
+        <div class="d-flex justify-content-between mt-3">
+          <button class="btn btn-outline-secondary" @click="go(2)">◁ Anterior</button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-dark" @click="save()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+   </template>
+
+
+  <!-- Drawer flotante: crear/editar paso -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="drawerStep" aria-labelledby="drawerTitle">
+    <div class="offcanvas-header">
+      <h2 class="offcanvas-title fs-5" id="drawerTitle" x-text="editNode? 'Editar operación' : 'Nueva operación'"></h2>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="mb-3">
+        <label class="form-label">Operación</label>
+        <select class="form-select" x-model="form.operation_id"  required>
+          <option value="">— elige —</option>
+          <template x-for="op in catalog" :key="op.id">
+            <option :value="op.id" x-text="op.name"></option>
+          </template>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Tiempo de ciclo (min) <span class="text-danger">*</span></label>
+        <input type="number" min="0.1" step="0.1" class="form-control" x-model.number="form.ct" :aria-invalid="form.ct<=0?'true':'false'">
+        <div class="invalid-feedback d-block" x-show="!(form.ct>0)">Debe ser &gt; 0</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Predecesores</label>
+        <div class="small">No selecciones si inicia al comienzo.</div>
+            <template x-for="n in nodes" :key="n.id">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" :id="n.id"
+                    :value="n.id"
+                    x-model="form.preds"
+                    >
+                    <label class="form-check-label" :for="n.id" x-text="n.name"></label>
+                </div>
+            </template>
+      </div>
+      <div class="d-grid">
+        <button class="btn btn-dark" @click="saveNode()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function routingWizard(){
+  const uid = ()=>'n'+Math.random().toString(36).slice(2,10);
+
+  return {
+    // stepper
+    step:1,
+    go(n){
+      if(n===2 && !this.modelId) return;
+      if(n===3 && !this.canGoPreview) return;
+      this.step=n;
+      if(n===3) this.schedulePreview();        // asegura preview al entrar
+      this.$nextTick(()=> this.drawGraph('vertical'));
+    },
+
+    // modelo
+    models:[], model:null, modelId:'', filters:{status:'', q:''}, rows:[], page:1, per:9,
+    get filtered(){ const q=this.filters.q.toLowerCase(); return this.rows.filter(r => (!this.filters.status || r.status===this.filters.status) && (!q || [r.code,r.name||''].some(v => (v||'').toLowerCase().includes(q)))); },
+    get pages(){ return Math.max(1, Math.ceil(this.filtered.length/this.per)); },
+    get paged(){ const s=(this.page-1)*this.per; return this.filtered.slice(s,s+this.per); },
+    selectModel(m){ this.model=m; this.modelId=m.id; this.step=2; this.loadExisting(); },
+
+    // catálogo y pasos
+    catalog:[], nodes:[], editNode:null,
+    form:{id:null, operation_id:'', name:'', ct:1, preds:[]},
+
+    // estado/cálculo
+    totalLT:0, levels:[], hasCycle:false, saving:false,
+    bottleneckId:null,
+
+    // preview (BE)
+    _previewTimer:null, _previewAbort:null,
+
+    // permisos de navegación
+    get canGoPreview(){
+      return this.modelId && this.nodes.length>0 && !this.hasCycle &&
+             this.nodes.every(n => n.operation_id && Number(n.ct)>0);
+    },
+
+    // INIT
+    init(){
+      fetch('/api/v1/products').then(r=>r.ok?r.json():[]).then(d=>{ this.rows=d; this.models=d; });
+      fetch('/api/v1/operations').then(r=>r.json()).then(ops=> this.catalog = ops.filter(o=>o.active!==false));
+      window.addEventListener('resize', ()=>this.drawGraph('vertical'));
+    },
+    loadModels(){ this.filtered() },
+
+    // helpers de nombres
+    opName(id){ return (this.catalog.find(o=>o.id==id)?.name)||''; },
+    nodeName(id){ return (this.nodes.find(n=>n.id===id)?.name)||'—'; },
+
+    // drawer CRUD
+    openDrawer(n=null){
+      this.editNode = n;
+      this.form = n ? JSON.parse(JSON.stringify(n)) : {id:null, operation_id:'', name:'', ct:1, preds:[]};
+      new bootstrap.Offcanvas('#drawerStep').show();
+    },
+    syncFormName(){ this.form.name = this.opName(this.form.operation_id) || this.form.name; },
+    saveNode(){
+      if(!(this.form.operation_id && this.form.ct>0)) return;
+      this.syncFormName()
+      if(this.editNode){
+        Object.assign(this.editNode, JSON.parse(JSON.stringify(this.form)));
+      } else {
+        this.form.id = uid();
+        this.form.name = this.opName(this.form.operation_id) || this.form.name;
+        this.nodes.push(JSON.parse(JSON.stringify(this.form)));
+        this.form =  {id:null, operation_id:'', name:'', ct:1, preds:[]}
+      }
+      bootstrap.Offcanvas.getInstance(document.getElementById('drawerStep')).hide();
+      this.$nextTick(()=> this.recalc());
+    },
+    removeNode(n){
+      this.nodes = this.nodes.filter(x=>x.id!==n.id);
+      this.nodes.forEach(x => x.preds = x.preds.filter(p=>p!==n.id));
+      this.$nextTick(()=> this.recalc());
+    },
+
+    // TOPO + cálculo local (para respuesta inmediata)
+    _topo(){
+      const indeg=new Map(this.nodes.map(n=>[n.id,0]));
+      for(const n of this.nodes) for(const p of (n.preds||[])) indeg.set(n.id, indeg.get(n.id)+1);
+      const succ=new Map(this.nodes.map(n=>[n.id,[]]));
+      for(const n of this.nodes) for(const p of (n.preds||[])) succ.get(p).push(n.id);
+      const q=[...indeg].filter(([,d])=>d===0).map(([id])=>id), order=[], deg=new Map(indeg);
+      while(q.length){ const u=q.shift(); order.push(u); for(const v of succ.get(u)){ deg.set(v,deg.get(v)-1); if(deg.get(v)===0) q.push(v); } }
+      return order.length===this.nodes.length ? order : null;
+    },
+    recalc(){
+      // validación rápida
+      this.nodes.forEach(n => n._err = !(Number(n.ct)>0));
+      const order=this._topo(); this.hasCycle=!order;
+      if(!order){ this.levels=[]; this.totalLT=0; this.drawGraph('vertical'); return; }
+
+      // forward local
+      const by=Object.fromEntries(this.nodes.map(n=>[n.id,n]));
+      for(const id of order){
+        const n=by[id];
+        const es=(n.preds||[]).map(pid=>by[pid]?.ef||0);
+        n.es=es.length?Math.max(...es):0;
+        n.ef=n.es+Number(n.ct||0);
+      }
+      // levels locales (para dibujar al toque)
+      const groups={};
+      for(const n of this.nodes){ const k=(Math.round((n.es||0)*100)/100).toFixed(2); (groups[k] ||= []).push(n); }
+      const keys=Object.keys(groups).map(parseFloat).sort((a,b)=>a-b);
+      this.levels=keys.map(k=>groups[k.toFixed(2)]);
+      this.totalLT=Math.max(...this.nodes.map(n=>n.ef||0));
+
+      // críticos locales (rápidos, luego vendrá el back a “corregir”)
+      this.markCriticalLocal();
+
+      // dibuja y agenda preview
+      this.$nextTick(()=> this.drawGraph('vertical'));
+      this.schedulePreview();
+    },
+    markCriticalLocal(){
+      const order=this._topo(); if(!order){ this.nodes.forEach(n=>n._crit=false); return; }
+      const by = Object.fromEntries(this.nodes.map(n=>[n.id,n]));
+      const succ = new Map(this.nodes.map(n=>[n.id,[]]));
+      for(const n of this.nodes) for(const p of (n.preds||[])) succ.get(p).push(n.id);
+
+      const totalLT = this.totalLT || Math.max(...this.nodes.map(n=>n.ef||0), 0);
+      const LS = new Map(), LF = new Map();
+      for(const id of [...order].reverse()){
+        const n = by[id];
+        const s = succ.get(id) || [];
+        const lf = s.length ? Math.min(...s.map(sid => LS.get(sid))) : totalLT;
+        const ls = lf - Number(n.ct||0);
+        LF.set(id, lf); LS.set(id, ls);
+      }
+      for(const n of this.nodes){
+        n.ls = LS.get(n.id);
+        n.lf = LF.get(n.id);
+        n.slack = (n.ls - n.es);
+        n._crit = Math.abs(n.slack) < 1e-6;
+      }
+      const crits = this.nodes.filter(n => n._crit);
+      const maxCT = crits.length ? Math.max(...crits.map(n => Number(n.ct)||0)) : -Infinity;
+      const bn = crits.find(n => Number(n.ct) === maxCT);
+      this.bottleneckId = bn ? bn.id : null;
+    },
+
+    // PREVIEW (BE) — debounce + abort
+    schedulePreview(){
+      clearTimeout(this._previewTimer);
+      this._previewTimer = setTimeout(()=> this.fetchPreview(), 400);
+    },
+    previewPayload(){
+      return {
+        model_id: this.modelId,
+        nodes: this.nodes.map(n => ({
+          id: n.id,
+          operation_id: n.operation_id,
+          ct: String(n.ct),          // 👈 como string para Decimal
+          preds: n.preds || []
+        }))
+      };
+    },
+    fetchPreview(){
+      if(!this.canGoPreview) return;
+      try { if(this._previewAbort) this._previewAbort.abort(); } catch(e){}
+      this._previewAbort = new AbortController();
+
+      fetch('/api/v1/routings/preview', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(this.previewPayload()),
+        signal: this._previewAbort.signal
+      })
+      .then(r => r.ok ? r.json() : r.json().then(x=>Promise.reject(x)))
+      .then(res => {
+        if(!res?.ok || !res.metrics) return;
+        // sincroniza métricas oficiales (BE) → UI
+        const mById = Object.fromEntries(res.metrics.nodes.map(m=>[m.id, m]));
+        for(const n of this.nodes){
+          const m = mById[n.id]; if(!m) continue;
+          n.es = parseFloat(m.es); n.ef = parseFloat(m.ef);
+          n.ls = parseFloat(m.ls); n.lf = parseFloat(m.lf);
+          n.slack = parseFloat(m.slack);
+          n._crit = !!m.crit;
+        }
+        this.totalLT    = parseFloat(res.metrics.lt);
+        this.bottleneckId = res.metrics.bottleneck_key || null;
+        // usa levels del back si vienen (más estable)
+        if(Array.isArray(res.metrics.levels) && res.metrics.levels.length){
+          const map = Object.fromEntries(this.nodes.map(n=>[n.id,n]));
+          this.levels = res.metrics.levels.map(arr => arr.map(id => map[id]).filter(Boolean));
+        }
+        this.$nextTick(()=> this.drawGraph('vertical'));
+      })
+      .catch(_=>{/* ignorar en edición */})
+      .finally(()=> this._previewAbort = null);
+    },
+
+    // CARGA EXISTENTE
+    loadExisting(){
+      this.nodes=[]; this.levels=[]; this.totalLT=0;
+      if(!this.modelId) return;
+      fetch(`/api/v1/routings/${this.modelId}`)
+        .then(r=> r.ok ? r.json() : null)
+        .then(data=>{
+          if(!data) return;
+          // nodes del back → UI
+          const byKey = {};
+          this.nodes = (data.nodes||[]).map(s => {
+            const n = {
+              id: s.id,                                     // node_key
+              operation_id: s.operation_id,
+              name: this.opName(s.operation_id) || s.name || '',
+              ct: parseFloat(s.ct),
+              preds: []
+            };
+            byKey[n.id]=n; return n;
+          });
+
+          // reconstruir preds
+          if(Array.isArray(data.edges_keys)){   // 👈 Recomendado en el back
+            for(const e of data.edges_keys){
+              const to = byKey[e.to]; if(to) (to.preds ||= []).push(e.from);
+            }
+          } else if(Array.isArray(data.edges) && Array.isArray(data.nodes)){
+            // fallback si back devuelve edges con ids numéricos
+            // (ajusta si incluyes id_db en nodes)
+          }
+
+          // métricas (si vienen) para pintar al toque
+          if(data.lt) this.totalLT = parseFloat(data.lt);
+          if(data.bottleneck_node_key) this.bottleneckId = data.bottleneck_node_key;
+
+          this.$nextTick(()=> this.recalc());
+        })
+        .catch(()=>{/* ignora */});
+    },
+
+    // GUARDAR
+    save(){
+      if(!this.canGoPreview) return alert('Completa pasos y corrige errores.');
+      this.saving = true;
+      const payload = this.previewPayload();  // mismo formato que preview
+      fetch('/api/v1/routings/create', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.ok ? r.json() : r.json().then(x=>Promise.reject(x)))
+      .then(res => {
+        if(!res.ok) throw new Error(res.error||'Error al guardar');
+        // feedback simple
+        alert('Ruta guardada ✔');
+      })
+      .catch(err => {
+        alert('No se pudo guardar: ' + (err.message||''));
+      })
+      .finally(()=> this.saving=false);
+    },
+
+    // DIBUJO (vertical)
+    drawGraph(orientation='vertical'){
+      const svg = this.$refs.gsvg; if(!svg) return;
+
+      const CRIT = '#0d6efd';  // primary
+      const BOTL = '#dc3545';  // danger
+      const NORMAL = 'currentColor';
+
+      const PAD=24, R=24, COL_W=160, LAYER_H=120;
+
+      if(orientation==='vertical'){
+        const cols  = Math.max(1, ...this.levels.map(l => l.length));
+        const rows  = Math.max(1, this.levels.length);
+        const width = PAD*2 + COL_W * cols;
+        const height= PAD*2 + LAYER_H * rows;
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+        const pos = new Map();
+        this.levels.forEach((lvl, rowIdx) => {
+          const y = PAD + LAYER_H*rowIdx + LAYER_H/2;
+          const span = (lvl.length-1) * COL_W;
+          const startX = PAD + (width - 2*PAD - span)/2;
+          lvl.forEach((n, i) => pos.set(n.id, { x: startX + i*COL_W, y }));
+        });
+
+        const defs = `
+          <defs>
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="${NORMAL}" opacity=".45"/>
+            </marker>
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="${BOTL}" flood-opacity=".6"/>
+            </filter>
+          </defs>`;
+
+        // Edges
+        const edges=[];
+        for(const n of this.nodes){
+          const to = pos.get(n.id); if(!to) continue;
+          for(const p of (n.preds||[])){
+            const from = pos.get(p); if(!from) continue;
+            const x1=from.x, y1=from.y + R;
+            const x2=to.x,   y2=to.y   - R;
+            const dy=Math.max(30,(y2-y1)/2);
+            const bothCrit = (this.nodes.find(x=>x.id===p)?._crit) && (n._crit);
+            const stroke   = bothCrit ? CRIT : NORMAL;
+            edges.push(
+              `<path d="M ${x1} ${y1} C ${x1} ${y1+dy}, ${x2} ${y2-dy}, ${x2} ${y2}"
+                     fill="none" stroke="${stroke}" stroke-width="${bothCrit?2:1.5}"
+                     stroke-opacity=".5" marker-end="url(#arrow)"/>`
+            );
+          }
+        }
+
+        // Nodes
+        const nodesSVG=[];
+        for(const n of this.nodes){
+          const p = pos.get(n.id); if(!p) continue;
+          const ct = (Number(n.ct)||0).toFixed(2);
+          const name = n.name || this.opName(n.operation_id) || '—';
+          const isCrit = !!n._crit;
+          const isBN   = (this.bottleneckId === n.id);
+          const stroke = isBN ? BOTL : isCrit ? CRIT : NORMAL;
+          const sw     = isBN ? 3 : isCrit ? 2 : 1.5;
+          const extra  = isBN ? `filter="url(#glow)"` : '';
+          nodesSVG.push(`
+            <g transform="translate(${p.x},${p.y})" ${extra}>
+              <text x="-${R+16}" y="4" text-anchor="middle" font-size="8" fill="${stroke}">${ct}min</text>
+              <circle cx="0" cy="0" r="${R}" fill="#fff" stroke="${stroke}" stroke-width="${sw}"></circle>
+              <text x="0" y="4" text-anchor="middle" font-size="8" fill="currentColor">${name}</text>
+            </g>
+          `);
+        }
+        svg.innerHTML = defs + edges.join('') + nodesSVG.join('');
+      }
+    }
+  }
+}
+</script>
+
+{% endblock %}

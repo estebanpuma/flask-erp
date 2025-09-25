@@ -3,7 +3,7 @@
 {% block content %}
   {% set title = 'Calidad' %}
   {% include 'components/pageHeader.html' %}
-  
+
   <div class="row g-3">
     {{ entry_card('/quality/incidents', '🚨 No Conformidades', 'Problemas en producción o devoluciones.') }}
     {{ entry_card('/quality/actions', '🚰 Acciones Correctivas', 'Seguimiento a mejoras implementadas.') }}

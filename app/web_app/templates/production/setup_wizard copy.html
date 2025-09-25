@@ -175,7 +175,7 @@
         });
         this.catalog.models=res
         console.log('catalog.models', this.catalog.models)
-        
+
       },
 
       async fetchProducts(){
@@ -201,15 +201,15 @@
         ).toString()
 
         const res = await window.guifer.helpers.fetch.apiFetch('GET', `products?${qs}`);
-        this.products = res;      
+        this.products = res;
         this.filteredItems = res;
       },
 
       resetModels(){
         selected_product = '';
         this.filters.line='';
-        this.filters.subline=''; 
-        this.filters.target=''; 
+        this.filters.subline='';
+        this.filters.target='';
         this.filters.product='';
         this.filteredItems = this.products;
       },
@@ -231,7 +231,7 @@
       back(){ if(this.step>0) this.step-- },
       restart(){ this.step=0; this.notice=''; this.error=''; this.preview=''; },
 
-      
+
       selectFiltered(allSizes){
         this.catalog.models.forEach(m=>{
           m.selected = true

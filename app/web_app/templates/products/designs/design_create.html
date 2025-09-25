@@ -7,7 +7,7 @@
 </div>
 
 <div class="container mt-3" x-data="productWizard({ productId: {{ product_id }}, startStep: 2 })">
-  
+
   {% include "products/products/product_wizard.html" %}
 </div>
 {% endblock %}
@@ -15,4 +15,3 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/productsForm.js') }}"></script>
 {% endblock %}
-

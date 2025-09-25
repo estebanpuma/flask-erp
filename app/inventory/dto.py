@@ -1,5 +1,6 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
-from typing import Literal, Optional
 
 
 class WarehouseCreateDTO(BaseModel):
@@ -7,7 +8,7 @@ class WarehouseCreateDTO(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
     description: Optional[str] = None
     location: Optional[str] = None
-    
+
 
 class WarehouseUpdateDTO(BaseModel):
     name: Optional[str] = None

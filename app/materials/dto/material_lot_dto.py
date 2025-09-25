@@ -1,7 +1,8 @@
 # dto/material_lot_dto.py
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class MaterialLotCreateDTO(BaseModel):
@@ -20,5 +21,3 @@ class MaterialLotUpdateDTO(BaseModel):
     received_date: Optional[date] = None
     lot_number: str = Field(..., min_length=1, max_length=50, strip_whitespace=True)
     note: Optional[date] = None
-
-

@@ -10,14 +10,14 @@
   <div class="form-floating mb-3">
     <input type="text" class="form-control text-uppercase"
            id="code" placeholder="Ej: Escolar"
-           x-model="line.code" 
+           x-model="line.code"
            @input="checkCode()"
            required>
     <label for="code">Código de la línea</label>
     <template x-if="existing_code" >
         <span id="codeFeedback" class="text-danger">
             🚫 El código ya existe.
-        </span>        
+        </span>
     </template>
   </div>
 

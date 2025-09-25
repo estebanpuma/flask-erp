@@ -1,7 +1,7 @@
 // /static/js/alpine-loader.js
 (function () {
 
-  
+
   // --- util: carga un <script> y devuelve Promise
   function loadScript(src) {
     return new Promise((res, rej) => {
@@ -19,7 +19,7 @@
     inputs:   '/static/js/components/inputs.js',
     buttons:  '/static/js/components/buttons.js',
     modals:   '/static/js/components/modals.js',
-    status:   '/static/js/components/status.js', 
+    status:   '/static/js/components/status.js',
 
   };
 

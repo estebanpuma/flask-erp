@@ -1,18 +1,17 @@
 {% extends "base.html" %}
 {% from 'components/detailCard.html' import detail_card %}
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block title %}Detalle de Línea{% endblock %}
 
 {% block content %}
 <div class="container mt-3" >
 
-  <div x-data="{ href: '/products', title: 'Detalle de producto' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
- 
+{{pageHeader('/products', 'Detalle del producto')}}
+
   <div
       x-data="genericDetail(
         '/api/v1/products/{{ product_id }}',
-        
+
           [
             { field:'line.name', label:'Línea'},
             { field:'collection.name', label:'Colección'},
@@ -22,11 +21,11 @@
           ],
 
           '👟'
-        
+
       )"
     >
     {% include "components/detailCard.html" %}
-    
+
     <!-- Mensaje de error -->
     <template x-if="error">
       <div class="alert alert-danger" x-text="error"></div>

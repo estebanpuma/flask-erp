@@ -1,36 +1,36 @@
+from flask import Blueprint
 from flask_restful import Api
 
-from flask import Blueprint
-
 from .resources import (
-                        SaleOrderPostResource,
-                        SaleOrderPatchResource,
-                        SaleOrderDeleteResource,
-                        SaleOrderGetResource, 
-                        SaleOrderPreviewResource,
-
-                        SaleOrderLineGetResource,
-                        UpdateStatusPatchResource
-                        
+    SaleOrderDeleteResource,
+    SaleOrderGetResource,
+    SaleOrderLineGetResource,
+    SaleOrderPatchResource,
+    SaleOrderPostResource,
+    SaleOrderPreviewResource,
+    UpdateStatusPatchResource,
 )
 
-
-sales_api_bp = Blueprint('sales_api', __name__, url_prefix='/api/v1')
+sales_api_bp = Blueprint("sales_api", __name__, url_prefix="/api/v1")
 
 sales_api = Api(sales_api_bp)
 
 # Sale Order (cabecera)
-sales_api.add_resource(SaleOrderPostResource, '/sale-orders')
-sales_api.add_resource(SaleOrderGetResource, '/sale-orders', '/sale-orders/<int:resource_id>')
+sales_api.add_resource(SaleOrderPostResource, "/sale-orders")
+sales_api.add_resource(
+    SaleOrderGetResource, "/sale-orders", "/sale-orders/<int:resource_id>"
+)
 
-sales_api.add_resource(SaleOrderPatchResource, '/sale-orders/<int:resource_id>')
-sales_api.add_resource(SaleOrderLineGetResource, '/sale-orders/<int:resource_id>/lines')
+sales_api.add_resource(SaleOrderPatchResource, "/sale-orders/<int:resource_id>")
+sales_api.add_resource(SaleOrderLineGetResource, "/sale-orders/<int:resource_id>/lines")
 
-sales_api.add_resource(SaleOrderDeleteResource, '/sale-orders/<int:resource_id>')
+sales_api.add_resource(SaleOrderDeleteResource, "/sale-orders/<int:resource_id>")
 
-sales_api.add_resource(SaleOrderPreviewResource, '/sale-orders/preview')
+sales_api.add_resource(SaleOrderPreviewResource, "/sale-orders/preview")
 
-sales_api.add_resource(UpdateStatusPatchResource, '/sale-orders/<int:resource_id>/status')
+sales_api.add_resource(
+    UpdateStatusPatchResource, "/sale-orders/<int:resource_id>/status"
+)
 """
 
 

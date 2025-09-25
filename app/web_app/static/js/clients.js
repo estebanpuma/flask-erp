@@ -11,9 +11,9 @@ function clientsTable() {
       window.addEventListener('client-selected', (e) => {
         this.selectedClient = e.detail;
         console.log('Cliente seleccionado:', this.selectedClient);
-        
+
         window.location.href = `/clients/${this.selectedClient.id}`;
-       
+
       });
     },
 
@@ -64,9 +64,9 @@ function clientForm(client_id=null) {
           const data = await res.json();
           this.form = data;
           this.form['province_id']=data.province.id
-          
+
           this.form['canton_id']=data.canton.id
-          
+
           console.log(this.form)
         } catch(err){
           this.error = 'Error al cargar cliente';
@@ -81,7 +81,7 @@ function clientForm(client_id=null) {
         this.error = 'Error al cargar provincias';
       };
       this.loadCantons()
-      
+
     },
 
     async loadCantons() {
@@ -105,7 +105,7 @@ function clientForm(client_id=null) {
 
       try {
         const res = await fetch(`/api/v1/clients?ruc_or_ci=${this.form.ruc_or_ci}`);
-        
+
         if (res.ok) {
             const data = await res.json();
             console.log(data)
@@ -113,7 +113,7 @@ function clientForm(client_id=null) {
             if(data.length>0){
                 this.rucError = 'Ya existe un cliente con esta cédula/RUC';
             }
-            
+
         }
       } catch (err) {
         this.rucError = 'No se pudo validar el RUC'+err;
@@ -164,7 +164,7 @@ function clientForm(client_id=null) {
         setTimeout(() => {
           window.location.href = `/clients/${data.id}`;
         }, 1000);
-        
+
       } catch (err) {
         this.error = err.message;
       }
@@ -185,7 +185,7 @@ function clientDetail(client_id) {
       this.client_id = client_id;
       console.log('client_id: ', client_id)
       this.fetchClient();
-       
+
       },
 
     async fetchClient() {

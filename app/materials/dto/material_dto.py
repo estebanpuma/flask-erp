@@ -1,6 +1,7 @@
 # dto/material_dto.py
-from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class MaterialCreateDTO(BaseModel):
@@ -10,9 +11,10 @@ class MaterialCreateDTO(BaseModel):
     unit: Optional[str] = None
     group_id: Optional[int] = None
 
-    @field_validator('code')
+    @field_validator("code")
     def code_must_be_uppercase(cls, v: str) -> str:
         return v.upper()
+
 
 class MaterialUpdateDTO(BaseModel):
     name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)

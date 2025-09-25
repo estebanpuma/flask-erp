@@ -1,11 +1,9 @@
-from flask_restful import fields, reqparse
-
+from flask_restful import fields
 
 warehouse_fields = {
-    'id': fields.Integer,
-    'code': fields.String,
-    'name': fields.String,
-    'description': fields.String,
-    'location': fields.String
-
+    "id": fields.Integer,
+    "code": fields.String,
+    "name": fields.String,
+    "description": fields.String,
+    "location": fields.String,
 }

@@ -1,4 +1,3 @@
-
 def generate_design_code(base_code: str, color_codes: list[str]) -> str:
     """
     Genera un código único para la variante combinando el código del producto

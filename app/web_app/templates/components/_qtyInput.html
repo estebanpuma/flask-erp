@@ -1,0 +1,22 @@
+{% macro qtyInput(value )%}
+
+<div class="d-flex align-items-center">
+    <button
+        class="btn btn-outline-dark btn-sm me-1">
+        -
+    </button>
+    <input
+        class="form-control form-control-sm px-1 text-center" style="max-width: 60px; min-width: 30px;"
+        type="text"
+        maxlength="4"
+        inputmode="numeric"
+        pattern="[0-9]*"
+        value="{{value}}"
+    >
+    <button
+        class="btn btn-outline-dark btn-sm ms-1">
+        +
+    </button>
+</div>
+
+{% endmacro %}

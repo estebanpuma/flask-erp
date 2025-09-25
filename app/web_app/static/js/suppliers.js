@@ -30,7 +30,7 @@ function supplierForm() {
         });
 
         const data = await res.json();
-        
+
         if (!res.ok) {
           throw new Error(data.message || 'Error al guardar proveedor');
         }
@@ -46,10 +46,10 @@ function supplierForm() {
         const offcanvasEl = document.getElementById('newSupplierOffcanvas');
         const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
         if (bsOffcanvas) bsOffcanvas.hide();
-        
+
         console.log('data:', data)
-        
-                    
+
+
         // TODO: Emitir evento personalizado o actualizar proveedor en el formulario principal
       } catch (err) {
         this.error = err.message;

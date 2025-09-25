@@ -1,4 +1,4 @@
-      
+
 <div class="card-body" id="customer">
   <h2 class="fs-5 fw-bold mb-4 text-center">Datos del cliente</h2>
   <div class="mb-4">
@@ -9,7 +9,7 @@
             class="form-control"
             placeholder="Buscar cliente…"
             @click="clearCustomerSearch()">
-            
+
     </div>
     <ul class="list-group mt-2" x-show="customerResults.length > 0">
       <template x-for="c in customerResults" :key="c.id">
@@ -21,7 +21,7 @@
         </li>
       </template>
     </ul>
-          
+
 
     <!-- Detalle tras selección -->
     <template x-if="customer.ruc_or_ci">
@@ -54,20 +54,16 @@
                 <i class="bi bi-chevron-left"></i><span>Regresar</span>
               </button>
             </div>
-            
+
             {% include 'sales/sale-orders/steps/_clientForm.html' %}
 
           </div>
-          
+
         </div>
 
       </div>
-      
+
     </template>
-    
-  </div>   
+
+  </div>
 </div>
-     
-
-
-

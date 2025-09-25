@@ -1,43 +1,52 @@
-from flask_restful import Resource, request, marshal_with, marshal_with_field, marshal
+from flask_restful import request
 
-from ..core.resources import BaseGetResource, BasePostResource, BasePatchResource, BaseDeleteResource
-
-from .services import SalesOrderService, SaleOrderLineService
-
-from .schemas import sale_order_fields, sale_order_line_fields, preview_order_fields
-
-from ..core.utils import *
-from ..core.exceptions import AppError
+from ..core.resources import (
+    BaseDeleteResource,
+    BaseGetResource,
+    BasePatchResource,
+    BasePostResource,
+)
+from .schemas import sale_order_fields, sale_order_line_fields
+from .services import SaleOrderLineService, SalesOrderService
 
 
 class SaleOrderPostResource(BasePostResource):
     service_create = staticmethod(SalesOrderService.create_obj)
     output_fields = sale_order_fields
 
+
 class SaleOrderGetResource(BaseGetResource):
     schema_get = staticmethod(SalesOrderService.get_obj)
-    schema_list = staticmethod(lambda: SalesOrderService.get_obj_list(request.args.to_dict()))
+    schema_list = staticmethod(
+        lambda: SalesOrderService.get_obj_list(request.args.to_dict())
+    )
     output_fields = sale_order_fields
+
 
 class SaleOrderDeleteResource(BaseDeleteResource):
     service_get = staticmethod(SalesOrderService.get_obj)
     service_delete = staticmethod(SalesOrderService.delete_obj)
+
 
 class SaleOrderPatchResource(BasePatchResource):
     service_get = staticmethod(SalesOrderService.get_obj)
     service_patch = staticmethod(SalesOrderService.patch_obj)
     output_fields = sale_order_fields
 
+
 class SaleOrderPreviewResource(BasePostResource):
     service_create = staticmethod(SalesOrderService.preview_order)
-    
+
+
 class SaleOrderLineGetResource(BaseGetResource):
     schema_get = staticmethod(SaleOrderLineService.get_order_list)
     output_fields = sale_order_line_fields
 
+
 class UpdateStatusPatchResource(BasePatchResource):
     service_get = staticmethod(SalesOrderService.get_obj)
     service_patch = staticmethod(SalesOrderService.update_status_order)
+
 
 """
 
@@ -59,19 +68,19 @@ class SaleOrderLineDeleteResource(Resource):
             return success_response("Línea eliminada correctamente")
         except AppError as e:
             return validation_error_response(e)
-        
+
 
 class SaleOrderLinePostResource(Resource):
     def post(self, order_id):
         try:
             data = request.get_json()
             line = SaleOrderService.add_line(order_id, data)
-            
+
             return success_response(marshal(line, sale_order_line_fields), 201)
-            
+
         except AppError as e:
             return validation_error_response(str(e))
-        
+
 class SaleOrderLinePatchResource(Resource):
     def patch(self, order_id, line_id):
         try:
@@ -80,6 +89,6 @@ class SaleOrderLinePatchResource(Resource):
             return success_response(marshal(line, sale_order_line_fields,"Línea actualizada correctamente" ))
         except AppError as e:
             return validation_error_response(str(e))
-        
-        
+
+
 """

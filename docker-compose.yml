@@ -26,8 +26,8 @@ services:
     ports:
       - 8080:8080
     networks:
-      - erp-network 
-  
+      - erp-network
+
   # PgAdmin (gestor avanzado)
   pgadmin:
     image: dpage/pgadmin4
@@ -58,6 +58,6 @@ services:
 networks:
   erp-network:
     #internal: true  # Aísla la red (no accesible desde fuera de Docker)
-    
+
 volumes:
   postgres-data:

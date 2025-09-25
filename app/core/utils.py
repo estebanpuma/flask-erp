@@ -1,16 +1,13 @@
 # app/core/utils.py
 
-from flask import jsonify, make_response
-
-from sqlalchemy.orm.attributes import InstrumentedAttribute
-from sqlalchemy import or_
-
-# utils/file_uploader.py
-
 import os
 import uuid
-from flask import current_app
+
+from flask import current_app, jsonify, make_response
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 from werkzeug.utils import secure_filename
+
+# utils/file_uploader.py
 
 
 class FileUploader:
@@ -34,15 +31,15 @@ class FileUploader:
         """
         if not file:
             raise ValueError("Archivo no recibido.")
-        if file.filename == '':
+        if file.filename == "":
             raise ValueError("Nombre de archivo vacío.")
 
-        ext = file.filename.rsplit('.', 1)[-1].lower()
+        ext = file.filename.rsplit(".", 1)[-1].lower()
         if ext not in current_app.config["ALLOWED_EXTENSIONS"]:
             raise ValueError("Extensión de archivo no permitida.")
 
         # Generar nombre seguro y único
-        original_name = secure_filename(file.filename)
+        secure_filename(file.filename)
         unique_name = f"{uuid.uuid4().hex}.{ext}"
 
         # Construir carpeta de destino
@@ -96,6 +93,7 @@ def error_response(message="Error inesperado", status_code=500):
     Estandariza respuestas de error.
     """
     return make_response(jsonify({"message": message}), status_code)
+
 
 def validation_error_response(errors):
     """

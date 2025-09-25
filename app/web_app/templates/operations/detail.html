@@ -1,14 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Proceso{% endblock %}
-
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
 <div class="container mt-3">
 
   <!-- Header de página -->
-  <div x-data="{ href: '/production/operations', title: 'Proceso' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
-
+  {{ pageHeader('/production/operations', title='Detalle') }}
   <!-- Detalle de la operación (usa tu genericDetail existente) -->
   <div
     x-data="genericDetail(
@@ -60,66 +57,7 @@
       </div>
     </div>
 
-    <!-- Ficha de operaciones -->
-    <div class="card rounded-4 border-1">
-      <div class="card-body">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-          <span class="fs-5 fw-semibold">Ficha de operaciones</span>
-          <a class="btn btn-dark btn-sm"
-             :href="`/production/operations-sheet/create?operation_id=${operationId}`">
-            Nuevo registro
-          </a>
-        </div>
 
-        <!-- Toolbar: filtro + búsqueda -->
-        <div class="row g-2 mb-3">
-          <div class="col-12 col-md-4">
-            <select class="form-select" x-model="filters.resourceId">
-              <option value="">— Todos los recursos —</option>
-              <template x-for="r in resources" :key="r.id">
-                <option :value="r.id" x-text="r.name"></option>
-              </template>
-            </select>
-          </div>
-          <div class="col-12 col-md-4">
-            <input class="form-control" type="search" placeholder="Buscar variante…"
-                   x-model.trim="filters.q" @input.debounce.200ms="noop">
-          </div>
-        </div>
-
-        <!-- Loading -->
-        <template x-if="loading.sheet">
-          <div class="text-muted small">Cargando ficha de operaciones…</div>
-        </template>
-
-        <!-- Vacío -->
-        <template x-if="!loading.sheet && !filteredRows().length">
-          <div class="text-muted small">Sin registros para los filtros actuales.</div>
-        </template>
-
-        <!-- Tabla -->
-        <div class="table-responsive" x-show="!loading.sheet && filteredRows().length">
-          <table class="table table-hover table-sm align-middle">
-            <thead>
-              <tr>
-                <th>Variante</th>
-                <th>Recurso</th>
-                <th class="text-end">Tiempo (min/u)</th>
-                <th class="text-end">Cap. turno</th>
-              </tr>
-            </thead>
-            <tbody>
-              <template x-for="ru in filteredRows()" :key="ru.id">
-                <tr>
-                  <td x-text="ru.variant_code"></td>
-                  <td x-text="ru.res_name"></td>
-                  <td class="text-end" x-text="fmt3(ru.std_min_unit)"></td>
-                  <td class="text-end" x-text="fmt3(ru.resource_capacity)"></td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
 
         <!-- Error general -->
         <template x-if="error">

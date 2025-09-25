@@ -30,7 +30,7 @@
           <h6 class="fw-semibold mb-1">Información del producto</h6>
           <p class="text-muted mb-0" x-text="selectedDesign.description || 'Sin descripción del producto'"></p>
         </div>
-        
+
 
       </div>
       <div class="col-lg-5">
@@ -52,22 +52,22 @@
           <!-- Color Selector -->
           <div class="d-flex align-items-center mb-3" x-init="fetchProduct(selectedDesign.product.id)">
             <template x-for="d in selectedProduct.designs" :key="d.id">
-              
+
               <div @click="selectedDesign = d; onDesignChange()"
 
                   class="rounded me-2"
                   :class="selectedDesign && selectedDesign.id === d.id ? 'border border-dark border-5' : 'border-secondary'"
                   style="cursor:pointer">
-    
+
                 <img :src="getPrimaryImageUrl(d.images)"
                     class="img-fluid"
                     style="width:60px;height:60px;object-fit:cover;">
-                
+
               </div>
             </template>
           </div>
 
-          
+
           <!-- Size & Quantity List -->
           <div x-show="variants.length && selectedDesign">
             <h6 class="small text-secondary mb-2">
@@ -85,7 +85,7 @@
                     </div>
                     {% include 'components/_quantityInput.html' %}
                   </div>
-                  
+
                 </div>
               </template>
             </div>
@@ -95,20 +95,20 @@
             </div>
             <button class="btn btn-dark w-100 rounded-pill py-2 fw-semibold" type="button" @click="addToCart()">
               Añadir al carrito
-            </button> 
+            </button>
           </div>
 
-          
+
         </div>
       </div>
 
-      
+
     <!-- Info extra, solo visible en móvil -->
           <div class="mt-4 d-lg-none">
             <h6 class="fw-semibold mb-1">Información del producto</h6>
             <p class="text-muted small mb-0" x-text="selectedDesign.description || 'Sin descripción del producto'"></p>
           </div>
-      
+
 
     </div>
   </div>

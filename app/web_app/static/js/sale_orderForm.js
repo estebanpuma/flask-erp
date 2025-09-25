@@ -14,7 +14,7 @@ function salesWizard(){
             due_date:'',
             salesperson:'',
             notes:'',
-        }, 
+        },
         shipping:{
             province_id: '',
             canton_id: '',
@@ -24,7 +24,7 @@ function salesWizard(){
         },
         customer:{},
         payment:{},
-        
+
         designs_request:[],
 
         // Búsquedas
@@ -76,7 +76,7 @@ function salesWizard(){
 
             }
         },
-        
+
         clearCustomerSearch() {
             this.customerQuery = '';
             this.customerResults = [];
@@ -129,7 +129,7 @@ function salesWizard(){
 
             this.provinces = await this.fetcher('GET', `provinces`);
             this.loadCantons(this.clientForm.province_id);
-            
+
             },
 
         async loadCantons(province_id) {
@@ -142,7 +142,7 @@ function salesWizard(){
             this.rucError = null;
             if (!this.clientForm.ruc_or_ci || this.clientForm.ruc_or_ci.length < 10) return;
             let client = await this.fetcher('GET', `clients?ruc_or_ci=${this.clientForm.ruc_or_ci}`)
-            if(client.ruc_or_ci) this.rucError = 'Ya existe un cliente con esta cédula/RUC';                      
+            if(client.ruc_or_ci) this.rucError = 'Ya existe un cliente con esta cédula/RUC';
         },
 
 //---------------------------------------------------------------------------------
@@ -166,18 +166,18 @@ function salesWizard(){
                 this.designs = this.fetchDesigns();
             }
         },
-        
+
         async selectDesign(id) {
             let design = await this.fetcher('GET', `product-designs/${id}`) || [];
             this.selectedDesign = design      // espera que el API devuelva p.designs = [{id, code, color, variants:[...]}, …]
             this.variants = design.variants;
             this.onDesignChange()
             this.selectedVariant = null;
-            this.step = 2;        
+            this.step = 2;
               // avanza directo al paso 2
             },
 
-        
+
             //imgane principal
         getPrimaryImageUrl(images) {
             if (!images || images.length === 0) {
@@ -220,10 +220,10 @@ function salesWizard(){
             this.variants.forEach(variant => {
                 variant.quantity = 0
                 variant.current_price = Number(this.selectedDesign.current_price)
-                
+
                 if (design){
                     let line = design.lines.find(l => l.variant_id === variant.id)
-                
+
                     if(line){
                         variant.quantity = line.quantity
                         variant.current_price = Number(this.selectedDesign.current_price)
@@ -233,26 +233,26 @@ function salesWizard(){
                             'quantity': line.quantity
 
                         })
-                        
-                        
-                    } 
-  
+
+
+                    }
+
                 }
-            
+
             });
-            
+
         },
 
 
 
         lineSubtotal(){
-           
+
             let design_subtotal = this.designSubtotal(this.design_order)
             return design_subtotal
         },
 
         designSubtotal(design){
-            
+
             let design_subtotal = design.lines.reduce((accumulator, line)=>{
                 subtotal = (accumulator +(line.quantity * decimalUtils.toCents(this.selectedDesign.current_price)))
                 return subtotal
@@ -266,8 +266,8 @@ function salesWizard(){
             if (v.quantity > 0) {
                 if (idx !== -1) {
                     this.design_order.lines[idx].quantity = v.quantity;
-                    
-                } else {  
+
+                } else {
                     this.design_order.lines.push({
                     design: this.selectedDesign,
                     variant_id: v.id,
@@ -338,7 +338,7 @@ function salesWizard(){
                 this.saveLine(v);
             });
             window.scrollTo({ top: 0, behavior: 'smooth' });
-           
+
         },
 
 
@@ -403,7 +403,7 @@ function salesWizard(){
             this.total = decimalUtils.fromCents(total)
             return this.total
         },
-                    
+
 
 
 //-----------------------------OrderData------------------------------
@@ -419,7 +419,7 @@ function salesWizard(){
         },
 
         async fetchSalesPersons(){
-            
+
             this.salespersons = await this.fetcher('GET', '/workers')
         },
 
@@ -428,9 +428,9 @@ function salesWizard(){
             let pending_amount = decimalUtils.toCents(total) - decimalUtils.toCents(paid)
             console.log('pendig amount: ', pending_amount)
             return decimalUtils.moneyFormat(decimalUtils.fromCents(pending_amount));
-          
+
         },
-            
+
         async fetchPaymentMethods(){
             this.payment_methods = await this.fetcher('GET', 'payment-methods')
         },
@@ -441,7 +441,7 @@ function salesWizard(){
 
         // Navegación
         nextStep() {
-            
+
             if (this.step === 6){
                 this.clearError();
                 if(!this.shipping.address || !this.shipping.province_id || !this.shipping.canton_id){
@@ -449,11 +449,11 @@ function salesWizard(){
                     this.error= 'Debes completar todos los datos de envío.'
                     return
                 }
-                
+
             }
             if (this.step < this.totalSteps) this.step++;
             //if (this.step === this.totalSteps) this.confirmOrder()
-       
+
         },
         prevStep() {
             if (this.step > 1) this.step--;
@@ -467,7 +467,7 @@ function salesWizard(){
             document.body.innerHTML = originalContents;
             window.location.reload(); // recarga Alpine si usas datos reactivos
             },
-        
+
         formLoading: false,
         async confirmOrder(){
             this.formLoading = true
@@ -488,12 +488,12 @@ function salesWizard(){
                 sales_person_id: this.order.salesperson,
                 notes: this.order.notes,
                 lines:order_lines,
-                
+
                 shipping_province_id: this.shipping.province_id,
                 shipping_canton_id: this.shipping.canton_id,
                 shipping_address: this.shipping.address,
                 shipping_reference: this.shipping.reference,
-                
+
                 payment:{
                     amount: this.payment.amount,
                     method_id:this.payment.method_id,
@@ -521,11 +521,8 @@ function salesWizard(){
                 alert(error)
 
             }
-            
-            
+
+
         },
     }
 }
-
-
-    

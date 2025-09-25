@@ -3,12 +3,20 @@
 {% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
 
-{{ pageHeader(href='/production', 
-              title='Recursos', 
-              has_btn=True, 
+{{ pageHeader(href='/production',
+              title='Recursos',
+              has_btn=True,
               btn_href='/production/resources/create',
               btn_label='Nuevo') }}
 
+<div class="card-body">
+    <div class="d-flex justify-content-between">
+      <div><a type="button" class="btn badge text-bg-secondary" @click="filter('machine')">Maquinas</a></div>
+      <div><a type="button" class="btn badge text-bg-secondary" @click="filter('labor')">Mano de obra</a></div>
+      <div><a href="/production/resources/lasts" type="button" class="btn badge text-bg-secondary">Hormas</a></div>
+      <div><a  type="button" class="btn badge text-bg-secondary" @click="filter('all')">Matrices</a></div>
+    </div>
+  </div>
 
 <div
     x-data="genericList(
@@ -18,7 +26,7 @@
         { field: 'code',        label: 'Código',      filterable: true  },
         { field: 'name',        label: 'Nombre',      filterable: true  },
         { field: 'kind',        label: 'Tipo',      filterable: true  },
-        { field: 'qty',        label: 'Cantidad',      filterable: true  },   
+        { field: 'qty',        label: 'Cantidad',      filterable: true  },
       ]
     )"
     x-init="init()"
@@ -36,4 +44,3 @@
 <script  src="{{ url_for('static', filename='js/components.js') }}"></script>
   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}
-

@@ -5,7 +5,7 @@
   <div class="d-flex flex-row-reverse">
     <button type="button" @click="step=3" class="p-0 btn btn-back position-relative" >
         <i class="fs-3 bi bi-cart">
-        
+
         </i>
         <template x-if="designs_request.length>0">
           <span class="position-absolute top-75 start-75 translate-middle badge rounded-pill bg-dark"
@@ -16,10 +16,10 @@
       </button>
   </div>
 
-    
+
 
   <!-- Step Partials -->
- 
+
   <template x-if="step===1">
     {% include 'sales/sale-orders/steps/step1_catalog.html' %}
   </template>

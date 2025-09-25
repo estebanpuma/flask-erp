@@ -1,15 +1,14 @@
-from ..sales.models import SaleOrder
-
-from .exceptions import NotFoundError
 from ..core.enums import ProductionSourceTypeEnum
+from ..sales.models import SaleOrder
+from .exceptions import NotFoundError
 
 
 class OriginFactory:
-    
+
     ORIGIN_MAP = {
         ProductionSourceTypeEnum.SALES.value: SaleOrder,
-        #"rd_order": RDOrder,
-        #"stock_order": StockOrder
+        # "rd_order": RDOrder,
+        # "stock_order": StockOrder
         # futuros: 'demo_order', 'urgent_order', etc.
     }
 

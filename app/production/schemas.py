@@ -1,6 +1,4 @@
-from flask_restful import fields, reqparse, MethodView
-
-
+from flask_restful import fields
 
 production_resources_fields = {
     "id": fields.Integer,
@@ -10,43 +8,36 @@ production_resources_fields = {
     "qty": fields.Integer,
     "description": fields.String,
     "operation_id": fields.Integer,
-    "operation_name": fields.String(attribute='operation.name'),
+    "operation_name": fields.String(attribute="operation.name"),
     "capacity_per_unit": fields.MyDecimal,
     "capacity_unit": fields.String,
-    "total_capacity":fields.MyDecimal,
-    "is_active":fields.Boolean,
+    "total_capacity": fields.MyDecimal,
+    "is_active": fields.Boolean,
 }
 
 variant_resource_usage = {
-    'id': fields.Integer,
-    'resource_id': fields.Integer,
-    'operation_id': fields.Integer,
-    'variant_id': fields.Integer,
-    'std_min_unit': fields.MyDecimal,
-    "operation_name": fields.String(attribute='operation.name'),
-    "resource_name": fields.String(attribute='resource.name'),
-    "variant_code": fields.String(attribute='variant.code'),
-
-
-
+    "id": fields.Integer,
+    "resource_id": fields.Integer,
+    "operation_id": fields.Integer,
+    "variant_id": fields.Integer,
+    "std_min_unit": fields.MyDecimal,
+    "operation_name": fields.String(attribute="operation.name"),
+    "resource_name": fields.String(attribute="resource.name"),
+    "variant_code": fields.String(attribute="variant.code"),
 }
 
 op_fields = {
-    'id':fields.Integer,
-    'code': fields.String,
-    'name': fields.String,
-    'rate_hour': fields.MyDecimal,
-    'mission': fields.String,
-    'kpi': fields.String,
-    'responsible': fields.String,
-    'resources': fields.List(fields.Nested(production_resources_fields)),
-    'variant_operations': fields.List(fields.Nested(variant_resource_usage)),
-    'is_active': fields.Boolean,
-
+    "id": fields.Integer,
+    "code": fields.String,
+    "name": fields.String,
+    "rate_hour": fields.MyDecimal,
+    "mission": fields.String,
+    "kpi": fields.String,
+    "responsible": fields.String,
+    "resources": fields.List(fields.Nested(production_resources_fields)),
+    "variant_operations": fields.List(fields.Nested(variant_resource_usage)),
+    "is_active": fields.Boolean,
 }
-
-
-
 
 
 production_request_fields = {
@@ -75,15 +66,15 @@ production_order_line_fields = {
 production_order_fields = {
     "id": fields.Integer,
     "status": fields.String,
-    "start_date": fields.DateTime(dt_format='iso8601'),
-    "end_date": fields.DateTime(dt_format='iso8601'),
+    "start_date": fields.DateTime(dt_format="iso8601"),
+    "end_date": fields.DateTime(dt_format="iso8601"),
     "workers_assigned": fields.Integer,
     "total_overtime_hours": fields.Float,
     "estimated_man_hours": fields.Float,
-    "created_at": fields.DateTime(dt_format='iso8601'),
+    "created_at": fields.DateTime(dt_format="iso8601"),
     "lines": fields.List(fields.Nested(production_order_line_fields)),
-    'get_production_duration_days': fields.Integer,
-    'production_requests':fields.List(fields.Nested(production_request_fields))
+    "get_production_duration_days": fields.Integer,
+    "production_requests": fields.List(fields.Nested(production_request_fields)),
 }
 
 production_material_detail_fields = {

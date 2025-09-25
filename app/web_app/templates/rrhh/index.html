@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% from 'components/entryCard.html' import entry_card %}
-
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
   {% set title = 'RRHH' %}
-  {% include 'components/pageHeader.html' %}
 
+  {{ pageHeader(href='/', title='RRHH', subtitle='', has_btn=False, btn_href='', btn_label='' ) }}
 
   <div class="row g-3">
     {{ entry_card('/workers', '👤 Trabajadores', 'Gestión de trabajadores.') }}

@@ -2,10 +2,17 @@
 
 from decimal import Decimal
 
+
 class PricingEntity:
-    def __init__(self, material_cost: Decimal, labor_hours: Decimal,
-                 labor_rate: Decimal, overhead_rate: Decimal, markup_pct: Decimal):
-        
+    def __init__(
+        self,
+        material_cost: Decimal,
+        labor_hours: Decimal,
+        labor_rate: Decimal,
+        overhead_rate: Decimal,
+        markup_pct: Decimal,
+    ):
+
         self.material_cost = material_cost
         self.labor_hours = labor_hours
         self.labor_rate = labor_rate

@@ -12,21 +12,21 @@
     <div
       x-data="genericDetail(
         '/api/v1/material-groups/{{ group_id }}',
-        
+
           [
              { field:'code',        label:'Código' },
-            { field:'name',        label:'Nombre' },   
+            { field:'name',        label:'Nombre' },
             { field:'quantity',        label:'Cantidad en el grupo' },
             { field: 'description',  label: 'Descripción'},
             { field:'is_active', label:'Status' },
           ],
 
           '🎨'
-        
+
       )"
     >
     {% include "components/detailCard.html" %}
-    
+
     <!-- Mensaje de error -->
     <template x-if="error">
       <div class="alert alert-danger" x-text="error"></div>
@@ -35,7 +35,7 @@
   </div>
 
 
-  
+
 
 </div>
 {% endblock %}

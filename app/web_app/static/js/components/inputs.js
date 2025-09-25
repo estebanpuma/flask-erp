@@ -26,7 +26,7 @@
             id: id || `in_${Math.random().toString(36).slice(2,9)}`,
             label, placeholder:placeholder, type, name,
             required, disabled, readonly, autocomplete, maxLength, pattern,
-            help, invalidText:invalidText, showInvalid, trim, debounce, inputClass, 
+            help, invalidText:invalidText, showInvalid, trim, debounce, inputClass,
             is_invalid: is_invalid,
 
             // regla de invalidez básica + patrón
@@ -68,7 +68,7 @@
                     <div class="invalid-feedback" x-text="invalidText"></div>
                     <small x-show="help" class="text-muted d-block mt-1" x-text="help"></small>
                 </div>
-                
+
                 `;
 
                 // 2) Sembrar desde el x-model del padre si existe
@@ -167,82 +167,82 @@ function boolSwitch({
   });
 
     // Componente Alpine para inputQtyState
-/* ----------  estado + lógica  ---------- */
-function inputQtyState ({ initial = 0, step = 1, min = 0, max = null, size = 'lg', id = 'qty', required = true } = {}) 
-    {
-        const clamp = v => Math.max(min, max !== null ? Math.min(max, v) : v);
+function inputQtyState ({ initial = 0, step = 1, min = 0, max = null, size = 'lg', id = 'qty', required = true } = {}) {
+  const STEP = Number(step);
+  const DEC  = (String(STEP).split('.')[1] || '').length;
 
-        return {
-        /* puerto público de x-modelable */
-        value: clamp(initial),
+  const toNum = (x) => (x === '' || x === null || x === undefined ? NaN : Number(x));
 
-        /* primera vez que Alpine arranca este scope */
-        init () {
-            /* pinta la plantilla SOLO una vez  */
-            this.$el.innerHTML = /*html*/`
-            <button type="button"
-                    class="btn btn-outline-dark btn-${size} me-1"
-                    :class="value<=${min} ? 'opacity-50 pointer-events-none' : ''"
-                    @click="dec">−</button>
+  const clamp = (v) => {
+    const n = toNum(v);
+    if (Number.isNaN(n)) return min;                  // ← evita NaN (o usa initial)
+    const upper = max !== null ? Math.min(max, n) : n;
+    return Math.max(min, upper);
+  };
 
-            <input  id="${id}" type="text" pattern="[0-9.]*" inputmode="decimal"
-                    class="form-control form-control-${size} fw-semibold text-center px-1"
-                    style="max-width:60px;min-width:30px;"
-                    x-model="value" @input="sanitize"
-                    ${required ? 'required' : ''} >
+  const add   = (a, b) => parseFloat((Number(a) + Number(b)).toFixed(DEC));
 
-            <button type="button"
-                    class="btn btn-outline-dark btn-${size} ms-1"
-                    ${max !== null
-                        ? `:class="value>=${max} ? 'opacity-50 pointer-events-none' : ''"`
-                        : ''}
-                    @click="inc">+</button>
-            `;
+  return {
+    value: clamp(initial),
 
-            /* propaga cambios al padre (x-model) */
-            this.$watch('value', v => this.$dispatch('input', v));
-        },
+    init () {
+      this.$el.innerHTML = /*html*/`
+        <button type="button"
+                class="btn btn-outline-dark btn-${size} me-1"
+                :class="value<=${min} ? 'opacity-50 pointer-events-none' : ''"
+                @click="dec">−</button>
 
-        /* acciones */
-        inc () { this.value = clamp(this.value + step); },
-        dec () { this.value = clamp(this.value - step); },
-        sanitize(e) {
-            const raw = e.target.value;
+        <input  id="${id}" type="text" pattern="[0-9.]*" inputmode="decimal"
+                class="form-control form-control-${size} fw-semibold text-center px-1"
+                style="max-width:60px;min-width:30px;"
+                x-model.number="value" @input="sanitize"
+                ${required ? 'required' : ''} >
 
-            /* 1 ▸ Elegir la expresión según si step tiene decimales */
-            const onlyDigits        = /[^0-9]/g;        // 12345
-            const digitsPlusDot     = /[^0-9.]/g;       // 12.34
-            const needsDot          = step % 1 !== 0;   // true si step = 0.1, 0.01…
+        <button type="button"
+                class="btn btn-outline-dark btn-${size} ms-1"
+                ${max !== null
+                  ? `:class="value>=${max} ? 'opacity-50 pointer-events-none' : ''"`
+                  : ''}
+                @click="inc">+</button>
+      `;
 
-            /* 2 ▸ Filtrar caracteres no permitidos */
-            let clean = raw.replace(needsDot ? digitsPlusDot : onlyDigits, '');
+      this.$watch('value', v => this.$dispatch('input', v));
+    },
 
-            /* 3 ▸ Si admite punto, mantener uno solo y recortar decimales */
-            if (needsDot) {
-            // quitar puntos extra
-            clean = clean.replace(/\.(?=.*\.)/g, '');
-            // limitar nº de decimales según step
-            const decPlaces = (step.toString().split('.')[1] || '').length;
-            if (clean.includes('.')) {
-                const [int, dec] = clean.split('.');
-                clean = int + '.' + dec.slice(0, decPlaces);
-            }
-            }
+    inc () { this.value = clamp(add(this.value,  STEP)); },
+    dec () { this.value = clamp(add(this.value, -STEP)); },
 
-            /* 4 ▸ Convertir a número y clampearlos a min/max */
-            const num = clean === '' ? NaN : Number(clean);
-            if (!isNaN(num)) {
-            this.value = clamp(num);          // clamp es tu helper min-max
-            } else if (clean === '') {
-            this.value = '';                  // permitir borrar todo
-            }
+    sanitize (e) {
+      const raw = e.target.value;
+
+      const onlyDigits        = /[^0-9]/g;
+      const digitsPlusDot     = /[^0-9.]/g;
+      const needsDot          = DEC > 0;
+
+      let clean = raw.replace(needsDot ? digitsPlusDot : onlyDigits, '');
+
+      if (needsDot) {
+        clean = clean.replace(/\.(?=.*\.)/g, '');
+        const decPlaces = DEC;
+        if (clean.includes('.')) {
+          const [int, dec] = clean.split('.');
+          clean = int + '.' + dec.slice(0, decPlaces);
         }
-        };
-    };
-  
-    document.addEventListener('alpine:init', () => {
-    Alpine.data('inputQty', inputQtyState);
-    });
+      }
+
+      const num = clean === '' ? NaN : Number(clean);
+      if (!isNaN(num)) {
+        this.value = clamp(num);
+      } else if (clean === '') {
+        this.value = '';
+      }
+    }
+  };
+}
+
+document.addEventListener('alpine:init', () => {
+  Alpine.data('inputQty', inputQtyState);
+});
 
 
 function inputTextArea({
@@ -345,7 +345,7 @@ function floatingInputSelect(
       size      = 'md',
       help        = '',                  // texto de ayuda (opcional)
     }={}){
-      
+
     return{
         value: initial,
         help,

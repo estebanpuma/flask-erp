@@ -65,7 +65,7 @@ Authorization: Bearer <access_token>
 
 ## 📤 Obtener un cliente o listar clientes
 
-**GET** `/api/v1/clients`  
+**GET** `/api/v1/clients`
 **GET** `/api/v1/clients/<client_id>`
 
 - Si se pasa `client_id`, retorna un cliente.
@@ -151,6 +151,6 @@ Puedes enviar **solo los campos que deseas actualizar**:
 
 ---
 
-# 🚀 ¡Con esto tienes la documentación lista y profesional! 
+# 🚀 ¡Con esto tienes la documentación lista y profesional!
 
 ✨️ **Última actualización: 28 de Abril 2025**

@@ -3,11 +3,15 @@
 {% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
 
-{{ pageHeader(href='/production', 
-              title='Procesos', 
-              has_btn=True, 
-              btn_href='/production/resources/create',
+{{ pageHeader(href='/production',
+              title='Procesos',
+              has_btn=True,
+              btn_href='/production/operations/create',
               btn_label='Nuevo') }}
+
+<div>
+  <a href="/production/routing" class="btn btn-dark">routing</a>
+</div>
 
 <div
     x-data="genericList(
@@ -16,7 +20,7 @@
       [
         { field: 'code',        label: 'Código',      filterable: true  },
         { field: 'name',        label: 'Nombre',      filterable: true  },
-    
+
       ]
     )"
     x-init="init()"
@@ -34,4 +38,3 @@
 <script  src="{{ url_for('static', filename='js/components.js') }}"></script>
   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}
-

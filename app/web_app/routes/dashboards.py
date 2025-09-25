@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template
 import datetime
 
-dashboards_bp = Blueprint('dashboards', __name__, url_prefix='/')
+from flask import Blueprint, render_template
+
+dashboards_bp = Blueprint("dashboards", __name__, url_prefix="/")
 
 
 MOTIVATIONAL_QUOTES = [
@@ -16,7 +17,7 @@ MOTIVATIONAL_QUOTES = [
     "🏆 *Nuestro cliente final siente el esfuerzo que pusiste hoy.*",
     "📈 *Vender es ayudar: entendamos y resolvamos.*",
     "🌱 *Liderar es servir con visión.*",
-    "🔁 *No hay errores, hay aprendizajes que optimizan.*"
+    "🔁 *No hay errores, hay aprendizajes que optimizan.*",
 ]
 
 
@@ -24,7 +25,8 @@ def get_daily_quote():
     day_index = datetime.date.today().timetuple().tm_yday % len(MOTIVATIONAL_QUOTES)
     return MOTIVATIONAL_QUOTES[day_index]
 
-@dashboards_bp.route('/')
+
+@dashboards_bp.route("/")
 def home():
     daily_quote = get_daily_quote()
-    return render_template('dashboards/home.html', daily_quote = daily_quote)
+    return render_template("dashboards/home.html", daily_quote=daily_quote)

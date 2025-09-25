@@ -1,18 +1,17 @@
 # fields/sales_fields.py
-from flask_restful import fields
-
-
-from flask_restful import fields
 from decimal import Decimal
+
+from flask_restful import fields
 
 
 class MyDecimal(fields.Raw):
     def format(self, value):
         if value is None:
             return None
-        return format(Decimal(value).quantize(Decimal('0.01')), 'f')
+        return format(Decimal(value).quantize(Decimal("0.01")), "f")
 
-fields.MyDecimal = MyDecimal   # añade al namespace
+
+fields.MyDecimal = MyDecimal  # añade al namespace
 
 preview_order_fields = {
     "subtotal": fields.MyDecimal,
@@ -32,16 +31,16 @@ list_sale_order_line_fields = {
 }
 
 size_fields = {
-    'id': fields.Integer,
-    'value': fields.String,
-    'series_id': fields.Integer,
+    "id": fields.Integer,
+    "value": fields.String,
+    "series_id": fields.Integer,
 }
 
 variant_fields = {
     "id": fields.Integer,
     "design_id": fields.Integer,
     "code": fields.String,
-    "size": fields.Nested(size_fields)
+    "size": fields.Nested(size_fields),
 }
 
 sale_order_line_fields = {
@@ -51,15 +50,15 @@ sale_order_line_fields = {
     "price_unit": fields.MyDecimal,
     "discount_rate": fields.MyDecimal,
     "subtotal": fields.MyDecimal,
-    "variant": fields.Nested(variant_fields)
+    "variant": fields.Nested(variant_fields),
 }
 
 client_order_fields = {
-    'id': fields.Integer,
-    'ruc_or_ci': fields.Integer,
-    'name': fields.String,
-    'category': fields.String,
-    'phone': fields.String
+    "id": fields.Integer,
+    "ruc_or_ci": fields.Integer,
+    "name": fields.String,
+    "category": fields.String,
+    "phone": fields.String,
 }
 
 sale_order_fields = {
@@ -82,7 +81,7 @@ sale_order_fields = {
     "tax_rate": fields.MyDecimal,
     "total": fields.MyDecimal,
     "amount_paid": fields.MyDecimal,
-    "amount_due":fields.MyDecimal,
+    "amount_due": fields.MyDecimal,
     "lines": fields.List(fields.Nested(list_sale_order_line_fields)),
     "notes": fields.String,
 }

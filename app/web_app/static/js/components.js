@@ -1,5 +1,5 @@
 ;(function(window) {
-  
+
   const showToast=(msg,type='info',delay=3000)=>{
     const t=document.createElement('div')
     t.className=`toast align-items-center text-bg-${type} border-0`
@@ -138,7 +138,7 @@ function actionBtn ({
 
 
 
- 
+
 
   function floatingInputSelect(
     {
@@ -152,9 +152,9 @@ function actionBtn ({
       click   = '',
       blur    = '',
       required = true
-      
+
     }){
-      
+
       return /*html*/`
         <div class="form-floating mb-3">
             <select class="form-select form-select-lg ps-4 px-1 rounded-5 fw-semibold fs-6" x-model="${model}"
@@ -173,7 +173,7 @@ function actionBtn ({
 
   /* Exponemos todas las funciones en un namespace global */
   window.guifer = window.guifer || {}
-  window.guifer.components = { 
+  window.guifer.components = {
     alert:  {showToast, alert},
     btn:    {actionBtn, createBtn,},
     input:  {floatingInputSelect,},

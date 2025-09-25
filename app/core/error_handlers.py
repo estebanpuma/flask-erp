@@ -1,5 +1,7 @@
-from flask import jsonify, render_template
-from .exceptions import ValidationError, ConflictError, NotFoundError, AppError
+from flask import jsonify
+
+from .exceptions import AppError, ConflictError, NotFoundError, ValidationError
+
 
 def register_error_handlers(app):
 
@@ -18,14 +20,11 @@ def register_error_handlers(app):
     @app.errorhandler(AppError)
     def handle_app_error(e):
         return jsonify({"error": str(e)}), 500
-    
+
     @app.errorhandler(500)
     def base_error_handler(e):
         return jsonify({"error": str(e)}), 500
-    
+
     @app.errorhandler(404)
     def error_404_handler(e):
         return jsonify({"error": str(e)}), 404
-    
-    
-

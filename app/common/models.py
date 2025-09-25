@@ -2,6 +2,7 @@ from app import db
 
 from .utils import utc_now
 
+
 class BaseModel(db.Model):
     __abstract__ = True
 
@@ -17,8 +18,10 @@ class SoftDeleteMixin:
 
 
 class AppSetting(db.Model):
-    __tablename__ = 'app_settings'
-    key = db.Column(db.String(50), primary_key=True)         # Ej: 'max_overtime_per_day'
-    value = db.Column(db.String(255), nullable=False)       # Ej: '4.0'
-    name = db.Column(db.String(100), nullable=True) # <Ej: 'Horas extras máximas por trabajador'
+    __tablename__ = "app_settings"
+    key = db.Column(db.String(50), primary_key=True)  # Ej: 'max_overtime_per_day'
+    value = db.Column(db.String(255), nullable=False)  # Ej: '4.0'
+    name = db.Column(
+        db.String(100), nullable=True
+    )  # <Ej: 'Horas extras máximas por trabajador'
     description = db.Column(db.String(255), nullable=True)

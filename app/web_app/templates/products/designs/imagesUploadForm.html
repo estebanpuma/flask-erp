@@ -1,5 +1,5 @@
-<div 
-  x-data="designImageUploader({{ design_id }}, {{ product_id }})" 
+<div
+  x-data="designImageUploader({{ design_id }}, {{ product_id }})"
   x-init="loadGallery()"
   class="p-4 border rounded"
 >
@@ -9,25 +9,25 @@
       <legend class="font-semibold">Subir imágenes al Diseño {{ design_id }}</legend>
 
       <div class="mb-2">
-        <input 
-          type="file" 
-          name="images" 
-          multiple 
+        <input
+          type="file"
+          name="images"
+          multiple
           accept="image/*"
           @change="handleFiles"
         >
       </div>
       <div class="mb-4">
-        <input 
-          type="text" 
-          name="primary" 
+        <input
+          type="text"
+          name="primary"
           placeholder="Nombre de la imagen principal (opcional)"
           x-model="primary"
           class="border p-1 rounded w-full"
         >
       </div>
 
-      <button 
+      <button
         type="submit"
         class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
       >Subir</button>
@@ -41,10 +41,10 @@
 
   <!-- Galería -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-    
+
       <div class="border p-2">
-        <img 
-          :src="gallery" 
+        <img
+          :src="gallery"
           alt= 'ok'
           class="w-full h-auto mb-2"
         >
@@ -83,7 +83,7 @@ function designImageUploader(designId, productId) {
         console.log('alo')
         this.gallery = res2.url
         console.log('res2: ', this.gallery)
-        
+
       } catch (e) {
         this.error = `No se pudo cargar la galería:${e.toString()} `
         console.log(e)

@@ -67,7 +67,7 @@ function lotForm(preselectedMaterialId = null) {
 
     filterMaterials() {
         const q = this.searchQuery.toLowerCase()
-        
+
         this.filteredMaterials = this.materials.filter(m =>
             m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q)
         )
@@ -79,7 +79,7 @@ function lotForm(preselectedMaterialId = null) {
             const res = await fetch('/api/v1/suppliers');
             const data = await res.json();
             this.suppliers = data;
-            
+
         } catch (err) {
             console.error('Error al cargar proveedores', err);
         }
@@ -125,7 +125,7 @@ function lotForm(preselectedMaterialId = null) {
             this.loading = false
         }
         },
-    
-    
+
+
   }
 }

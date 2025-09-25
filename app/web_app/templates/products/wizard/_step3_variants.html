@@ -21,10 +21,10 @@
     <h6 class="mb-2">Serie seleccionada:</h6>
     <div class="d-flex flex-wrap gap-2">
         <template x-if="sizes">
-             <span class="badge bg-dark" 
+             <span class="badge bg-dark"
              x-text="'serie '+ selectedSerie.name + '[' + selectedSerie.start_size + '-' + selectedSerie.end_size + '] (' + selectedSerie.category +')'"></span>
         </template>
-      
+
     </div>
   </div>
 
@@ -36,7 +36,7 @@
           <i class="bi bi-x text-white"></i>
       </button>
     </div>
-    
+
     <ul class="list-group">
       <template x-for="variant in variants" :key="variant.size_id">
         <li class="list-group-item d-flex justify-content-between">
@@ -44,7 +44,7 @@
           <small class="text-muted" x-text="variant.size_name"></small>
         </li>
       </template>
-      
+
     </ul>
   </div>
 

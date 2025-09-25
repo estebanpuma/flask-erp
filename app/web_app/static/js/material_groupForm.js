@@ -92,4 +92,3 @@ function material_groupForm() {
     }
   }
 }
-

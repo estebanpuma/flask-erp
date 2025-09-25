@@ -1,8 +1,7 @@
-from ..common import BaseModel
-
 from app import db
 
-from datetime import date as dt
+from ..common import BaseModel
+
 
 class RDOrder(BaseModel):
     __tablename__ = "rd_orders"

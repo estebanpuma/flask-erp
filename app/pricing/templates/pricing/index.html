@@ -28,7 +28,7 @@
             {{ render_input_float(form.value) }}
             {{ form.submit(class='btn btn-dark') }}
         </form>
-        
+
     </section>
 
 
@@ -38,26 +38,26 @@
             <div class="card-header bg-primary text-white">
                 <h4 class="mb-0">⚡ Calculadora Rápida de Precios</h4>
             </div>
-            
+
             <div class="card-body">
                 <!-- Paso 1: Costo -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">💰 Costo de Producción por Unidad</label>
-                    <input type="number" step="0.01" 
-                           x-model="cost" 
+                    <input type="number" step="0.01"
+                           x-model="cost"
                            @input="calculatePricing"
                            class="form-control form-control-lg"
                            placeholder="Ej: 25.50">
                 </div>
-    
+
                 <!-- Paso 2: Márgenes -->
                 <div class="row g-4 mb-4">
                     <!-- Margen Ideal -->
                     <div class="col-md-6">
                         <label class="form-label fw-bold">🎯 Margen Bruto Ideal</label>
                         <div class="input-group">
-                            <input type="number" step="0.1" 
-                                   x-model="idealMargin" 
+                            <input type="number" step="0.1"
+                                   x-model="idealMargin"
                                    @input="calculatePricing"
                                    class="form-control"
                                    :class="{'is-valid': idealMargin >= minimumMargin}">
@@ -65,13 +65,13 @@
                         </div>
                         <small class="text-muted">Recomendado: 40-60%</small>
                     </div>
-                    
+
                     <!-- Margen Mínimo -->
                     <div class="col-md-6">
                         <label class="form-label fw-bold">⚠️ Margen Mínimo Permitido</label>
                         <div class="input-group">
-                            <input type="number" step="0.1" 
-                                   x-model="minimumMargin" 
+                            <input type="number" step="0.1"
+                                   x-model="minimumMargin"
                                    @input="calculatePricing"
                                    class="form-control"
                                    :class="{'is-invalid': minimumMargin >= idealMargin}">
@@ -80,7 +80,7 @@
                         <small class="text-muted">Mínimo recomendado: 20%</small>
                     </div>
                 </div>
-    
+
                 <!-- Paso 3: Precios Calculados -->
                 <div class="row g-4">
                     <!-- Precio Ideal -->
@@ -90,15 +90,15 @@
                                 <h5 class="card-title text-success">Precio Ideal</h5>
                                 <h2 x-text="`$${idealPrice.toFixed(2)}`"></h2>
                                 <div class="progress">
-                                    <div class="progress-bar bg-success" 
-                                         role="progressbar" 
-                                         :style="`width: ${idealMargin}%`" 
+                                    <div class="progress-bar bg-success"
+                                         role="progressbar"
+                                         :style="`width: ${idealMargin}%`"
                                          :aria-valuenow="idealMargin"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Precio Mínimo -->
                     <div class="col-md-6">
                         <div class="card border-warning">
@@ -106,28 +106,28 @@
                                 <h5 class="card-title text-warning">Precio Mínimo</h5>
                                 <h2 x-text="`$${minimumPrice.toFixed(2)}`"></h2>
                                 <div class="progress">
-                                    <div class="progress-bar bg-warning" 
-                                         role="progressbar" 
-                                         :style="`width: ${minimumMargin}%`" 
+                                    <div class="progress-bar bg-warning"
+                                         role="progressbar"
+                                         :style="`width: ${minimumMargin}%`"
                                          :aria-valuenow="minimumMargin"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-    
+
                 <!-- Campo para Descuento/Ajuste -->
                 <div class="mt-4" x-show="showDiscountField">
                     <hr>
                     <label class="form-label fw-bold">🎚️ Ajustar Precio Manualmente</label>
                     <div class="input-group">
-                        <input type="number" step="0.01" 
-                               x-model="customPrice" 
+                        <input type="number" step="0.01"
+                               x-model="customPrice"
                                @input="validateCustomPrice"
                                class="form-control"
                                :class="customPriceStatus">
-                        <button class="btn btn-outline-danger" 
-                                type="button" 
+                        <button class="btn btn-outline-danger"
+                                type="button"
                                 @click="requestOverride"
                                 :disabled="!needsOverride">
                             Solicitar Aprobación
@@ -139,7 +139,7 @@
                 </div>
             </div>
         </div>
-    
+
         <!-- Modal de Aprobación -->
         <div class="modal fade" id="approvalModal">
             <div class="modal-dialog">
@@ -148,17 +148,17 @@
                         <h5 class="modal-title">🔒 Solicitar Excepción</h5>
                     </div>
                     <div class="modal-body">
-                        <input type="password" 
-                               x-model="supervisorPassword" 
-                               class="form-control" 
+                        <input type="password"
+                               x-model="supervisorPassword"
+                               class="form-control"
                                placeholder="Contraseña de supervisor">
                     </div>
                     <div class="modal-footer">
-                        <button type="button" 
-                                class="btn btn-secondary" 
+                        <button type="button"
+                                class="btn btn-secondary"
                                 data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" 
-                                class="btn btn-primary" 
+                        <button type="button"
+                                class="btn btn-primary"
                                 @click="approveOverride">Aprobar</button>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
         function pricingCalculator() {
             return{
 
-            
+
             cost: 0,
             idealMargin: 50,
             minimumMargin: 20,
@@ -179,23 +179,23 @@
             supervisorPassword: '',
             priceWarning: false,
             overrideApproved: false,
-    
+
             get idealPrice() {
-                return this.cost > 0 
-                    ? this.cost / (1 - (this.idealMargin/100)) 
+                return this.cost > 0
+                    ? this.cost / (1 - (this.idealMargin/100))
                     : 0;
             },
-    
+
             get minimumPrice() {
-                return this.cost > 0 
-                    ? this.cost / (1 - (this.minimumMargin/100)) 
+                return this.cost > 0
+                    ? this.cost / (1 - (this.minimumMargin/100))
                     : 0;
             },
-    
+
             get showDiscountField() {
                 return this.cost > 0 && this.idealPrice > 0;
             },
-    
+
             get customPriceStatus() {
                 if (!this.customPrice) return '';
                 const currentMargin = ((this.customPrice - this.cost) / this.customPrice) * 100;
@@ -204,26 +204,26 @@
                     'is-invalid': currentMargin < this.minimumMargin
                 };
             },
-    
+
             get needsOverride() {
                 return this.customPrice < this.minimumPrice;
             },
-    
+
             calculatePricing() {
                 this.customPrice = this.idealPrice;
                 this.priceWarning = false;
             },
-    
+
             validateCustomPrice() {
                 const margin = ((this.customPrice - this.cost) / this.customPrice) * 100;
                 this.priceWarning = margin < this.minimumMargin;
             },
-    
+
             async requestOverride() {
                 const modal = new bootstrap.Modal('#approvalModal');
                 modal.show();
             },
-    
+
             async approveOverride() {
                 if (this.supervisorPassword === 'SUPER2024') { // En producción usar autenticación real
                     this.overrideApproved = true;
@@ -232,7 +232,7 @@
                     await this.savePricingException();
                 }
             },
-    
+
             async savePricingException() {
                 // Lógica para guardar la excepción en el backend
                 const exceptionData = {

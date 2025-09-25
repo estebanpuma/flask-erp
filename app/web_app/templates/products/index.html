@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
 {% from 'components/entryCard.html' import entry_card %}
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
   {% set title = 'Productos' %}
-  {% include 'components/pageHeader.html' %}
+  {{pageHeader('/production', 'Productos') }}
 
   <div class="row g-3">
 
@@ -17,4 +18,3 @@
 
   </div>
 {% endblock %}
-

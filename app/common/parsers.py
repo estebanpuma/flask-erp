@@ -1,6 +1,9 @@
 from datetime import datetime
+
+from flask import current_app
+
 from ..core.exceptions import ValidationError
-from flask import flash, current_app
+
 
 def parse_str(value, field=None, nullable=False, default=None):
     if value is None or str(value).strip().lower() in ["", "none", "nan"]:
@@ -12,7 +15,9 @@ def parse_str(value, field=None, nullable=False, default=None):
     return str(value).strip()
 
 
-def parse_int(value, field=None, nullable=False, min_value=None, max_value=None, default=None):
+def parse_int(
+    value, field=None, nullable=False, min_value=None, max_value=None, default=None
+):
     if value is None or str(value).lower() in ["none", "nan", ""]:
         if nullable:
             return None
@@ -24,16 +29,22 @@ def parse_int(value, field=None, nullable=False, min_value=None, max_value=None,
         value = int(float(value))
     except (ValueError, TypeError):
         raise ValidationError(f"El campo '{field}' debe ser un número entero.")
-    
+
     if min_value is not None and value < min_value:
-        raise ValidationError(f"El campo '{field}' debe ser mayor o igual a {min_value}.")
+        raise ValidationError(
+            f"El campo '{field}' debe ser mayor o igual a {min_value}."
+        )
     if max_value is not None and value > max_value:
-        raise ValidationError(f"El campo '{field}' debe ser menor o igual a {max_value}.")
-    
+        raise ValidationError(
+            f"El campo '{field}' debe ser menor o igual a {max_value}."
+        )
+
     return value
 
 
-def parse_float(value, field=None, nullable=False, min_value=None, max_value=None, default=None):
+def parse_float(
+    value, field=None, nullable=False, min_value=None, max_value=None, default=None
+):
     if value is None or str(value).lower() in ["none", "nan", ""]:
         if nullable:
             return None
@@ -47,10 +58,14 @@ def parse_float(value, field=None, nullable=False, min_value=None, max_value=Non
         raise ValidationError(f"El campo '{field}' debe ser un número decimal.")
 
     if min_value is not None and value < min_value:
-        raise ValidationError(f"El campo '{field}' debe ser mayor o igual a {min_value}.")
+        raise ValidationError(
+            f"El campo '{field}' debe ser mayor o igual a {min_value}."
+        )
     if max_value is not None and value > max_value:
-        raise ValidationError(f"El campo '{field}' debe ser menor o igual a {max_value}.")
-    
+        raise ValidationError(
+            f"El campo '{field}' debe ser menor o igual a {max_value}."
+        )
+
     return value
 
 
@@ -62,11 +77,13 @@ def parse_bool(value, field=None, default=None):
             return default
         raise ValidationError(f"El campo '{field}' es obligatorio.")
     value = str(value).strip().lower()
-    if value in ['true', '1', 'yes', 'y', 'si']:
+    if value in ["true", "1", "yes", "y", "si"]:
         return True
-    elif value in ['false', '0', 'no', 'n']:
+    elif value in ["false", "0", "no", "n"]:
         return False
-    raise ValidationError(f"El campo '{field}' debe ser un valor booleano válido (true/false).")
+    raise ValidationError(
+        f"El campo '{field}' debe ser un valor booleano válido (true/false)."
+    )
 
 
 def parse_enum(value, enum_class, field=None, nullable=False, default=None):
@@ -81,7 +98,9 @@ def parse_enum(value, enum_class, field=None, nullable=False, default=None):
     for member in enum_class:
         if value_str == member.name.lower() or value_str == member.value.lower():
             return member
-    raise ValidationError(f"El campo '{field}' no es válido. Opciones válidas: {[e.value for e in enum_class]}")
+    raise ValidationError(
+        f"El campo '{field}' no es válido. Opciones válidas: {[e.value for e in enum_class]}"
+    )
 
 
 def parse_date(value, field=None, nullable=False, default=None):
@@ -100,8 +119,10 @@ def parse_date(value, field=None, nullable=False, default=None):
         raise ValidationError(f"El campo '{field}' debe tener el formato YYYY-MM-DD.")
 
 
-
-def parse_phone(value, field=None,):
+def parse_phone(
+    value,
+    field=None,
+):
     val = parse_str(value)
     if val and val.endswith(".0"):
         val = val[:-2]
@@ -115,14 +136,16 @@ def parse_ruc_or_ci(value):
     return val
 
 
-def parse_ids_list(value, nullable=False, field=None, default=None, min_value=None, max_value=None):
+def parse_ids_list(
+    value, nullable=False, field=None, default=None, min_value=None, max_value=None
+):
 
-    current_app.logger.info(f'Entry point: {value} vs tyip{type(value)}')
-    
+    current_app.logger.info(f"Entry point: {value} vs tyip{type(value)}")
+
     if not isinstance(value, list) or not value:
-            current_app.logger.info(f'Eso es inside: ')
-            raise ValidationError(f"{field}. No debe ser una lista vacia")
-    
+        current_app.logger.info("Eso es inside: ")
+        raise ValidationError(f"{field}. No debe ser una lista vacia")
+
     if value is None or str(value).lower() in ["none", "nan", ""]:
         if nullable:
             return None
@@ -134,18 +157,24 @@ def parse_ids_list(value, nullable=False, field=None, default=None, min_value=No
         for val in value:
             val = int(float(val))
             if min_value is not None and val < min_value:
-                raise ValidationError(f"El campo '{field}' debe ser mayor o igual a {min_value}.")
+                raise ValidationError(
+                    f"El campo '{field}' debe ser mayor o igual a {min_value}."
+                )
             if max_value is not None and val > max_value:
-                raise ValidationError(f"El campo '{field}' debe ser menor o igual a {max_value}.")
+                raise ValidationError(
+                    f"El campo '{field}' debe ser menor o igual a {max_value}."
+                )
     except (ValueError, TypeError):
-        raise ValidationError(f"El campo '{field}' debe ser una lista de números entero.")
-    
+        raise ValidationError(
+            f"El campo '{field}' debe ser una lista de números entero."
+        )
+
     return value
 
 
 def parse_srt_list(value, field=None, nullable=False, default=None):
     if not isinstance(value, list) or not value:
-            raise ValidationError(f"{field}. No debe ser una lista vacia")
+        raise ValidationError(f"{field}. No debe ser una lista vacia")
     if value is None or str(value).strip().lower() in ["", "none", "nan"]:
         if nullable:
             return None
@@ -154,7 +183,7 @@ def parse_srt_list(value, field=None, nullable=False, default=None):
         raise ValidationError(f"El campo '{field}' es obligatorio.")
     for val in value:
         try:
-           val = str(val).strip()
-        except(ValueError, TypeError):
+            val = str(val).strip()
+        except (ValueError, TypeError):
             raise ValidationError(f"El campo '{field}' debe ser una lista de strings.")
     return value

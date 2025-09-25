@@ -1,27 +1,26 @@
 # app/entities/production_entities.py
 
 from math import ceil
-from datetime import date
+
 from .models import (
+    ProductionMaterialDetail,
+    ProductionMaterialDetailForRework,
+    ProductionMaterialSummary,
     ProductionOrder,
     ProductionOrderLine,
     ProductionRequest,
-    ProductionMaterialDetail,
-    ProductionMaterialSummary,
     ProductionRework,
-    ProductionMaterialDetailForRework
 )
-from ..products.models import ProductVariant
 
 
 class ProductionRequestEntity:
     def __init__(self, model: ProductionRequest):
         self.model = model
-    
-    def update_request(self, status:str):
+
+    def update_request(self, status: str):
         """Actualiza el estado de la solicitud"""
         self.model.status = status
-        
+
 
 class ProductionOrderEntity:
     def __init__(self, model: ProductionOrder):
@@ -31,20 +30,25 @@ class ProductionOrderEntity:
     def total_man_hours(self) -> float:
         """Suma de horas-hombre necesarias de todas las líneas."""
 
-        return sum(line_entity.estimated_man_hours() for line_entity in self.line_entities)
+        return sum(
+            line_entity.estimated_man_hours() for line_entity in self.line_entities
+        )
 
     @property
     def get_production_duration_days(self) -> int:
         """Duración estimada de la orden, en días."""
         if not self.model.workers_assigned:
             return None
-        return ceil(self.total_man_hours / (self.model.workers_assigned * (self.model.total_overtime_hours + 8)))
+        return ceil(
+            self.total_man_hours
+            / (self.model.workers_assigned * (self.model.total_overtime_hours + 8))
+        )
 
     @property
     def line_entities(self):
         """Retorna entidades de línea para acceder a su lógica."""
         return [ProductionOrderLineEntity(line) for line in self.model.lines or []]
-    
+
     @property
     def calculate_material_summary(self):
         """
@@ -61,8 +65,7 @@ class ProductionOrderEntity:
                     summary[mat_id] += qty
                 else:
                     summary[mat_id] = qty
-        return summary  
-
+        return summary
 
     def update_plan(self, workers_assigned: int, overtime_hours: float):
         """Actualiza la planificación global de la orden."""
@@ -74,13 +77,16 @@ class ProductionOrderLineEntity:
     def __init__(self, model: ProductionOrderLine):
         self.model = model
 
-    
-    def estimated_man_hours(self, standar_time:float=None) -> float:
+    def estimated_man_hours(self, standar_time: float = None) -> float:
         """Horas hombre totales para esta línea."""
         if standar_time is None:
-            standard_hour = self.model.product_variant.standar_time if self.model.product_variant else 0
+            standard_hour = (
+                self.model.product_variant.standar_time
+                if self.model.product_variant
+                else 0
+            )
             return self.model.quantity * float(standard_hour)
-        standard_hour = standar_time  
+        standard_hour = standar_time
         return self.model.quantity * standard_hour
 
     @property
@@ -89,15 +95,11 @@ class ProductionOrderLineEntity:
         if not self.model.workers_assigned:
             return None
         return ceil(self.estimated_man_hours / (self.model.workers_assigned * ()))
-    
-    
+
     def update_plan(self, workers_assigned: int, overtime_hours: float):
         """Actualiza la planificación de esta línea."""
         self.model.workers_assigned = workers_assigned
         self.model.overtime_hours = overtime_hours
-
-   
-
 
 
 class ProductionMaterialDetailEntity:
@@ -109,7 +111,7 @@ class ProductionMaterialDetailEntity:
         """
         Cantidad total considerando el porcentaje de desperdicio.
         """
-        waste_factor = (1 + (self.model.waste_percentage or 0) / 100.0)
+        waste_factor = 1 + (self.model.waste_percentage or 0) / 100.0
         return (self.model.quantity_needed or 0) * waste_factor
 
     def update_reserved(self, quantity_reserved: float):
@@ -128,21 +130,21 @@ class ProductionMaterialDetailEntity:
 class ProductionMaterialSummaryEntity:
     def __init__(self, model: ProductionMaterialSummary):
         self.model = model
-        
 
     @property
     def pending_quantity(self) -> float:
         """
         Calcula la cantidad pendiente de reservar.
         """
-        return (self.model.total_quantity_needed or 0) - (self.model.quantity_reserved or 0)
+        return (self.model.total_quantity_needed or 0) - (
+            self.model.quantity_reserved or 0
+        )
 
     def update_reserved(self, quantity_reserved: float):
         self.model.quantity_reserved = quantity_reserved
 
     def update_pending(self, quantity_pending: float):
         self.model.quantity_pending = quantity_pending
-
 
 
 class ProductionReworkEntity:
@@ -165,7 +167,10 @@ class ProductionReworkEntity:
         """
         Devuelve las entidades de materiales asociados al reproceso.
         """
-        return [ProductionMaterialDetailForReworkEntity(m) for m in self.model.rework_materials or []]
+        return [
+            ProductionMaterialDetailForReworkEntity(m)
+            for m in self.model.rework_materials or []
+        ]
 
 
 class ProductionMaterialDetailForReworkEntity:
@@ -178,4 +183,3 @@ class ProductionMaterialDetailForReworkEntity:
         Cantidad usada de material para el reproceso.
         """
         return self.model.quantity_used or 0.0
-

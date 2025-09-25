@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Recursos{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block content %}
+
+{{ pageHeader(href='/production',
+              title='Centros de trabajo',
+              has_btn=True,
+              btn_href='/production/work_stations/create',
+              btn_label='Nuevo') }}
+
+
+<div>hola</div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script  src="{{ url_for('static', filename='js/components.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+{% endblock %}

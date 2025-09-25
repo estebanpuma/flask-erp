@@ -2,12 +2,12 @@
 function materialsTable() {
     console.log("JS externo materials.js cargado correctamente");
     return {
-        
+
         materials: [],
         loading: false,
         error: null,
 
-       
+
 
 
         fetchMaterials() {
@@ -99,7 +99,7 @@ function materialForm(materialId = null) {
         if (!res.ok) throw new Error(data.message || 'Error inesperado');
 
         this.success = true;
-        
+
         this.formDisabled = true;
         console.log(data.id)
         setTimeout(() => {
@@ -178,4 +178,3 @@ function lotDetail(id) {
     }
   }
 }
-

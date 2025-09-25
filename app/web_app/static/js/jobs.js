@@ -92,7 +92,7 @@ function jobDetailPage(id) {
             console.log(data)
         }catch(e){
             console.error('Error al cargar detalle del puesto', e);
-        }   
+        }
     },
 
 
@@ -143,7 +143,7 @@ function jobEditPage(id) {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.form),
-        
+
         });
         console.log(this.form)
         const data = await res.json();
@@ -152,7 +152,7 @@ function jobEditPage(id) {
         if(res.ok){
             window.location.href = `/workers/jobs/${id}`; // redirigir al listado
         }
-        
+
       } catch (err) {
         console.error('Error al enviar', err);
         this.success = false;

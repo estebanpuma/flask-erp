@@ -1,33 +1,40 @@
 # services/supplier_service.py
 from app import db
-from .models import Supplier
+
+from ..core.exceptions import ConflictError, NotFoundError
 from .dto import SupplierCreateDTO, SupplierUpdateDTO
-from ..core.exceptions import NotFoundError, ValidationError, ConflictError
+from .models import Supplier
 
 
 class SupplierService:
     @staticmethod
-    def create_obj(data:dict)->Supplier:
+    def create_obj(data: dict) -> Supplier:
         with db.session.begin():
             dto = SupplierCreateDTO(**data)
-            supplier = SupplierService.create_supplier(name=dto.name,
-                                                       ruc_or_ci=dto.ruc_or_ci,
-                                                       phone=dto.phone,
-                                                       email=dto.email,
-                                                       address=dto.address)
+            supplier = SupplierService.create_supplier(
+                name=dto.name,
+                ruc_or_ci=dto.ruc_or_ci,
+                phone=dto.phone,
+                email=dto.email,
+                address=dto.address,
+            )
             return supplier
 
     @staticmethod
-    def create_supplier(name:str, ruc_or_ci:str, phone:str=None, email:str=None, address:str=None ) -> Supplier:
-        supplier = Supplier.query.filter(Supplier.ruc_or_ci==ruc_or_ci).first()
+    def create_supplier(
+        name: str,
+        ruc_or_ci: str,
+        phone: str = None,
+        email: str = None,
+        address: str = None,
+    ) -> Supplier:
+        supplier = Supplier.query.filter(Supplier.ruc_or_ci == ruc_or_ci).first()
         if supplier:
-            raise ConflictError(f'Ya existe un proveedor registrado con el RUC:{str(ruc_or_ci)}')
+            raise ConflictError(
+                f"Ya existe un proveedor registrado con el RUC:{str(ruc_or_ci)}"
+            )
         supplier = Supplier(
-            name=name,
-            ruc_or_ci=ruc_or_ci,
-            phone=phone,
-            email=email,
-            address=address
+            name=name, ruc_or_ci=ruc_or_ci, phone=phone, email=email, address=address
         )
         db.session.add(supplier)
         return supplier
@@ -43,17 +50,16 @@ class SupplierService:
     def get_obj_list(filters: dict = None):
         query = db.session.query(Supplier)
         if filters:
-            if 'name' in filters:
+            if "name" in filters:
                 query = query.filter(Supplier.name.ilike(f"%{filters['name']}%"))
-            if 'ruc_or_ci' in filters:
-                query = query.filter(Supplier.ruc_or_ci == filters['ruc_or_ci'])
+            if "ruc_or_ci" in filters:
+                query = query.filter(Supplier.ruc_or_ci == filters["ruc_or_ci"])
         return query.all()
 
-
     @staticmethod
-    def patch_obj(supplier:Supplier, data:dict) -> Supplier:
+    def patch_obj(supplier: Supplier, data: dict) -> Supplier:
         dto = SupplierUpdateDTO(**data)
-        
+
         if dto.phone is not None:
             supplier.phone = dto.phone.strip()
         if dto.email is not None:
@@ -63,8 +69,6 @@ class SupplierService:
         try:
             db.session.commit()
             return supplier
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             raise
-
-

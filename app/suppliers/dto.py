@@ -1,6 +1,7 @@
 # dto/supplier_dto.py
-from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class SupplierCreateDTO(BaseModel):
@@ -10,10 +11,10 @@ class SupplierCreateDTO(BaseModel):
     email: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
     address: Optional[str] = Field(None, max_length=200, strip_whitespace=True)
 
-    @field_validator('ruc_or_ci')
+    @field_validator("ruc_or_ci")
     def validate_ruc_or_ci_length(cls, v: str) -> str:
         if len(v) not in {10, 13}:
-            raise ValueError('ruc_or_ci debe tener exactamente 10 o 13 caracteres')
+            raise ValueError("ruc_or_ci debe tener exactamente 10 o 13 caracteres")
         return v
 
 
@@ -21,5 +22,3 @@ class SupplierUpdateDTO(BaseModel):
     phone: Optional[str] = Field(None, max_length=20, strip_whitespace=True)
     email: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
     address: Optional[str] = Field(None, max_length=200, strip_whitespace=True)
-
-    

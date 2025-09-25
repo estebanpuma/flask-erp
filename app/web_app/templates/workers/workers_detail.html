@@ -12,9 +12,9 @@
     <div
       x-data="genericDetail(
         '/api/v1/workers/{{worker_id }}',
-        
+
           [
-            
+
              { field: 'ci',        label: 'CI'},
             { field: 'first_name',  label: 'Nombre' },
             { field: 'last_name',  label: 'Apellido'},
@@ -26,11 +26,11 @@
           ],
 
           '🙋'
-        
+
       )"
     >
     {% include "components/detailCard.html" %}
-    
+
     <!-- Mensaje de error -->
     <template x-if="error">
       <div class="alert alert-danger" x-text="error"></div>
@@ -39,7 +39,7 @@
   </div>
 
 
-  
+
 
 </div>
 {% endblock %}

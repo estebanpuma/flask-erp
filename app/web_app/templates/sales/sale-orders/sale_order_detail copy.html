@@ -32,7 +32,7 @@
     <div
       x-data="genericDetail(
         '/api/v1/sale-orders/{{ order_id }}',
-        
+
           [
             { field:'order_number',        label:'N.Orden' },
             { field:'client.name',        label:'Cliente' },
@@ -44,7 +44,7 @@
           ],
 
           '👟'
-        
+
       )"
     >
     <div class="d-flex gap-2 mt-3">
@@ -54,7 +54,7 @@
                   @click="changeStatus('Rechazada')">Rechazar</button>
         </div>
     {% include "components/detailCard.html" %}
-    
+
     <!-- Mensaje de error -->
     <template x-if="error">
       <div class="alert alert-danger" x-text="error"></div>
@@ -74,7 +74,7 @@
             { field: 'variant.size.value',  label: 'Talla',      filterable: true  },
             { field: 'quantity',   label: 'Cantidad',      filterable: true  },
             { field: 'subtotal',   label: 'Subtotal',      filterable: true  },
-            
+
           ]
         )"
         class="table-responsive"
@@ -83,7 +83,7 @@
     </div>
   </div>
 
- 
+
 
 </div>
 {% endblock %}

@@ -1,48 +1,57 @@
-
+from flask import Blueprint
 from flask_restful import Api
 
-from flask import Blueprint
+from .resources import (
+    CantonGetResource,
+    CantonPatchResource,
+    ClientBulkUploadResource,
+    ClientCategoryDeleteResource,
+    ClientCategoryGetResource,
+    ClientCategoryPatchResource,
+    ClientCategoryPostResource,
+    ClientCreateResource,
+    ClientDeleteResource,
+    ClientGetResource,
+    ClientPatchResource,
+    ClientSearchResource,
+    ContactDeleteResource,
+    ContactGetResource,
+    ContactPatchResource,
+    ContactPostResource,
+    ProvinceGetResource,
+    ProvincePatchResource,
+)
 
-
-from .resources import (ClientGetResource, 
-                        ClientCreateResource, 
-                        ClientPatchResource, 
-                        ClientDeleteResource, 
-                        ClientBulkUploadResource,
-                        ClientSearchResource,
-                        )
-from .resources import ClientCategoryDeleteResource, ClientCategoryGetResource, ClientCategoryPatchResource, ClientCategoryPostResource
-from .resources import CantonGetResource, CantonPatchResource, ProvinceGetResource, ProvincePatchResource
-from .resources import ContactDeleteResource, ContactGetResource, ContactPatchResource, ContactPostResource
-
-crm_api_bp = Blueprint('crm_api', __name__, url_prefix='/api/v1')
+crm_api_bp = Blueprint("crm_api", __name__, url_prefix="/api/v1")
 
 crm_api = Api(crm_api_bp)
 
 
-#************************CLients*************************************************
-crm_api.add_resource(ClientCreateResource, '/clients')
-crm_api.add_resource(ClientGetResource, '/clients', '/clients/<int:resource_id>')
-crm_api.add_resource(ClientPatchResource, '/clients/<int:resource_id>')
-crm_api.add_resource(ClientDeleteResource, '/clients/<int:resource_id>')
+# ************************CLients*************************************************
+crm_api.add_resource(ClientCreateResource, "/clients")
+crm_api.add_resource(ClientGetResource, "/clients", "/clients/<int:resource_id>")
+crm_api.add_resource(ClientPatchResource, "/clients/<int:resource_id>")
+crm_api.add_resource(ClientDeleteResource, "/clients/<int:resource_id>")
 
-crm_api.add_resource(ClientSearchResource, '/clients/search')
+crm_api.add_resource(ClientSearchResource, "/clients/search")
 
-#bulkupload
-crm_api.add_resource(ClientBulkUploadResource, '/clients/upload-excel')
+# bulkupload
+crm_api.add_resource(ClientBulkUploadResource, "/clients/upload-excel")
 
 
-#********************************CLientsCategory*************************************
-#////******************************************************************************
+# ********************************CLientsCategory*************************************
+# ////******************************************************************************
 
-crm_api.add_resource(ClientCategoryGetResource, "/client-category", "/client-category/<int:resource_id>")
+crm_api.add_resource(
+    ClientCategoryGetResource, "/client-category", "/client-category/<int:resource_id>"
+)
 crm_api.add_resource(ClientCategoryPostResource, "/client-category")
 crm_api.add_resource(ClientCategoryPatchResource, "/client-category/<int:resource_id>")
 crm_api.add_resource(ClientCategoryDeleteResource, "/client-category/<int:resource_id>")
 
 
-#/*********************************Location***********************************
-#*******************************************************************************
+# /*********************************Location***********************************
+# *******************************************************************************
 
 
 crm_api.add_resource(CantonGetResource, "/cantons", "/cantons/<int:resource_id>")
@@ -52,8 +61,8 @@ crm_api.add_resource(ProvinceGetResource, "/provinces", "/provinces/<int:resourc
 crm_api.add_resource(ProvincePatchResource, "/provinces/<int:resource_id>")
 
 
-#*********************************COntacts*************************************
-#************************************************************************************
+# *********************************COntacts*************************************
+# ************************************************************************************
 
 crm_api.add_resource(ContactGetResource, "/contacts", "/contacts/<int:resource_id>")
 crm_api.add_resource(ContactPostResource, "/contacts")

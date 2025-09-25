@@ -1,59 +1,58 @@
-from flask_restful import reqparse, fields
+from flask_restful import fields
 
 canton_fields = {
-    'id':fields.Integer,
-    'name':fields.String,
-    'population':fields.Integer,
-    'province_id':fields.Integer,
+    "id": fields.Integer,
+    "name": fields.String,
+    "population": fields.Integer,
+    "province_id": fields.Integer,
 }
 
 province_fields = {
-    'id':fields.Integer,
-    'name':fields.String,
-    'population':fields.Integer,
-    'cantons':fields.Nested(canton_fields)
+    "id": fields.Integer,
+    "name": fields.String,
+    "population": fields.Integer,
+    "cantons": fields.Nested(canton_fields),
 }
 
 province_name_fields = {
-    'id':fields.Integer,
-    'name':fields.String,
-    'population':fields.Integer,
+    "id": fields.Integer,
+    "name": fields.String,
+    "population": fields.Integer,
 }
 
 client_category_fields = {
-    'id': fields.Integer,
-    'name': fields.String,
-    'description': fields.String,
+    "id": fields.Integer,
+    "name": fields.String,
+    "description": fields.String,
 }
 # Define los campos que serán serializados
 client_fields = {
-    'id': fields.Integer,
-    'ruc_or_ci': fields.String,
-    'name': fields.String,
-    'email': fields.String,
-    'client_type': fields.String,
-    'address': fields.String,
-    'phone': fields.String,
-    'is_special_taxpayer':fields.Boolean,
-    'province': fields.Nested(province_name_fields),
-    'canton':fields.Nested(canton_fields),
-    'province_id': fields.Integer,
-    'canton_id': fields.Integer,
-
+    "id": fields.Integer,
+    "ruc_or_ci": fields.String,
+    "name": fields.String,
+    "email": fields.String,
+    "client_type": fields.String,
+    "address": fields.String,
+    "phone": fields.String,
+    "is_special_taxpayer": fields.Boolean,
+    "province": fields.Nested(province_name_fields),
+    "canton": fields.Nested(canton_fields),
+    "province_id": fields.Integer,
+    "canton_id": fields.Integer,
 }
 
 client_search_fields = {
-    'id': fields.Integer,
-    'ruc_or_ci': fields.String,
-    'name': fields.String,
-    'email': fields.String,
-    'client_category': fields.String,
-    'address': fields.String,
-    'phone': fields.String,
-    'is_special_taxpayer':fields.Boolean,
-    'province_name': fields.String,
-    'province_id': fields.Integer,
-    'canton_id': fields.Integer,
+    "id": fields.Integer,
+    "ruc_or_ci": fields.String,
+    "name": fields.String,
+    "email": fields.String,
+    "client_category": fields.String,
+    "address": fields.String,
+    "phone": fields.String,
+    "is_special_taxpayer": fields.Boolean,
+    "province_name": fields.String,
+    "province_id": fields.Integer,
+    "canton_id": fields.Integer,
 }
 
 contact_fields = {
@@ -64,6 +63,5 @@ contact_fields = {
     "position": fields.String,
     "notes": fields.String,
     "birth_date": fields.String,
-    "client_id": fields.Integer
+    "client_id": fields.Integer,
 }
-

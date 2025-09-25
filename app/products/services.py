@@ -1,59 +1,79 @@
-from app import db
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload, aliased
 from flask import current_app
-from .models import Product, ProductLine, ProductSubLine, ProductVariant, ProductVariantMaterialDetail
-from .models import Color, SizeSeries, Size, ProductDesign, ProductCollection, ProductTarget
-from .entities import ProductEntity, ProductDesignEntity, ProductVariantEntity, PatchProductEntity, ProductVariantMaterialEntity
-from .services_size_series import SizeSeriesService, SizeService
-from ..core.exceptions import *
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 
+from app import db
+
+from ..common.services import CollectionCodeGenerator, ProductCodeGenerator
+from ..core.exceptions import ConflictError, NotFoundError, ValidationError
 from ..core.filters import apply_filters
 from ..core.utils import FileUploader
-from ..common.services import ProductCodeGenerator, CollectionCodeGenerator
+from .dto_lines import (
+    CollectionCreateDTO,
+    CollectionUpdateDTO,
+    LineCreateDTO,
+    LineUpdateDTO,
+    SublineCreateDTO,
+    SublineUpdateDTO,
+)
+from .dto_products import ProductCreateDTO, ProductDesignCreateDTO
+from .entities import (
+    PatchProductEntity,
+    ProductVariantEntity,
+    ProductVariantMaterialEntity,
+)
+from .models import (
+    Color,
+    Last,
+    LastType,
+    Product,
+    ProductCollection,
+    ProductDesign,
+    ProductLine,
+    ProductSubLine,
+    ProductTarget,
+    ProductVariant,
+    ProductVariantMaterialDetail,
+    Size,
+    SizeSeries,
+)
 
-from .dto_lines import LineCreateDTO, SublineCreateDTO, LineUpdateDTO, SublineUpdateDTO, CollectionUpdateDTO, CollectionCreateDTO
-import os
-
-from .dto_products import ProductCreateDTO, ProductDesignCreateDTO, ProductVariantCreateDTO, ProductVariantMaterialCreateDTO
-
-import pandas as pd
 
 class ProductService:
 
     @staticmethod
-    def create_obj(data:dict):
-        
+    def create_obj(data: dict):
+
         with db.session.begin():
             dto = ProductCreateDTO(data)
-            product = ProductService.create_product(target_id=dto.target_id,
-                                                    collection_id=dto.collection_id,
-                                                    name=dto.name,
-                                                    description=dto.description,
-                                                    line_id=dto.line_id,
-                                                    subline_id= dto.subline_id,
-                                                    designs=dto.designs,
-                                                    materials=dto.materials,
-                                                    variants=dto.variants
-                                                    )
+            product = ProductService.create_product(
+                target_id=dto.target_id,
+                collection_id=dto.collection_id,
+                name=dto.name,
+                description=dto.description,
+                line_id=dto.line_id,
+                subline_id=dto.subline_id,
+                designs=dto.designs,
+                materials=dto.materials,
+                variants=dto.variants,
+            )
             return product
-        
 
     @staticmethod
-    def create_product( 
-                       name:str, 
-                       designs:list, 
-                       variants:list,
-                         materials:list, 
-                         line_id:int, 
-                         target_id:int, 
-                         collection_id:int, 
-                         subline_id:int=None, 
-                         description:str=None) -> Product:
+    def create_product(
+        name: str,
+        designs: list,
+        variants: list,
+        materials: list,
+        line_id: int,
+        target_id: int,
+        collection_id: int,
+        subline_id: int = None,
+        description: str = None,
+    ) -> Product:
         """Crea un nuevo producto (opcionalmente con un diseño)."""
-        from ..common.services import ProductCodeGenerator
 
-        #validaciones
+        # validaciones
         line = LineService.get_obj(line_id)
         subline = None
         if subline_id is not None:
@@ -61,96 +81,100 @@ class ProductService:
         target = TargetService.get_obj(target_id)
         collection = CollectionService.get_obj(collection_id)
 
-        code = ProductCodeGenerator.get_next_model_code(linea=line,
-                                                          sublinea=subline,
-                                                          tipo=target,
-                                                          coleccion=collection)
-        
+        code = ProductCodeGenerator.get_next_model_code(
+            linea=line, sublinea=subline, tipo=target, coleccion=collection
+        )
 
-        product = Product(code=code,
-                          name=name,
-                          line_id=line_id,
-                          subline_id=subline_id,
-                          target_id=target_id,
-                          collection_id=collection_id,
-                          description=description)
+        product = Product(
+            code=code,
+            name=name,
+            line_id=line_id,
+            subline_id=subline_id,
+            target_id=target_id,
+            collection_id=collection_id,
+            description=description,
+        )
         db.session.add(product)
         db.session.flush()  # Para obtener el ID
 
-        
-        current_app.logger.info(f' pos 0:{designs[0]}')
+        current_app.logger.info(f" pos 0:{designs[0]}")
         # Si se proporcionan diseños, los crea Actualmente solo uno
         designs_data = []
         designs_data.append(designs[0])
 
         if designs_data:
             new_designs = DesignService.bulk_create_designs(product.id, designs_data)
-        
+
         if variants:
             # Crear variantes para TODOS los diseños___ Atuamente solo uno
-            
+
             variants = VariantService.bulk_create_variants(
                 design_id=new_designs[0].id,
                 design_code=new_designs[0].code,
-                series_ids=variants[0].series_ids, 
+                series_ids=variants[0].series_ids,
                 materials=materials,
             )
-
 
         return product
 
     @staticmethod
     def get_obj_list(filters=None):
         from .models import Product
+
         return apply_filters(Product, filters)
-    
+
     @staticmethod
     def get_obj(product_id):
-        product = db.session.query(Product).options(joinedload(Product.designs)).get(product_id)
+        product = (
+            db.session.query(Product)
+            .options(joinedload(Product.designs))
+            .get(product_id)
+        )
         if not product:
-            raise NotFoundError('Recurso no encontrado')
+            raise NotFoundError("Recurso no encontrado")
         return product
 
     @staticmethod
-    def patch_obj(instance:Product, data:dict):
+    def patch_obj(instance: Product, data: dict):
         """Actualiza el producto"""
 
-        if 'line_id' in data:
-            line = LineService.get_line(data['line_id'])
+        if "line_id" in data:
+            line = LineService.get_line(data["line_id"])
             if line is None:
-                raise ValidationError('No existe liena con esa id')
-        if 'sub_line_id' in data:
-            subline = SublineService.get_subline(data['sub_line_id'])
+                raise ValidationError("No existe liena con esa id")
+        if "sub_line_id" in data:
+            subline = SublineService.get_subline(data["sub_line_id"])
             if subline is None:
-                raise ValidationError('N exise sublina con esa id')
+                raise ValidationError("N exise sublina con esa id")
 
         updated_product = PatchProductEntity(data).apply_changes(instance)
         try:
             db.session.commit()
             return updated_product
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            current_app.logger.warning('No se puedo actualizar el producto')
+            current_app.logger.warning("No se puedo actualizar el producto")
             raise
-    
+
     @staticmethod
     def delete_obj(instance):
         if not instance:
-            raise NotFoundError('No se encontro el producto para borrar')
+            raise NotFoundError("No se encontro el producto para borrar")
         try:
             db.session.delete(instance)
             db.session.commit()
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            current_app.logger.warning(f'Error al borrar producto')
+            current_app.logger.warning("Error al borrar producto")
             raise
 
     @staticmethod
-    def preview_new_code(line_id:int, target_id:int, collection_id:int, subline_id:int=None):
-        from ..common.services import ProductCodeGenerator
+    def preview_new_code(
+        line_id: int, target_id: int, collection_id: int, subline_id: int = None
+    ):
 
-        #validaciones
+        # validaciones
         line = LineService.get_obj(line_id)
         subline = None
         if subline_id is not None:
@@ -158,11 +182,11 @@ class ProductService:
         target = TargetService.get_obj(target_id)
         collection = CollectionService.get_obj(collection_id)
 
-        code = ProductCodeGenerator.preview_model_code(linea=line,
-                                                          sublinea=subline,
-                                                          tipo=target,
-                                                          coleccion=collection)
+        code = ProductCodeGenerator.preview_model_code(
+            linea=line, sublinea=subline, tipo=target, coleccion=collection
+        )
         return code
+
 
 class DesignService:
 
@@ -170,79 +194,80 @@ class DesignService:
     def get_obj(id):
         design = ProductDesign.query.get(id)
         if not design:
-            raise NotFoundError('No se encontro el diseno')
+            raise NotFoundError("No se encontro el diseno")
         return design
-    
+
     @staticmethod
     def get_obj_list(filters=None):
         return apply_filters(ProductDesign, filters)
-    
+
     @staticmethod
-    def patch_obj(instance:ProductDesign, data:dict)->ProductDesign:
-        EDITABLE_FIELDS = {'description', 'name'}
+    def patch_obj(instance: ProductDesign, data: dict) -> ProductDesign:
+        EDITABLE_FIELDS = {"description", "name"}
         invalid_fields = set(data.keys()) - EDITABLE_FIELDS
         if invalid_fields:
             raise ValidationError(f"Campos no editables: {invalid_fields}")
-        if 'description' in data:
-            instance.description = str(data['description'])
-        if 'name' in data:
-            instance.name = str(data['name'])
-        try:   
+        if "description" in data:
+            instance.description = str(data["description"])
+        if "name" in data:
+            instance.name = str(data["name"])
+        try:
             db.session.commit()
             return instance
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            current_app.logger.warning('Error al actualizar')
-        
-            
-        
+            current_app.logger.warning("Error al actualizar")
+
     @staticmethod
-    def delete_obj(instance:ProductDesign):
+    def delete_obj(instance: ProductDesign):
         try:
             db.session.delete(instance)
             db.session.commit()
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
-            current_app.logger.warning('Error al borrar el diseno')
+            current_app.logger.warning("Error al borrar el diseno")
             raise
 
     @staticmethod
-    def create_obj(data:dict):
+    def create_obj(data: dict):
         """Crea un diseño con sus variantes y materiales."""
-        current_app.logger.info(f'dara:{data}')
+        current_app.logger.info(f"dara:{data}")
         with db.session.begin():
             dto = ProductDesignCreateDTO(data)
-            design = DesignService.create_design(product_id=dto.product_id,
-                                                 color_ids=dto.color_ids,
-                                                 #series_ids=dto.series_ids,
-                                                 name=dto.name,
-                                                 description=dto.description,
-                                                 variants=dto.variants,
-                                                 materials=dto.materials)
+            design = DesignService.create_design(
+                product_id=dto.product_id,
+                color_ids=dto.color_ids,
+                # series_ids=dto.series_ids,
+                name=dto.name,
+                description=dto.description,
+                variants=dto.variants,
+                materials=dto.materials,
+            )
             return design
-        
+
     @staticmethod
-    def create_design(product_id:int,
-                       color_ids:list[int],
-                       #series_ids:list[int],
-                       variants:list,
-                       materials:list,
-                       name:str=None, 
-                       description:str=None,
-                       ) -> ProductDesign:
+    def create_design(
+        product_id: int,
+        color_ids: list[int],
+        # series_ids:list[int],
+        variants: list,
+        materials: list,
+        name: str = None,
+        description: str = None,
+    ) -> ProductDesign:
         """Funcion para crear un diseño con sus variantes y materiales."""
 
         product = Product.query.get(product_id)
         if not product:
-            raise ValidationError(f'No existe el producto con id: {product_id}')
-        
+            raise ValidationError(f"No existe el producto con id: {product_id}")
+
         color_ids = color_ids
         colors = []
         for color_id in color_ids:
             color = Color.query.get(color_id)
             if not color:
-                raise ValidationError(f'No existe el color con id: {str(color_id)}')
+                raise ValidationError(f"No existe el color con id: {str(color_id)}")
             colors.append(color)
 
         colors_codes = [c.code.upper() for c in colors]
@@ -250,17 +275,14 @@ class DesignService:
         c_code = f"{product.code}{str(color_part)}"
         # Genera el diseño
         design = ProductDesign(
-            product_id = product_id,
-            name = name,
-            description = description,
-            code = c_code            
+            product_id=product_id, name=name, description=description, code=c_code
         )
 
         db.session.add(design)
-        print(f'hasta aqui los designs: {design}')
+        print(f"hasta aqui los designs: {design}")
         design.colors.extend(colors)
         db.session.flush()
-        
+
         # Crea variantes para cada serie/talla
         VariantService.bulk_create_variants(
             design_id=design.id,
@@ -272,12 +294,12 @@ class DesignService:
         from .pricing_service import PricingService
 
         PricingService(db.session).calculate_price(
-                    design_id       = design.id,
-                    override_markup_pct = None,
-                    include_tax     = False,
-                    force_recalc    = True
-                )
-     
+            design_id=design.id,
+            override_markup_pct=None,
+            include_tax=False,
+            force_recalc=True,
+        )
+
         return design
 
     @staticmethod
@@ -291,8 +313,7 @@ class DesignService:
             raise ValidationError(f"Producto {product_id} no existe (at bulk)")
 
         designs = []
-        designs_and_materials = []
-  
+
         for design_data in designs_data:
             # Validar colores
             color_ids = design_data.color_ids
@@ -304,96 +325,100 @@ class DesignService:
             color_part = "".join(colors_codes)
             c_code = f"{product.code}{str(color_part)}"
 
-            print(f'Colores en buldesing; {colors}')
+            print(f"Colores en buldesing; {colors}")
             # Crear diseño (sin commit)
             design = ProductDesign(
-                product_id = product_id,
-                code = c_code,
+                product_id=product_id,
+                code=c_code,
             )
-            print(f'desig en bulk desig : {design}')
+            print(f"desig en bulk desig : {design}")
             design.colors.extend(colors)
-            current_app.logger.info(f'design.colors: {design.colors}')
+            current_app.logger.info(f"design.colors: {design.colors}")
             designs.append(design)
 
-            #designs_and_materials.append({'design':design, 'materials':design_data.materials, "series_ids": design_data["series_ids"]})
-        
+            # designs_and_materials.append({'design':design, 'materials':design_data.materials, "series_ids": design_data["series_ids"]})
+
         db.session.add_all(designs)
 
         # Flush para obtener IDs de diseños
         db.session.flush()
 
-        
-
-        
         return designs
 
-    
+
 class VariantService:
 
     @staticmethod
     def create_obj(data):
-        return str('No se puede crear variantes individuales por el momento')
-    
-    @staticmethod
-    def create_variants_obj(data):
-        
-        try:
-            with db.session.begin():
-                variants = VariantService.add_new_series_to_design(design_id=data['design_id'], 
-                                                            series_ids=data['series_ids'], 
-                                                            materials=data['materials'] )
-                return variants
-        except Exception as e:
-            current_app.logger.warning(f'Error al crear nuevas variantes. e{e}')
-            raise e
-                
-        
+        return str("No se puede crear variantes individuales por el momento")
 
     @staticmethod
-    def bulk_create_variants(design_id: int, design_code: str, series_ids: list, materials: list):
+    def create_variants_obj(data):
+
+        try:
+            with db.session.begin():
+                variants = VariantService.add_new_series_to_design(
+                    design_id=data["design_id"],
+                    series_ids=data["series_ids"],
+                    materials=data["materials"],
+                )
+                return variants
+        except Exception as e:
+            current_app.logger.warning(f"Error al crear nuevas variantes. e{e}")
+            raise e
+
+    @staticmethod
+    def bulk_create_variants(
+        design_id: int, design_code: str, series_ids: list, materials: list
+    ):
         """Crea todas las variantes para un diseño con sus materiales."""
         # Validación temprana de series (mejor performance)
         series = SizeSeries.query.filter(SizeSeries.id.in_(series_ids)).all()
         if len(series) != len(series_ids):
             missing_ids = set(series_ids) - {s.id for s in series}
-            raise ValidationError(f'Series no encontradas: {missing_ids}')
+            raise ValidationError(f"Series no encontradas: {missing_ids}")
 
         variants = []
-        
+
         # Creación de todas las variantes primero
         for serie in series:
             serie_materials = materials  # Materiales compartidos para
-            
+
             for size in serie.sizes:
-                variant = ProductVariantEntity({
-                    "design_id": design_id,
-                    "size_id": size.id,
-                    "design_code": design_code,
-                    "size_value": size.value,
-                    "materials": serie_materials
-                }).to_model()
-                
+                variant = ProductVariantEntity(
+                    {
+                        "design_id": design_id,
+                        "size_id": size.id,
+                        "design_code": design_code,
+                        "size_value": size.value,
+                        "materials": serie_materials,
+                    }
+                ).to_model()
+
                 db.session.add(variant)
                 variants.append(variant)
-                
+
                 # Asignar materiales específicos de la serie
-                #no hago flush porque ya tengo la relacion SQLALchemy
-                #no incluyo variant_id porque la relacion lo hace por mi
+                # no hago flush porque ya tengo la relacion SQLALchemy
+                # no incluyo variant_id porque la relacion lo hace por mi
                 for mat in serie_materials:
-                    variant.materials.append(ProductVariantMaterialDetail(
-                        material_id=mat.material_id,
-                        quantity=mat.quantity,
-                    ))
+                    variant.materials.append(
+                        ProductVariantMaterialDetail(
+                            material_id=mat.material_id,
+                            quantity=mat.quantity,
+                        )
+                    )
 
         return variants
-           
 
     @staticmethod
-    def add_new_series_to_design(design_id: int, series_ids: list, materials: list) -> list[ProductVariant]:
+    def add_new_series_to_design(
+        design_id: int, series_ids: list, materials: list
+    ) -> list[ProductVariant]:
         """Añade nuevas variantes a un diseño existente."""
         design = ProductDesign.query.get(design_id)
         if not design:
-            raise ValidationError('No existe un diseno con el id indicado')
+            raise ValidationError("No existe un diseno con el id indicado")
         return VariantService.bulk_create_variants(
             design_id=design.id,
             design_code=design.code,
@@ -407,17 +432,16 @@ class VariantService:
         if not variant:
             raise NotFoundError("Variante no encontrada.")
         return variant
-    
+
     @staticmethod
     def get_obj_list(filters=None):
-        
+
         return apply_filters(ProductVariant, filters)
 
     @staticmethod
     def get_obj_list_by_product(product_id):
         return ProductVariant.query.filter_by(product_id=product_id).all()
 
-   
     @staticmethod
     def patch_obj(instance, data):
         if "barcode" in data:
@@ -427,7 +451,7 @@ class VariantService:
 
         try:
             db.session.commit()
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             raise
         except IntegrityError:
@@ -454,55 +478,58 @@ class ProductVariantMaterialService:
     @staticmethod
     def get_obj_list(filters=None):
         return apply_filters(ProductVariantMaterialDetail, filters)
-    
+
     @staticmethod
     def get_obj_list_by_variant(variant_id):
-        materials = ProductVariantMaterialDetail.query.filter(ProductVariantMaterialDetail.variant_id == variant_id).all()
+        materials = ProductVariantMaterialDetail.query.filter(
+            ProductVariantMaterialDetail.variant_id == variant_id
+        ).all()
         return materials
-    
+
     @staticmethod
     def create_obj(data):
         with db.session.begin():
-            created_materials = ProductVariantMaterialService.create_variant_material(data)
+            created_materials = ProductVariantMaterialService.create_variant_material(
+                data
+            )
             return created_materials
 
     @staticmethod
     def create_variant_material(data):
         """
-    Crea objetos ProductVariantMaterialDetail para un variant_id dado.
-    No hace commit, solo añade a la sesión.
-    """       
+        Crea objetos ProductVariantMaterialDetail para un variant_id dado.
+        No hace commit, solo añade a la sesión.
+        """
         ProductVariantMaterialService._check_foreign_keys(data)
 
         new_variant_materials = []
 
-        for material in data['materials']:
-            
+        for material in data["materials"]:
+
             obj = ProductVariantMaterialEntity(
                 {
-                    'variant_id':data['variant_id'],
-                    'material_id': material['material_id'],
-                    'quantity': material['quantity']
+                    "variant_id": data["variant_id"],
+                    "material_id": material["material_id"],
+                    "quantity": material["quantity"],
                 }
             ).to_model()
             new_variant_materials.append(obj)
 
         db.session.add_all(new_variant_materials)
         return new_variant_materials
-        
 
     @staticmethod
-    def patch_obj(instance, data:dict):
-        EDITABLE_FIELDS = {'quantity'}
+    def patch_obj(instance, data: dict):
+        EDITABLE_FIELDS = {"quantity"}
         invalid_fields = set(data.keys()) - EDITABLE_FIELDS
         if invalid_fields:
             raise ValidationError(f"Campos no editables: {invalid_fields}")
-        
+
         if "quantity" in data:
-            if data['quantity']>0:
+            if data["quantity"] > 0:
                 instance.quantity = data["quantity"]
             else:
-                raise ValidationError('La cantidad debe ser mayor a 0')
+                raise ValidationError("La cantidad debe ser mayor a 0")
 
         db.session.commit()
         return instance
@@ -515,30 +542,30 @@ class ProductVariantMaterialService:
         db.session.delete(obj)
         db.session.commit()
         return True
-    
+
     @staticmethod
     def _check_foreign_keys(data):
-        from ..materials.models import Material
+
         if not ProductVariant.query.get(data["variant_id"]):
             raise ValidationError("La variante no existe.")
-        
+
 
 class ProductVariantImageService:
 
     @staticmethod
     def get_images_by_variant(variant_id):
         pass
-       # return ProductVariantImage.query.filter_by(variant_id=variant_id).all()
-    
+
+    # return ProductVariantImage.query.filter_by(variant_id=variant_id).all()
+
     @staticmethod
     def delete_image(image_id):
         pass
-        #image = ProductVariantImage.query.get(image_id)
-        #if not image:
+        # image = ProductVariantImage.query.get(image_id)
+        # if not image:
         #    raise NotFoundError("Imagen no encontrada.")
 
         # Eliminar archivo físico (opcional)
-   
 
     @staticmethod
     def create_image(variant_id, file):
@@ -548,17 +575,15 @@ class ProductVariantImageService:
 
         # Subir imagen usando el servicio genérico
         try:
-            public_path = FileUploader.save_file(
-                file=file,
-                subfolder='products',
-                entity_id=variant_id
+            FileUploader.save_file(
+                file=file, subfolder="products", entity_id=variant_id
             )
         except ValueError as e:
             raise ValidationError(str(e))
 
         # Registrar en base de datos
         image = None
-        
+
         db.session.add(image)
         db.session.commit()
         return image
@@ -569,40 +594,38 @@ class LineService:
     @staticmethod
     def get_obj_list(filters=None):
         return apply_filters(ProductLine, filters)
-    
+
     @staticmethod
     def get_obj(line_id):
         line = ProductLine.query.get(line_id)
         if not line:
-            raise NotFoundError(f'No existe una linea con ID:{line_id}')
+            raise NotFoundError(f"No existe una linea con ID:{line_id}")
         return line
-    
+
     @staticmethod
-    def create_obj(data:dict)->ProductLine:
+    def create_obj(data: dict) -> ProductLine:
         with db.session.begin():
             dto = LineCreateDTO(**data)
             line = LineService.create_line(dto.code, dto.name, dto.description)
             return line
-    
+
     @staticmethod
-    def create_line(code:str, name:str, description:str):
-        
-        new_line = ProductLine(code=code.upper(),
-                                name = name,
-                                description = description)
+    def create_line(code: str, name: str, description: str):
+
+        new_line = ProductLine(code=code.upper(), name=name, description=description)
         db.session.add(new_line)
         return new_line
-    
+
     @staticmethod
-    def patch_obj(obj:ProductLine, data:dict)->ProductLine:
-        print('entra a patch obj')
+    def patch_obj(obj: ProductLine, data: dict) -> ProductLine:
+        print("entra a patch obj")
         dto = LineUpdateDTO(**data)
         job = LineService.patch_line(obj, dto.name, dto.description)
         return job
 
     @staticmethod
-    def patch_line(obj:ProductLine, name:str=None, description:str=None):
-        print('entra a job')
+    def patch_line(obj: ProductLine, name: str = None, description: str = None):
+        print("entra a job")
         if name:
             if obj.name != name:
                 obj.name = name
@@ -612,52 +635,50 @@ class LineService:
         try:
             db.session.commit()
         except Exception as e:
-            current_app.logger.warning(f'error: {e}')
+            current_app.logger.warning(f"error: {e}")
             db.session.rollback()
             raise str(e)
-    
 
-        
 
 class SublineService:
 
     @staticmethod
     def get_obj_list(filters=None):
         return apply_filters(ProductSubLine, filters)
-    
+
     @staticmethod
     def get_obj(subline_id):
         subline = ProductSubLine.query.get(subline_id)
         if not subline:
-            raise NotFoundError(f'No existe una sublinea con ID:{subline_id}')
+            raise NotFoundError(f"No existe una sublinea con ID:{subline_id}")
         return subline
-    
+
     @staticmethod
-    def create_obj(data:dict)->ProductSubLine:
+    def create_obj(data: dict) -> ProductSubLine:
         with db.session.begin():
             dto = SublineCreateDTO(**data)
             subline = SublineService.create_subline(dto.code, dto.name, dto.description)
             return subline
-    
+
     @staticmethod
-    def create_subline(code:str, name:str, description:str):
-        
-        new_subline = ProductSubLine(code=code.upper(),
-                                name = name,
-                                description = description)
+    def create_subline(code: str, name: str, description: str):
+
+        new_subline = ProductSubLine(
+            code=code.upper(), name=name, description=description
+        )
         db.session.add(new_subline)
         return new_subline
-    
+
     @staticmethod
-    def patch_obj(obj:ProductSubLine, data:dict)->ProductSubLine:
-        print('entra a patch obj')
+    def patch_obj(obj: ProductSubLine, data: dict) -> ProductSubLine:
+        print("entra a patch obj")
         dto = SublineUpdateDTO(**data)
         job = SublineService.patch_subline(obj, dto.name, dto.description)
         return job
 
     @staticmethod
-    def patch_subline(obj:ProductSubLine, name:str=None, description:str=None):
-        print('entra a job')
+    def patch_subline(obj: ProductSubLine, name: str = None, description: str = None):
+        print("entra a job")
         if name:
             if obj.name != name:
                 obj.name = name
@@ -667,7 +688,7 @@ class SublineService:
         try:
             db.session.commit()
         except Exception as e:
-            current_app.logger.warning(f'error: {e}')
+            current_app.logger.warning(f"error: {e}")
             db.session.rollback()
             raise str(e)
 
@@ -677,38 +698,38 @@ class TargetService:
     @staticmethod
     def get_obj_list(filters=None):
         return apply_filters(ProductTarget, filters)
-    
+
     @staticmethod
     def get_obj(line_id):
         line = ProductTarget.query.get(line_id)
         if not line:
-            raise NotFoundError(f'No existe una coleccion con ID:{line_id}')
+            raise NotFoundError(f"No existe una coleccion con ID:{line_id}")
         return line
-    
-    @staticmethod
-    def create_obj(data:dict)->ProductTarget:
-        return 'No implementado'
-        #with db.session.begin():
-           # dto = TargetCreateDTO(**data)
-           # collection = CollectionService.create_target(dto.code, dto.name, dto.description)
-           # return collection
-    
-    @staticmethod
-    def create_target(code:str, name:str, description:str):
-        
-        new_target = ProductTarget(code=str(code).upper(),
-                                name = name,
-                                description = description)
-        db.session.add(new_target)
-        return new_target
-    
-    @staticmethod
-    def patch_obj(obj:ProductTarget, data:dict)->ProductTarget:
-        return 'Not implemented'
 
     @staticmethod
-    def patch_target(obj:ProductTarget, name:str=None, description:str=None):
-        print('entra a job')
+    def create_obj(data: dict) -> ProductTarget:
+        return "No implementado"
+        # with db.session.begin():
+        # dto = TargetCreateDTO(**data)
+        # collection = CollectionService.create_target(dto.code, dto.name, dto.description)
+        # return collection
+
+    @staticmethod
+    def create_target(code: str, name: str, description: str):
+
+        new_target = ProductTarget(
+            code=str(code).upper(), name=name, description=description
+        )
+        db.session.add(new_target)
+        return new_target
+
+    @staticmethod
+    def patch_obj(obj: ProductTarget, data: dict) -> ProductTarget:
+        return "Not implemented"
+
+    @staticmethod
+    def patch_target(obj: ProductTarget, name: str = None, description: str = None):
+        print("entra a job")
         if name:
             if obj.name != name:
                 obj.name = name
@@ -718,32 +739,28 @@ class TargetService:
         try:
             db.session.commit()
         except Exception as e:
-            current_app.logger.warning(f'error: {e}')
+            current_app.logger.warning(f"error: {e}")
             db.session.rollback()
             raise str(e)
-        
+
 
 class CollectionService:
 
     @staticmethod
     def get_obj_list(filters: dict = None):
         # 1. Base de la consulta con los eager-loads
-        query = (
-            db.session
-            .query(ProductCollection)
-            .options(
-                joinedload(ProductCollection.line),
-                joinedload(ProductCollection.sub_line),
-                joinedload(ProductCollection.target),
-            )
+        query = db.session.query(ProductCollection).options(
+            joinedload(ProductCollection.line),
+            joinedload(ProductCollection.sub_line),
+            joinedload(ProductCollection.target),
         )
 
         # 2. Aplica cada filtro si existe y no es None
         if filters:
             # Por cada clave, usa filter() dinámicamente
             for field, value in filters.items():
-                if value is None or value == '':
-                    if field == 'subline_id':
+                if value is None or value == "":
+                    if field == "subline_id":
                         model_attr = getattr(ProductCollection, field, None)
                         query = query.filter(model_attr == value)
                     continue
@@ -754,34 +771,38 @@ class CollectionService:
 
         # 3. Ejecuta y devuelve
         return query.all()
-    
+
     @staticmethod
-    def get_specific_list(filters:dict=None):
-        print(filters)
-        current_app.logger.info(filters)
-        if 'line_id' and 'target_id' and 'subline_id' in filters:
-            query = (db.session.query(ProductCollection)
-                    .filter(ProductCollection.line_id == filters['line_id'],
-                            ProductCollection.subline_id == filters['subline_id'],
-                            ProductCollection.target_id == filters['target_id'])
-                    .all()
-                    )
-            return query
-        
-        if 'line_id' and 'target_id' in filters:
-            query = (db.session.query(ProductCollection)
-                .filter(ProductCollection.line_id == filters['line_id'],
-                        ProductCollection.subline_id == None,
-                        ProductCollection.target_id == filters['target_id'])
-                .all()
+    def get_specific_list(filters: dict = None):
+        if "line_id" and "target_id" and "subline_id" in filters:
+            query = (
+                db.session.query(ProductCollection)
+                .filter(
+                    ProductCollection.line_id == filters["line_id"],
+                    ProductCollection.subline_id == filters["subline_id"],
+                    ProductCollection.target_id == filters["target_id"],
                 )
+                .all()
+            )
+            return query
+
+        if "line_id" and "target_id" in filters:
+            query = (
+                db.session.query(ProductCollection)
+                .filter(
+                    ProductCollection.line_id == filters["line_id"],
+                    ProductCollection.subline_id is None,
+                    ProductCollection.target_id == filters["target_id"],
+                )
+                .all()
+            )
             return query
         else:
-            return 'Proporcione datos'
+            return "Proporcione datos"
 
     @staticmethod
     def get_obj(obj_id):
-        
+
         obj = (
             db.session.query(ProductCollection)
             .options(
@@ -792,45 +813,51 @@ class CollectionService:
             .get(obj_id)
         )
         if not obj:
-            raise NotFoundError(f'No existe una coleccion con ID:{obj_id}')
+            raise NotFoundError(f"No existe una coleccion con ID:{obj_id}")
         return obj
-    
+
     @staticmethod
-    def create_obj(data:dict)->ProductCollection:
+    def create_obj(data: dict) -> ProductCollection:
         with db.session.begin():
             dto = CollectionCreateDTO(**data)
-            collection = CollectionService.create_collection( 
-                                                             line_id=dto.line_id,
-                                                             subline_id=dto.subline_id,
-                                                             target_id=dto.target_id,
-                                                             name=dto.name, 
-                                                             description=dto.description)
+            collection = CollectionService.create_collection(
+                line_id=dto.line_id,
+                subline_id=dto.subline_id,
+                target_id=dto.target_id,
+                name=dto.name,
+                description=dto.description,
+            )
             return collection
-    
+
     @staticmethod
-    def preview_collection_code(line_id, target_id, subline_id=None, )->int:
+    def preview_collection_code(
+        line_id,
+        target_id,
+        subline_id=None,
+    ) -> int:
         line = db.session.query(ProductLine).get(line_id)
         subline = db.session.query(ProductSubLine).get(subline_id)
         target = db.session.query(ProductTarget).get(target_id)
 
         code = CollectionCodeGenerator.preview_collection_number(line, subline, target)
         return code
-    
+
     @staticmethod
-    def create_collection(line_id: int, subline_id: int, target_id: int, name: str, description: str):
+    def create_collection(
+        line_id: int, subline_id: int, target_id: int, name: str, description: str
+    ):
 
         line = db.session.query(ProductLine).get(line_id)
         subline = db.session.query(ProductSubLine).get(subline_id)
         target = db.session.query(ProductTarget).get(target_id)
 
-        code = CollectionCodeGenerator.get_next_collection_number(linea=line, sublinea=subline, tipo=target)
-
+        code = CollectionCodeGenerator.get_next_collection_number(
+            linea=line, sublinea=subline, tipo=target
+        )
 
         # Validación de unicidad según restricción
         query = db.session.query(ProductCollection).filter_by(
-            line_id=line_id,
-            target_id=target_id,
-            code=code
+            line_id=line_id, target_id=target_id, code=code
         )
 
         if subline_id is None:
@@ -839,35 +866,58 @@ class CollectionService:
             query = query.filter_by(subline_id=subline_id)
 
         if query.first():
-            raise ConflictError(f'Ya existe una colección con código {code} para la combinación seleccionada.')
-        
-        aux_code = f'{line.code}{subline.code if subline else ''}{target.code}{code}'
-        existing = ProductCollection.query.filter(ProductCollection.aux_code==aux_code).first()
+            raise ConflictError(
+                f"Ya existe una colección con código {code} para la combinación seleccionada."
+            )
+
+        aux_code = f"{line.code}{subline.code if subline else ''}{target.code}{code}"
+        existing = ProductCollection.query.filter(
+            ProductCollection.aux_code == aux_code
+        ).first()
         if existing:
-            raise ConflictError(f'Ya existe una colección con código {aux_code} para la combinación seleccionada.')
+            raise ConflictError(
+                f"Ya existe una colección con código {aux_code} para la combinación seleccionada."
+            )
         # Crear nueva colección
         new_collection = ProductCollection(
             code=code,
-            aux_code = aux_code,
+            aux_code=aux_code,
             line_id=line_id,
             subline_id=subline_id,
             target_id=target_id,
             name=name,
-            description=description
+            description=description,
         )
 
         db.session.add(new_collection)
+        db.session.flush()
+
+        last_type = LastType(name=name, collection_id=new_collection.id)
+        db.session.add(last_type)
+        db.session.flush()
+
+        lasts = []
+        for s in range(14, 44):
+            last = Last(family_id=last_type.id, size=s, qty=0)
+            lasts.append(last)
+        db.session.add_all(lasts)
+
         return new_collection
-    
+
     @staticmethod
-    def patch_obj(obj:ProductCollection, data:dict)->ProductCollection:
-        print('entra a patch obj')
+    def patch_obj(obj: ProductCollection, data: dict) -> ProductCollection:
+        print("entra a patch obj")
         dto = CollectionUpdateDTO(**data)
         col = CollectionService.patch_line(obj, dto.name, dto.description, dto.n_hormas)
         return col
 
     @staticmethod
-    def patch_line(obj:ProductCollection, name:str=None, description:str=None, n_hormas:int=None):
+    def patch_line(
+        obj: ProductCollection,
+        name: str = None,
+        description: str = None,
+        n_hormas: int = None,
+    ):
         print(n_hormas)
         print(obj)
         print(obj.id)
@@ -876,26 +926,24 @@ class CollectionService:
                 obj.name = name
         if description:
             obj.description = description
-        if n_hormas>=0:
+        if n_hormas >= 0:
             obj.n_hormas = n_hormas
         if not name and not description and not n_hormas:
-            raise ValueError('No se proporciono un campo permitido')
+            raise ValueError("No se proporciono un campo permitido")
 
         try:
             db.session.commit()
             return obj
         except Exception as e:
-            current_app.logger.warning(f'error: {e}')
+            current_app.logger.warning(f"error: {e}")
             db.session.rollback()
             raise str(e)
 
 
-
 class ColorService:
-    
+
     @staticmethod
-    def get_obj_list(filters = None ):
-        
+    def get_obj_list(filters=None):
         """
         query = Color.query
         if filters:
@@ -908,60 +956,60 @@ class ColorService:
 
         return query.all()
         """
-        return apply_filters(Color,filters)
-    
-        
+        return apply_filters(Color, filters)
+
     @staticmethod
     def get_obj(color_id):
         color = Color.query.get(color_id)
         if not color:
             raise NotFoundError("Color no encontrado")
         return color
-    
+
     @staticmethod
     def create_obj(data):
-        if Color.query.filter_by(code=data['code']).first():
+        if Color.query.filter_by(code=data["code"]).first():
             raise ConflictError("Ya existe un color con ese código.")
-        
-        new_color = Color(code = data['code'].upper(),
-                        name = data['name'],
-                        hex_value = data.get('hex_value').upper(),
-                        description = data.get('description'))
+
+        new_color = Color(
+            code=data["code"].upper(),
+            name=data["name"],
+            hex_value=data.get("hex_value").upper(),
+            description=data.get("description"),
+        )
         db.session.add(new_color)
         try:
             db.session.commit()
-            current_app.logger.info(f'Nuevo color guardado. {new_color.name}')
+            current_app.logger.info(f"Nuevo color guardado. {new_color.name}")
             return new_color
         except:
             db.session.rollback()
-            current_app.logger.warning('Error al crear el color')
-            raise     
-        
-    
+            current_app.logger.warning("Error al crear el color")
+            raise
+
     @staticmethod
     def patch_obj(instance, data):
-        if 'name' in data:
-            instance.name = data['name'].strip()
-        if 'code' in data:
-            if Color.query.filter_by(code=data['code']).first():
+        if "name" in data:
+            instance.name = data["name"].strip()
+        if "code" in data:
+            if Color.query.filter_by(code=data["code"]).first():
                 raise ConflictError("Ya existe un color con ese código.")
-            instance.code = data['code'].upper()
-        if 'hex_value' in data:
-            instance.hex_value = data['hex_value']
-        if 'description' in data:
-            instance.description = data['description']
+            instance.code = data["code"].upper()
+        if "hex_value" in data:
+            instance.hex_value = data["hex_value"]
+        if "description" in data:
+            instance.description = data["description"]
 
         try:
             db.session.commit()
             return instance
         except:
             db.session.rollback()
-            current_app.logger.warning('Error al actualizar el recurso')
+            current_app.logger.warning("Error al actualizar el recurso")
             raise
-    
+
     @staticmethod
     def delete_obj(color):
-        
+
         try:
             db.session.delete(color)
             db.session.commit()
@@ -970,40 +1018,38 @@ class ColorService:
             raise
 
 
-#**************************SIZE SERVICES*******************************************
+# **************************SIZE SERVICES*******************************************
 class SizeService:
 
     @staticmethod
     def get_all_sizes(filters=None):
         query = Size.query
         if filters:
-            if 'serie' in filters:
-                query = query.filter(Size.series_id == int(filters['serie']))
-            if 'value' in filters:
-                query = query.filter(Size.value == str(filters['value']))
-        
+            if "serie" in filters:
+                query = query.filter(Size.series_id == int(filters["serie"]))
+            if "value" in filters:
+                query = query.filter(Size.value == str(filters["value"]))
+
         return query.all()
-    
+
     @staticmethod
     def get_sizes_from_serie(serie_id):
         sizes = Size.query.filter(Size.series_id == serie_id).all()
         return sizes
-    
+
     @staticmethod
     def get_size(size_id):
         size = Size.query.get(size_id)
         if not size:
-            raise NotFoundError('Plan de pago no encontrado')
+            raise NotFoundError("Plan de pago no encontrado")
         return size
-    
-    
+
     @staticmethod
     def generate_sizes_for_series(series_id, start_size, end_size, step=1):
         current = start_size
         while current <= end_size:
             db.session.add(Size(value=str(current), series_id=series_id))
             current += step
-
 
     @staticmethod
     def create_size(value, series_id):
@@ -1015,12 +1061,11 @@ class SizeService:
         db.session.add(size)
         try:
             db.session.commit()
-            
-        except Exception as e:
+
+        except Exception:
             db.session.rollback()
             raise
         return size
-    
 
     @staticmethod
     def delete_size(resource_id):
@@ -1032,8 +1077,60 @@ class SizeService:
         return True
 
 
+class LastService:
 
-        
-                
-        
+    @staticmethod
+    def get_obj(id: int) -> Last | None:
+        return db.session.get(Last, id)
 
+    @staticmethod
+    def get_obj_list(filters: dict = None) -> list[Last]:
+        lasts = apply_filters(Last, filters)
+        print(f"lasy: {lasts}")
+        return lasts
+
+    # helpers "hardcodeados" según tu operación
+    def hardcoded_sizes() -> list[int]:
+        # ajusta si tu empresa usa otro rango
+        return list(range(14, 44))  # 14..43
+
+    @staticmethod
+    def sync_lasts() -> list[Last]:
+        """
+        Crea las filas de Last faltantes por colección+talla.
+        Idempotente: sólo inserta lo que falta. Devuelve las filas nuevas creadas (no todas).
+        Si commit=True, hace commit aquí; de lo contrario, deja la transacción abierta.
+        """
+        session = db.session
+        created: list[Last] = []
+
+        # 1) Trae TODAS las colecciones (así rellenas también parciales)
+        collections = session.query(ProductCollection.id).all()
+        if not collections:
+            return created
+
+        # 2) Para cada colección, calcula tallas existentes y crea las faltantes
+        sizes = LastService.hardcoded_sizes()
+        for (cid,) in collections:
+            # Solo pedir las tallas (columna) para minimizar tráfico
+            existing_sizes = {
+                s
+                for (s,) in session.query(Last.size)
+                .filter(Last.collection_id == cid)
+                .all()
+            }
+            missing = [s for s in sizes if s not in existing_sizes]
+            if not missing:
+                continue
+
+            new_rows = [Last(collection_id=cid, size=s, qty=0) for s in missing]
+            session.add_all(new_rows)
+            created.extend(new_rows)
+
+        try:
+            session.commit()
+            lasts = db.session.query(Last).all()
+            return lasts
+        except Exception:
+            session.rollback()
+            raise

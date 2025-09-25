@@ -1,6 +1,7 @@
 from flask import Blueprint
 
-common_bp = Blueprint('common', __name__)
+from .models import AppSetting as AppSetting
+from .models import BaseModel as BaseModel
+from .models import SoftDeleteMixin as SoftDeleteMixin
 
-from .models import *
-
+common_bp = Blueprint("common", __name__)

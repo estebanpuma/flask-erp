@@ -51,6 +51,11 @@ font-weight: 600;
     text-decoration: none;
 }
 
+.btn-simple{
+    text-decoration: none;
+    border: none;
+}
+
 .btn-back:hover, .btn-back:focus{
     color: blue;
     text-decoration: underline;
@@ -62,7 +67,7 @@ font-weight: 600;
   @page {
     size: auto;   /* O usa A5, A6, dependiendo tu plantilla */
     margin: auto;
-    
+
   }
   /* ...resto igual... */
 }

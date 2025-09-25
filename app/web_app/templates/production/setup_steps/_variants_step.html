@@ -11,7 +11,7 @@
         <p class="text-muted small">Puedes seleccionar por línea, sublínea, colecciones o por <strong>modelo</strong>. Luego marca las tallas.</p>
 
         <!-- Filtros de colección -->
-    
+
 
         <!-- Buscador por modelo -->
         <div class="input-group mb-3">
@@ -27,10 +27,10 @@
                             <div x-data="{open:false}">
                                 <span @click="open = !open" class="btn fw-bold px-1">Línea <i class="bi bi-chevron-down small"></i> </span>
                                 <div x-show="open">
-                                    <input type="text" 
-                                        class="form-control" 
-                                        x-model="filters.line" 
-                                        placeholder="Filtrar" 
+                                    <input type="text"
+                                        class="form-control"
+                                        x-model="filters.line"
+                                        placeholder="Filtrar"
                                         @input="filterItems()">
                                 </div>
                             </div>
@@ -39,10 +39,10 @@
                             <div x-data="{open:false}">
                                 <span @click="open = !open" class="btn fw-bold">Sublínea <i class="bi bi-chevron-down"></i> </span>
                                 <div x-show="open">
-                                    <input type="text" 
-                                            x-model="filters.subline" 
-                                            class="form-control" 
-                                            placeholder="Filtrar" 
+                                    <input type="text"
+                                            x-model="filters.subline"
+                                            class="form-control"
+                                            placeholder="Filtrar"
                                             @input="filterItems()">
                                 </div>
                             </div>
@@ -51,10 +51,10 @@
                             <div x-data="{open:false}">
                                 <span @click="open = !open" class="btn fw-bold">Target <i class="bi bi-chevron-down"></i></span>
                                 <div x-show="open">
-                                    <input type="text" 
-                                            x-model="filters.target" 
-                                            class="form-control" 
-                                            placeholder="Filtrar" 
+                                    <input type="text"
+                                            x-model="filters.target"
+                                            class="form-control"
+                                            placeholder="Filtrar"
                                             @input="filterItems()">
                                 </div>
                             </div>
@@ -63,9 +63,9 @@
                             <div x-data="{open:false}">
                                 <span @click="open = !open" class="btn fw-bold">Coleccion <i class="bi bi-chevron-down"></i></span>
                                 <div x-show="open">
-                                    <input type="text" 
-                                            x-model="filters.collection" 
-                                            class="form-control" 
+                                    <input type="text"
+                                            x-model="filters.collection"
+                                            class="form-control"
                                             placeholder="Filtrar"
                                             @input="filterItems()">
                                 </div>
@@ -76,7 +76,7 @@
                                 <span @click="open = !open" class="btn fw-bold">Modelo</span>
                                 <div x-show="open">
                                     <input type="text" x-model="filters.product"
-                                     class="form-control" placeholder="Filtrar" 
+                                     class="form-control" placeholder="Filtrar"
                                      @input="filterItems()">
                                 </div>
                             </div>
@@ -91,7 +91,7 @@
                                 <td x-text="p.collection.name"></td>
                                 <td x-text="p.code" class="fw-semibold"></td>
                             </tr>
-                        </template> 
+                        </template>
                     </tbody>
                 </table>
             </div>

@@ -68,7 +68,7 @@ function workerList() {
         }
       this.fetchWorkers();
     },
-    
+
 
     async fetchWorkers() {
       this.loading = true;
@@ -164,4 +164,3 @@ function workerEditPage(id) {
     }
   }
 }
-

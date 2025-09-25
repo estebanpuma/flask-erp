@@ -32,7 +32,7 @@ window.genericDetail = function(apiUrl, fields, icon, backrefURL, editURL) {
           console.info('load img: ', res2)
           if (!res2.ok) throw new Error(`Error 2222 ${res2.status}`)
             this.item.image = res2.url
-        }   
+        }
       } catch (e) {
         this.error = `No se pudo cargar la galería:${e.toString()} `
         console.log(e)
@@ -76,7 +76,7 @@ window.genericDetail = function(apiUrl, fields, icon, backrefURL, editURL) {
     },
 
     async editObj(){
-      if(this.editURL) window.location.href = this.editURL; 
+      if(this.editURL) window.location.href = this.editURL;
     },
 
     async deleteObj(){
@@ -92,7 +92,7 @@ window.genericDetail = function(apiUrl, fields, icon, backrefURL, editURL) {
         if (this.success) {
           alert(this.message)
           if(this.backrefURL)
-            window.location.href = this.backrefURL; 
+            window.location.href = this.backrefURL;
         }
         window.location.href = history.back();
 
@@ -104,7 +104,7 @@ window.genericDetail = function(apiUrl, fields, icon, backrefURL, editURL) {
       } finally {
         this.loading = false;
       }
-     
+
     }
 
   }

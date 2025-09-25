@@ -1,6 +1,7 @@
 # dto/product_lot_movement_dto.py
+from typing import Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
 
 
 class ProductLotMovementOutDTO(BaseModel):
@@ -20,6 +21,3 @@ class ProductLotAdjustmentDTO(BaseModel):
     product_lot_id: int
     new_quantity: float = Field(..., ge=0)
     note: Optional[str] = None
-
-
-

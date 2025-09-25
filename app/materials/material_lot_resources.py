@@ -1,17 +1,21 @@
 from flask import request
 
-from ..core.resources import BaseGetResource, BasePatchResource, BaseDeleteResource, BasePostResource, BulkUploadBaseResource
-
-from .material_lot_services import MaterialLotService
-
-from .material_lot_schemas import material_lot_fields, inventory_movement_fields
+from ..core.resources import (
+    BaseDeleteResource,
+    BaseGetResource,
+    BasePatchResource,
+    BasePostResource,
+)
 from .inventory_movement_services import InventoryMovementService
-
+from .material_lot_schemas import inventory_movement_fields, material_lot_fields
+from .material_lot_services import MaterialLotService
 
 
 class MaterialLotGetResource(BaseGetResource):
     schema_get = staticmethod(MaterialLotService.get_obj)
-    schema_list = staticmethod( lambda: MaterialLotService.get_obj_list(request.args.to_dict()))
+    schema_list = staticmethod(
+        lambda: MaterialLotService.get_obj_list(request.args.to_dict())
+    )
     output_fields = material_lot_fields
 
 
@@ -36,12 +40,13 @@ class MaterialLotGetByMaterialResource(BaseGetResource):
     output_fields = material_lot_fields
 
 
-
-#*************inventory movement services********************'
-#*************** solo movimiento de materia prima****************
+# *************inventory movement services********************'
+# *************** solo movimiento de materia prima****************
 class InventoryMovementGetResource(BaseGetResource):
     schema_get = staticmethod(InventoryMovementService.get_obj)
-    schema_list = staticmethod( lambda: InventoryMovementService.get_obj_list(request.args.to_dict()))
+    schema_list = staticmethod(
+        lambda: InventoryMovementService.get_obj_list(request.args.to_dict())
+    )
     output_fields = inventory_movement_fields
 
 
@@ -58,6 +63,3 @@ class InventoryMovementTransferPostResource(BasePostResource):
 class InventoryMovementAdjustPostResource(BasePostResource):
     service_create = staticmethod(InventoryMovementService.adjust_obj)
     output_fields = inventory_movement_fields
-
-
-

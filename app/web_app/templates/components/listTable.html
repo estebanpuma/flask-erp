@@ -39,7 +39,7 @@
                 <span x-text="col.label" class="fw-bold text-white"></span>
                 <i class="bi bi-chevron-down text-white" class="fs-6"></i>
               </div>
-              
+
 
               <template x-if="col.filterable && btn===true">
                 <div>
@@ -51,22 +51,22 @@
                   @input="filterItems()"
                 />
                 </div>
-                
+
               </template>
             </div>
           </th>
         </template>
       </tr>
     </thead>
-   
+
 
     <tbody  x-show="!error && !loading && filteredItems.length > 0">
       <template x-for="item in filteredItems" :key="item.id">
         <tr role="button" @click="item.href && (window.location.href = item.href)">
           <template x-for="col in columns" :key="col.field">
             <td  x-html="cellHtml(item, col)">
-            </td>  
-          </template>      
+            </td>
+          </template>
         </tr>
       </template>
     </tbody>
@@ -78,7 +78,7 @@
     <div class="container">
     <div class="alert alert-dark text-center ">
       No hay elementos para mostrar.
-  
+
     </div>
     </div>
 

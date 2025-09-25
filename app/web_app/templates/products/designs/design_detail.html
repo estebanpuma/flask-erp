@@ -15,7 +15,7 @@
     <div
       x-data="genericDetail(
         '/api/v1/product-designs/{{ design_id }}',
-        
+
           [
             { field:'product.line.name', label:'Línea'},
             { field:'product.collection.name', label:'Colección'},
@@ -26,11 +26,11 @@
           ],
 
           '👟'
-        
+
       )"
     >
     {% include "components/detailCard.html" %}
-    
+
     <!-- Mensaje de error -->
     <template x-if="error">
       <div class="alert alert-danger" x-text="error"></div>
@@ -57,7 +57,7 @@
     </div>
   </div>
 
-  
+
 
 </div>
 {% endblock %}

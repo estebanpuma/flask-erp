@@ -1,0 +1,190 @@
+{% from 'components/_pageHeader.html' import pageHeader %}
+<div class="container my-4" x-data="wcForm()" x-init="init()" style="max-width: 540px;">
+{{ pageHeader(href='/production/workcenters', title='Crear Centro de Trabajo') }}
+
+
+<template x-if="error">
+<div class="alert alert-danger" x-text="error"></div>
+</template>
+<template x-if="success">
+<div class="alert alert-success" x-text="success"></div>
+</template>
+
+
+<form @submit.prevent="save()" class="vstack gap-3">
+<div class="card shadow-sm">
+<div class="card-body vstack gap-3">
+<div>
+<label class="form-label">Nombre</label>
+<input type="text" class="form-control" x-model.trim="form.name" required>
+</div>
+<div>
+<label class="form-label">Descripción</label>
+<textarea class="form-control" x-model.trim="form.description" rows="2" placeholder="Ej: Línea de aparado #1"></textarea>
+</div>
+<div>
+<label class="form-label">Proceso (Operation)</label>
+<select class="form-select" x-model.number="form.operation_id" required>
+<option value="">— Selecciona —</option>
+<template x-for="op in operations" :key="op.id">
+<option :value="op.id" x-text="op.name"></option>
+</template>
+</select>
+<div class="form-text">Este centro de trabajo pertenece al proceso seleccionado.</div>
+</div>
+<div class="row g-3">
+<div class="col-12 col-md-6">
+<label class="form-label">Duración del turno (min)</label>
+<input type="number" min="1" class="form-control" x-model.number="form.shift_time_minutes" placeholder="Ej: 480" required>
+</div>
+<div class="col-12 col-md-6">
+<label class="form-label">Turnos por día</label>
+<input type="number" min="1" class="form-control" x-model.number="form.shifts_per_day" placeholder="Ej: 1" required>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="card shadow-sm">
+<div class="card-header fw-semibold">Recursos asignados</div>
+<div class="card-body vstack gap-3">
+<div class="d-flex justify-content-between align-items-center">
+<div class="form-text">Agrega uno o más recursos con su cantidad disponible en este centro.</div>
+<button type="button" class="btn btn-sm btn-outline-primary" @click="addResource()">+ Agregar recurso</button>
+</div>
+
+
+<template x-if="form.resources.length === 0">
+<div class="text-muted">No hay recursos aún. Agrega el primero.</div>
+</template>
+
+<template x-for="(row, idx) in form.resources" :key="row._key">
+<div class="row g-2 align-items-end border rounded p-2">
+<div class="col-12 col-md-7">
+<label class="form-label">Recurso</label>
+<select class="form-select" x-model.number="row.resource_id" required>
+<option value="">— Selecciona —</option>
+<template x-for="r in resources" :key="r.id">
+<option :value="r.id" x-text="r.name"></option>
+</template>
+</select>
+</div>
+<div class="col-8 col-md-3">
+<label class="form-label">Cantidad</label>
+<input type="number" min="1" class="form-control" x-model.number="row.qty" required>
+</div>
+<div class="col-4 col-md-2 d-grid">
+<button type="button" class="btn btn-outline-danger" @click="removeResource(idx)">Eliminar</button>
+</div>
+</div>
+</template>
+</div>
+</div>
+
+
+<div class="d-flex gap-2 justify-content-end">
+<a href="/production/workcenters" class="btn btn-outline-secondary">Cancelar</a>
+<button type="submit" class="btn btn-dark">Guardar</button>
+</div>
+</form>
+</div>
+
+
+<script>
+function wcForm() {
+    return {
+        operations: [],
+        resources: [],
+        error: null,
+        success: null,
+        loading: false,
+        form: {
+        name: "",
+        description: "",
+        operation_id: null,
+        shift_time_minutes: 480,
+        shifts_per_day: 1,
+        resources: [] // [{resource_id:Number, qty:Number}]
+        },
+
+
+        init() {
+            this.fetchData();
+            if (!this.form.resources.length) this.addResource();
+        },
+
+        async fetchData() {
+            try {
+                this.loading = true;
+                const [opsRes, resRes] = await Promise.all([
+                fetch('/api/v1/operations'),
+                fetch('/api/v1/production-resources')
+                ]);
+                if (!opsRes.ok) throw new Error('No se pudieron cargar procesos');
+                if (!resRes.ok) throw new Error('No se pudieron cargar recursos');
+                const opsJson = await opsRes.json();
+                const resJson = await resRes.json();
+                // Ajusta según tu convención de respuesta
+                this.operations = opsJson.data || opsJson.items || opsJson;
+                this.resources = resJson.data || resJson.items || resJson;
+            } catch (e) {
+                this.error = e.message;
+            } finally {
+                this.loading = false;
+            }
+            },
+
+        addResource() {
+            this.form.resources.push({ _key: crypto.randomUUID(), resource_id: null, qty: 1 });
+        },
+
+
+removeResource(idx) {
+this.form.resources.splice(idx, 1);
+},
+
+
+normalizePayload() {
+// limpia filas sin resource_id y castea a Number
+const rows = this.form.resources
+.filter(r => r.resource_id)
+.map(r => ({ resource_id: Number(r.resource_id), qty: Number(r.qty || 0) }));
+return {
+name: this.form.name?.trim(),
+description: this.form.description?.trim() || null,
+operation_id: Number(this.form.operation_id),
+shift_time_minutes: Number(this.form.shift_time_minutes),
+shifts_per_day: Number(this.form.shifts_per_day || 1),
+resources: rows
+};
+},
+
+
+async save() {
+try {
+this.error = null;
+const payload = this.normalizePayload();
+if (!payload.resources.length) {
+throw new Error('Agrega al menos un recurso con cantidad');
+}
+const resp = await fetch('/api/v1/workcenters', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+if (!resp.ok) {
+const err = await resp.json().catch(() => ({}));
+throw new Error(err.message || err.error || 'Error al guardar');
+}
+const data = await resp.json();
+this.success = 'Centro de trabajo creado correctamente';
+// opcional: redirigir
+setTimeout(() => window.location.href = `/production/workcenters/${data.data?.id || data.id}`, 600);
+} catch (e) {
+this.error = e.message;
+}
+}
+};
+};
+</script>

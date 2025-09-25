@@ -77,7 +77,7 @@
   window.guifer = window.guifer || {}
   window.guifer.helpers = window.guifer.helpers || {};
   Object.assign(window.guifer.helpers, {
-  
+
     validate:{ isEmpty,isEmail,isCI,isRUC },
     money:{ toCents,fromCents,money,moneyFmt,round },
     date:{ today,addDays,fmtDate },
