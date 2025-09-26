@@ -1,5 +1,5 @@
 from flask import current_app
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import joinedload
 
 from app import db
@@ -1086,7 +1086,6 @@ class LastService:
     @staticmethod
     def get_obj_list(filters: dict = None) -> list[Last]:
         lasts = apply_filters(Last, filters)
-        print(f"lasy: {lasts}")
         return lasts
 
     # helpers "hardcodeados" según tu operación
@@ -1095,42 +1094,82 @@ class LastService:
         return list(range(14, 44))  # 14..43
 
     @staticmethod
-    def sync_lasts() -> list[Last]:
+    def sync_lasts() -> list[LastType]:
         """
-        Crea las filas de Last faltantes por colección+talla.
-        Idempotente: sólo inserta lo que falta. Devuelve las filas nuevas creadas (no todas).
-        Si commit=True, hace commit aquí; de lo contrario, deja la transacción abierta.
+        Crea las filas faltantes de LastTypes con sus Lasts para cada ProductCollection
         """
         session = db.session
-        created: list[Last] = []
+        created: list[LastType] = []
 
-        # 1) Trae TODAS las colecciones (así rellenas también parciales)
-        collections = session.query(ProductCollection.id).all()
+        collections = session.query(ProductCollection).all()
         if not collections:
             return created
 
-        # 2) Para cada colección, calcula tallas existentes y crea las faltantes
         sizes = LastService.hardcoded_sizes()
-        for (cid,) in collections:
-            # Solo pedir las tallas (columna) para minimizar tráfico
-            existing_sizes = {
-                s
-                for (s,) in session.query(Last.size)
-                .filter(Last.collection_id == cid)
-                .all()
-            }
-            missing = [s for s in sizes if s not in existing_sizes]
-            if not missing:
-                continue
+        lasts_types = session.query(LastType).all()
+        collection_ids = {c.id for c in collections}
+        lasttype_collection_ids = {lt.collection_id for lt in lasts_types}
+        missing_ids = collection_ids - lasttype_collection_ids
 
-            new_rows = [Last(collection_id=cid, size=s, qty=0) for s in missing]
-            session.add_all(new_rows)
-            created.extend(new_rows)
+        if not missing_ids:
+            return created
+        collection_name_by_id = {
+            collection.id: collection.name for collection in collections
+        }
+
+        for cid in missing_ids:
+            new_last_type = LastType(collection_id=cid, name=collection_name_by_id[cid])
+            for size in sizes:
+                new_last = Last(size=size, qty=0)
+                new_last_type.lasts.append(new_last)
+            created.append(new_last_type)
+        session.add_all(created)
 
         try:
             session.commit()
-            lasts = db.session.query(Last).all()
-            return lasts
-        except Exception:
+            return created
+        except IntegrityError:
+            # Alguien pudo crear en paralelo; recargar estado y retornar vacío o recalcular
             session.rollback()
+            # O bien, volver a calcular missing y crear solo los realmente faltantes…
+            return []
+        except SQLAlchemyError:
+            session.rollback()
+            raise
+
+    @staticmethod
+    def patch_obj(obj: Last, data: dict):
+        """Actualiza uno o varios campo del objeto"""
+        if data.get("qty"):
+            obj.qty = data.get("qty")
+
+        try:
+            db.session.commit()
+            return obj
+        except Exception:
+            db.session.rollback()
+            raise
+
+
+class LastTypeService:
+    @staticmethod
+    def get_obj(id: int) -> Last | None:
+        return db.session.get(LastType, id)
+
+    @staticmethod
+    def get_obj_list(filters: dict = None) -> list[Last]:
+        lasts = apply_filters(LastType, filters)
+        return lasts
+
+    @staticmethod
+    def patch_obj(obj: LastType, data: dict):
+        """Actualiza uno o varios campo del objeto"""
+        if data.get("code"):
+            obj.code = data.get("code")
+
+        try:
+            db.session.commit()
+            return obj
+        except Exception:
+            db.session.rollback()
             raise

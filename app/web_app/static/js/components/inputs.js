@@ -206,7 +206,18 @@ function inputQtyState ({ initial = 0, step = 1, min = 0, max = null, size = 'lg
                 @click="inc">+</button>
       `;
 
+      // 2) Sembrar desde el x-model del padre si existe
+      const m = this.$el._x_model;
+      if (m) {
+      const current = m.get();
+      if (typeof current !== 'undefined') this.value = current;
+      else m.set(this.value);
+      }
+
       this.$watch('value', v => this.$dispatch('input', v));
+
+
+
     },
 
     inc () { this.value = clamp(add(this.value,  STEP)); },

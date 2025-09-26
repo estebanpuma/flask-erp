@@ -1,4 +1,3 @@
-{% from 'components/_qtyInput.html' import qtyInput %}
 <div x-data="detailLast({{id}})">
     <div class="card px-0">
         <div class="card-body">
@@ -10,44 +9,60 @@
             </div>
             <div class="mb-2">
                 <div class="text-muted">Código</div>
-                <div class="bg-light d-flex justify-content-between rounded-2 form-control" disabled @click="editField()">
+                <button class="d-flex justify-content-between rounded-2 form-control "  @click="editField('code', last.code, 'Codigo', `/last-types/${last.id}/edit`, 'text')">
                     <div  x-text="last.code?last.code:'Sin codigo'"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
-                </div>
+                </button>
             </div>
             <div>
                 <div class="text-muted">Tallas</div>
-                <ul class="list-group list-group-flush">
-                    <template x-for="row in last.lasts" :key="row.id ?? (row.size_value || row.size)">
-                        <li class="list-group-item list-group-item-action">
-                            <div class="d-flex justify-content-between">
-                                <span x-text="'Talla: '+row.size ?? row.size_value"></span>
-                                <span x-text="'Cant: '+row.qty"></span>
-
+                    <ul class="list-group list-group-flush">
+                        <template x-for="row in last.lasts" :key="row.id">
+                            <li class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold badge text-bg-secondary"
+                                    x-text="row.size ?? row.size_value"></span>
+                                 <div x-data="{v:{quantity: row.qty} }" @click="editField('qty', row.qty, 'Cantidad', `/lasts/${row.id}/edit`, 'number')">
+                                    {% include 'components/_quantityInput.html' %}
+                                 </div>
                             </div>
-                        </li>
-                    </template>
-                </ul>
+                            </li>
+                        </template>
+                    </ul>
             </div>
         </div>
     </div>
+
+    {% include 'production/resources/lasts/_editForm.html'%}
 </div>
+
+
 <script>
     function detailLast(id){
         return{
             last:{},
             lasts:[],
             error:'',
+            form:{},
+            field_label:'',
+            selectedField:'',
+            form_model:'',
+            original_value: '',
+            api:'',
+            message:'',
+            type:'',
+            _offcanvas: null,
 
             init(){
-                this.fetchLast(id)
+                this.fetchLastType(id);
+                this._offcanvas = bootstrap.Offcanvas.getOrCreateInstance(this.$refs.offcanvas);
             },
 
-            async fetchLast(id){
+            async fetchLastType(id){
                 try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `/lasts?collection_id=${id}`);
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `/last-types/${id}`);
 
-                    this.lasts = res;
+                    this.last = res;
                     console.log('res: ', res);
                     this.setLast(res);
                 }catch(error){
@@ -56,12 +71,45 @@
             },
 
             setLast(data){
-                this.last = {
-                    collection_id: id,
-                    name: this.lasts[0].collection_name,
-                    lasts: data
+                this.lasts= data.lasts
+
+            },
+
+            editField(field, data, label, api, type){
+                this.type = type??'text';
+                this.api = api;
+                this.original_value = data;
+                this.selectedField = field;
+                this.field_label = label;
+                this.form_model = data;
+                this._offcanvas.show();
+                this.form[field] = this.form_model;
+                console.log("Offcanvas abierto por JS.");
+            },
+
+            async saveField(){
+                let url = this.api
+                this.form[this.selectedField] = this.form_model;
+                console.log('save: ', this.form)
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('PATCH', url, this.form );
+                    this.fetchLastType(res.family_id)
+                    console.log('repsonse: ', res)
+
+                    alert("Guardado");
+                    this.form = {};
+                    this._offcanvas.hide();
                 }
+                catch(err){
+                    console.error('ERROR API: ', err)
+                }
+
+            },
+
+            resetField(){
+                this.form_model = this.original_value
             }
+
         }
     }
 </script>

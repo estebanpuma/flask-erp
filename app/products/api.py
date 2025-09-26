@@ -10,8 +10,11 @@ from .resources import (
     ColorGetResource,
     ColorPatchResource,
     ColorPostResource,
+    LastPatchResource,
     LastsGetResource,
     LastSyncResource,
+    LastTypeGetResource,
+    LastTypePatchResource,
     LineGetResource,
     LinePatchResource,
     LinePostResource,
@@ -97,8 +100,13 @@ products_api.add_resource(
 
 # ---------------------------Lasts---------------------------------------
 products_api.add_resource(LastsGetResource, "/lasts", "/lasts/<int:resource_id>")
+products_api.add_resource(LastPatchResource, "/lasts/<int:resource_id>/edit")
 products_api.add_resource(LastSyncResource, "/lasts/sync")
 
+products_api.add_resource(
+    LastTypeGetResource, "/last-types", "/last-types/<int:resource_id>"
+)
+products_api.add_resource(LastTypePatchResource, "/last-types/<int:resource_id>/edit")
 
 # *******************************Products****************************************
 # *****************************************************************************

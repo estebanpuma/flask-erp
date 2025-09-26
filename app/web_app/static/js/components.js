@@ -13,21 +13,6 @@
     bs.show(); t.addEventListener('hidden.bs.toast',()=>t.remove())
   }
 
-  function alert({
-    msg='Alerta',
-    type='primary'
-  }){
-    let icon;
-    if(type==='warning') icon='exclamation-triangle';
-    if(type==='danger') icon='exclamation-triangle';
-    if(type==='primary') icon='info';
-    if(type==='success') icon='check-circle';
-    return /*html*/`
-    <div class="alert alert-${type==='info'?'primary':type} alert-dismissible fade show" role="alert">
-      <strong><i class='bi bi-${icon}'></i></strong> ${msg}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>`
-  }
 
 
 

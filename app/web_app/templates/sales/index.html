@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% from 'components/entryCard.html' import entry_card %}
-
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
-  {% set title = 'Ventas' %}
-  {% include 'components/pageHeader.html' %}
+
+  {{ pageHeader('/', 'Ventas') }}
 
 
   <div class="row g-3">

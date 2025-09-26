@@ -94,7 +94,7 @@ class ProductCollection(BaseModel, SoftDeleteMixin):
 
     # relación a stock de hormas por talla (buckets)
     lasts = db.relationship(
-        "Last",
+        "LastType",
         back_populates="collection",
         cascade="all, delete-orphan",
         lazy="selectin",
@@ -111,7 +111,11 @@ class LastType(BaseModel):
         db.ForeignKey("product_collections.id", ondelete="CASCADE"),
         nullable=False,
     )
-    lasts = db.relationship("Last")
+    lasts = db.relationship(
+        "Last",
+        back_populates="family",
+        cascade="all, delete-orphan",
+    )
     collection = db.relationship("ProductCollection", back_populates="lasts")
 
 
@@ -128,7 +132,9 @@ class Last(BaseModel):
     width = db.Column(db.String(5), default="D")
     qty = db.Column(db.Integer, default=0, nullable=False)
 
-    status = db.Column(db.String())
+    status = db.Column(db.String(), default="Ok")
+
+    family = db.relationship("LastType", back_populates="lasts")
 
     __table_args__ = (db.UniqueConstraint("family_id", "size", name="uq_family_size"),)
 

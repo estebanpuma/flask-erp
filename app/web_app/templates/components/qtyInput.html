@@ -1,0 +1,31 @@
+{% macro qty(model, id=None, initial=0, step=1, min=0, max=None, size='md') %}
+<div
+  x-data="inputQtyState({
+    id: {{ (id or ('qty-' ~ loop.index if loop is defined else 'qty'))|tojson }},
+    initial: {{ initial|tojson }},
+    step: {{ step|tojson }},
+    min: {{ min|tojson }},
+    max: {{ max|tojson }},
+    size: {{ size|tojson }}
+  })"
+  x-modelable="value"
+  x-model="{{ model }}"
+  class="d-flex align-items-center gap-1">
+
+  <button type="button"
+          class="btn btn-outline-dark btn-{{ size }}"
+          :class="value <= min ? 'opacity-50 pointer-events-none' : ''"
+          @click="dec()">−</button>
+
+  <input :id="id" type="text" pattern="[0-9.]*" inputmode="decimal"
+         class="form-control form-control-{{ size }} fw-semibold text-center px-1"
+         style="max-width:60px;min-width:30px;"
+         x-model.number="value"
+         @input="sanitize">
+
+  <button type="button"
+          class="btn btn-outline-dark btn-{{ size }}"
+          :class="max !== null && value >= max ? 'opacity-50 pointer-events-none' : ''"
+          @click="inc()">+</button>
+</div>
+{% endmacro %}

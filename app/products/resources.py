@@ -12,6 +12,7 @@ from .schemas import (
     collection_fields,
     color_fields,
     last_fields,
+    last_type_fields,
     line_fields,
     product_design_fields,
     product_fields,
@@ -26,6 +27,7 @@ from .services import (
     ColorService,
     DesignService,
     LastService,
+    LastTypeService,
     LineService,
     ProductService,
     ProductVariantMaterialService,
@@ -387,12 +389,35 @@ class NextCodeCollectionCodeResource(Resource):
             return {"preview_code": str(number)}
 
 
+# --------------------Lasts-----------------------------------
+
+
 class LastsGetResource(BaseGetResource):
     schema_get = staticmethod(LastService.get_obj)
     schema_list = staticmethod(lambda: LastService.get_obj_list(request.args.to_dict()))
     output_fields = last_fields
 
 
+class LastPatchResource(BasePatchResource):
+    service_get = staticmethod(LastService.get_obj)
+    service_patch = staticmethod(LastService.patch_obj)
+    output_fields = last_fields
+
+
 class LastSyncResource(BaseGetResource):
     schema_list = staticmethod(lambda: LastService.sync_lasts())
-    output_fields = last_fields
+    output_fields = last_type_fields
+
+
+class LastTypeGetResource(BaseGetResource):
+    schema_get = staticmethod(LastTypeService.get_obj)
+    schema_list = staticmethod(
+        lambda: LastTypeService.get_obj_list(request.args.to_dict())
+    )
+    output_fields = last_type_fields
+
+
+class LastTypePatchResource(BasePatchResource):
+    service_get = staticmethod(LastTypeService.get_obj)
+    service_patch = staticmethod(LastTypeService.patch_obj)
+    output_fields = last_type_fields

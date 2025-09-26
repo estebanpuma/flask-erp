@@ -1,95 +1,54 @@
-<form
-  x-data="editField({
-
-    id: {{ id|tojson }},               /* ej: 3 */
-    field: {{ field|tojson }},         /* ej: 'code' */
-    label: {{ label|tojson }},         /* ej: 'Código' */
-    help: {{ help|tojson }}            /* ej: 'Código de horma' */
-  })"
-  @submit.prevent="save"
+<div
+    class="offcanvas offcanvas-end"
+    tabindex="-1"
+    id="offcanvasEdit"
+    aria-labelledby="offcanvasEditLabel"
+    x-ref="offcanvas"
 >
-  <!-- Input reutilizable que expone x-modelable="value" -->
-  <div
-    x-data="inputText({ label, id: field, help })"
-    x-model="form[field]"
-    x-modelable="value"
-  ></div>
+    <div class="offcanvas-header">
+         <h5 class="offcanvas-title" x-text="field_label || 'Editar'"></h5>
+        <button
+            type="button"
+            class="btn-close text-reset"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"
+        ></button>
+    </div>
+    <div class="offcanvas-body">
+      <form>
+        <!-- Input reutilizable que expone x-modelable="value" -->
+         <template x-if="type==='text'">
+            <div
+              x-data="inputText({ id: selectedField, label: field_label })"
+              x-model="form_model"
+              x-modelable="value"
 
-  <!-- Acciones -->
-  <div class="d-flex gap-2 mt-3">
-    <div class="flex-grow-1"
-         x-data="actionBtn({ label:'Guardar', variant:'dark', size:'md', icon:'floppy' })"
-         @action="save()"></div>
+            ></div>
+         </template>
 
-    <div x-data="actionBtn({ label:'Cancelar', variant:'outline-secondary', size:'md' })"
-         @action="resetForm()"></div>
-  </div>
+         <template x-if="type==='number'">
+          <div>
+            <input type="number" :name="selectedField" :id="selectedField" x-model="form_model" class="form-control">
+          </div>
 
-  <!-- Mensajes -->
-  <template x-if="error">
-    <div class="alert alert-danger mt-2" x-text="error"></div>
-  </template>
-  <template x-if="ok">
-    <div class="alert alert-success mt-2">Guardado ✅</div>
-  </template>
-</form>
+         </template>
 
-<script>
-function editField(props){
-  const { resource, id, field, label, help } = props;
 
-  return {
-    resource, id, field, label, help,
+        <!-- Acciones -->
+        <div class="d-flex gap-2 mt-3">
+          <div class="flex-grow-1"
+              x-data="actionBtn({ label:'Guardar', variant:'dark', size:'md', icon:'floppy' })"
+              @action="saveField()"></div>
 
-    loading: false,
-    error: null,
-    ok: false,
+          <div x-data="actionBtn({ label:'Cancelar', variant:'outline-secondary', size:'md' })"
+              @action="resetField()"></div>
+        </div>
 
-    obj: {},               // objeto completo (opcional)
-    form: { [field]: "" }, // solo el campo editable
+        <!-- Mensajes -->
+        <template x-if="error">
+          <div class="alert alert-danger mt-2" x-text="error"></div>
+        </template>
 
-    async init(){
-      await this.load();
-    },
-
-    async load(){
-      this.loading = true; this.error = null; this.ok = false;
-      try {
-        const res = await window.guifer.helpers.fetch.apiFetch('GET', `/api/v1/${this.resource}/${this.id}`);
-        this.obj = res;
-        // inicializa el modelo con el valor actual
-        this.form[this.field] = res?.[this.field] ?? "";
-      } catch (err) {
-        console.error(err);
-        this.error = "No se pudo cargar el registro.";
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async save(){
-      this.loading = true; this.error = null; this.ok = false;
-      try {
-        const payload = { [this.field]: this.form[this.field] };
-        await window.guifer.helpers.fetch.apiFetch('PATCH', `/api/v1/${this.resource}/${this.id}`, payload);
-        this.ok = true;
-        // opcional: refrescar objeto completo
-        // await this.load();
-        // o disparar un evento al padre para cerrar modal/actualizar lista:
-        // this.$dispatch('updated', { id: this.id, field: this.field, value: this.form[this.field] })
-      } catch (err) {
-        console.error(err);
-        this.error = "No se pudo guardar. Revisa el valor.";
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    resetForm(){
-      // restablece el valor original desde obj
-      this.form[this.field] = this.obj?.[this.field] ?? "";
-      this.error = null; this.ok = false;
-    }
-  }
-}
-</script>
+      </form>
+    </div>
+</div>

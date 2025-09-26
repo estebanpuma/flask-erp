@@ -159,11 +159,18 @@ collection_fields = {
 
 last_fields = {
     "id": fields.Integer,
+    "code": fields.String,
+    "qty": fields.Integer,
+    "size": fields.Integer,
+    "status": fields.String,
+    "family_id": fields.Integer,
+}
+
+last_type_fields = {
+    "id": fields.Integer,
     "name": fields.String,
     "code": fields.String,
     "collection_id": fields.Integer,
     "collection_name": fields.String(attribute="collection.name"),
-    "qty": fields.Integer,
-    "size": fields.Integer,
-    "status": fields.String,
+    "lasts": fields.List(fields.Nested(last_fields)),
 }
