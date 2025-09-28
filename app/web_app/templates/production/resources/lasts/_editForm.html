@@ -17,14 +17,14 @@
     <div class="offcanvas-body">
       <form>
         <!-- Input reutilizable que expone x-modelable="value" -->
-         <template x-if="type==='text'">
+         <show x-show="type==='text'">
             <div
               x-data="inputText({ id: selectedField, label: field_label })"
               x-model="form_model"
               x-modelable="value"
 
             ></div>
-         </template>
+         </show>
 
          <template x-if="type==='number'">
           <div>

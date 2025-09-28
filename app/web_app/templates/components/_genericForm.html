@@ -1,0 +1,151 @@
+{#
+  Componente Offcanvas reutilizable para edición de un solo campo.
+  Se activa con un evento global de Alpine.js.
+
+  Uso:
+  1. Incluye este archivo en tu `base.html` o layout principal.
+     {% include 'components/_genericForm.html' %}
+
+  2. Desde cualquier parte de tu aplicación, dispara el evento `open-generic-editor`
+     con los detalles necesarios.
+
+     Ejemplo en un botón:
+     <button @click="$dispatch('open-generic-editor', {
+        title: 'Editar Nombre',
+        label: 'Nombre del Cliente',
+        field: 'name',
+        value: 'Cliente Actual',
+        type: 'text',
+        patchUrl: '/api/v1/clients/123',
+        help: 'El nombre debe tener al menos 3 caracteres.',
+        onSave: () => { console.log('¡Guardado!'); location.reload(); }
+     })">Editar Nombre</button>
+#}
+<div
+    class="offcanvas offcanvas-end"
+    tabindex="-1"
+    id="genericEditOffcanvas"
+    aria-labelledby="genericEditOffcanvasLabel"
+    x-data="genericEditor()"
+    x-init="init()"
+    @open-generic-editor.window="open($event.detail)"
+    x-ref="offcanvas"
+>
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="genericEditOffcanvasLabel" x-text="title || 'Editar Campo'"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form @submit.prevent="save">
+            <p class="text-muted small" x-show="help" x-text="help"></p>
+
+            <!-- Input dinámico según el tipo -->
+            <div class="mb-3">
+                <label :for="field" class="form-label" x-text="label"></label>
+                <template x-if="type === 'text' || type === 'email' || type === 'tel'">
+                    <input :type="type" class="form-control" :id="field" x-model="formValue">
+                </template>
+                <template x-if="type === 'number'">
+                    <input type="number" class="form-control" :id="field" x-model.number="formValue">
+                </template>
+                <template x-if="type === 'textarea'">
+                    <textarea class="form-control" :id="field" x-model="formValue" rows="4"></textarea>
+                </template>
+            </div>
+
+            <!-- Mensajes de estado -->
+            <div x-show="message" class="alert" :class="success ? 'alert-success' : 'alert-danger'" x-text="message"></div>
+
+            <!-- Acciones -->
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
+                <button type="submit" class="btn btn-dark" :disabled="loading">
+                    <span x-show="!loading">Guardar Cambios</span>
+                    <span x-show="loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span x-show="loading"> Guardando...</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function genericEditor() {
+    return {
+        // --- Estado del componente ---
+        _offcanvas: null,
+        title: 'Editar Campo',
+        label: 'Valor',
+        field: '',
+        formValue: '',
+        originalValue: '',
+        type: 'text',
+        patchUrl: '',
+        help: '',
+        onSaveCallback: null,
+        loading: false,
+        message: '',
+        success: false,
+
+        // --- Métodos ---
+        init() {
+            this._offcanvas = new bootstrap.Offcanvas(this.$refs.offcanvas);
+        },
+
+        open(detail) {
+            this.title = detail.title || 'Editar Campo';
+            this.label = detail.label || 'Valor';
+            this.field = detail.field;
+            this.formValue = detail.value;
+            this.originalValue = detail.value;
+            this.type = detail.type || 'text';
+            this.patchUrl = detail.patchUrl;
+            this.help = detail.help || '';
+            this.onSaveCallback = detail.onSave; // Guardar el callback
+            this.message = '';
+            this.success = false;
+            this.loading = false;
+            this._offcanvas.show();
+        },
+
+        async save() {
+            if (!this.patchUrl || !this.field) return;
+
+            this.loading = true;
+            this.message = '';
+
+            try {
+                const payload = { [this.field]: this.formValue };
+                const response = await fetch(this.patchUrl, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Error ${response.status}`);
+                }
+
+                this.success = true;
+                this.message = '¡Guardado con éxito!';
+
+                // Ejecutar callback si existe
+                if (typeof this.onSaveCallback === 'function') {
+                    this.onSaveCallback(data);
+                }
+
+                setTimeout(() => this._offcanvas.hide(), 1000);
+
+            } catch (error) {
+                this.success = false;
+                this.message = error.message || 'Ocurrió un error inesperado.';
+                console.error('Error al guardar:', error);
+            } finally {
+                this.loading = false;
+            }
+        }
+    }
+}
+</script>

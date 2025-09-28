@@ -1,30 +1,54 @@
-<div x-data="detailLast({{id}})">
+<div x-data="detail({{id}})">
+    <template x-if="error">
+        <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+
     <div class="card px-0">
         <div class="card-body">
             <div class="mb-2">
                 <div class="text-muted">Nombre de la colleción</div>
-                <div class="bg-light rounded-2 form-control" disabled>
-                    <div x-text="last.name"></div>
-                </div>
-            </div>
-            <div class="mb-2">
-                <div class="text-muted">Código</div>
-                <button class="d-flex justify-content-between rounded-2 form-control "  @click="editField('code', last.code, 'Codigo', `/last-types/{{id}}/edit`, 'text')">
-                    <div  x-text="last.code?last.code:'Sin codigo'"></div>
+                <button class="d-flex justify-content-between rounded-2 form-control"
+                @click="$dispatch('open-generic-editor', {
+                    title: 'Nombre',
+                    label: 'Nombre',
+                    field: 'name',
+                    value: collection.name,
+                    type: 'text',
+                    patchUrl: '/api/v1/product-collections/{{id}}',
+                    help: 'El nombre debe tener al menos 3 caracteres.',
+                    onSave: () => { console.log('¡Guardado!'); alert('GUuuardado!'); location.reload(); }
+                })">
+                    <div x-text="collection.name"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </button>
             </div>
+            <div class="mb-2">
+                <div class="text-muted">Código</div>
+                <button class="d-flex justify-content-between rounded-2 form-control "
+                @click="$dispatch('open-generic-editor', {
+                        title: 'Código',
+                        label: 'Código',
+                        field: 'code',
+                        value: collection.code,
+                        type: 'text',
+                        patchUrl: '/api/v1/product-collections/{{id}}',
+                        help: 'El código tener al menos 3 caracteres.',
+                        onSave: () => { console.log('¡Guardado!');location.reload(); alert('GUuuardado!');  }
+                    })">
+                    <div  x-text="collection.code?collection.code:'Sin codigo'"></div>
+                    <div> <i class="bi bi-chevron-right"></i></div>
+                </button>
+
+            </div>
             <div>
-                <div class="text-muted">Tallas</div>
+                <div class="text-muted">Productos</div>
                     <ul class="list-group list-group-flush">
-                        <template x-for="row in last.lasts" :key="row.id">
+                        <template x-for="products in products" :key="products.id">
                             <li class="list-group-item list-group-item-action">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-semibold badge text-bg-secondary"
-                                    x-text="row.size ?? row.size_value"></span>
-                                 <div x-data="{v:{quantity: row.qty} }" @click="editField('qty', row.qty, 'Cantidad', `/lasts/${row.id}/edit`, 'number')">
-                                    {% include 'components/_quantityInput.html' %}
-                                 </div>
+                                    x-text="products.name"></span>
+                                 <span x-text="products.code"></span>
                             </div>
                             </li>
                         </template>
@@ -38,10 +62,10 @@
 
 
 <script>
-    function detailLast(id){
+    function detail(id){
         return{
-            last:{},
-            lasts:[],
+            collection:{},
+            products:[],
             error:'',
             form:{},
             field_label:'',
@@ -54,24 +78,34 @@
             _offcanvas: null,
 
             init(){
-                this.fetchLastType(id);
+                console.log('init... id: ', id)
+                this.fetchCollection(id);
                 this._offcanvas = bootstrap.Offcanvas.getOrCreateInstance(this.$refs.offcanvas);
             },
 
-            async fetchLastType(id){
+            async fetchCollection(id){
                 try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `last-types/${id}`);
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-collections/${id}`);
 
-                    this.last = res;
+                    this.collection = res;
                     console.log('res: ', res);
-                    this.setLast(res);
+                    this.fetchProducts(id)
                 }catch(error){
                     console.error('API error: ', error)
+                    this.error= error
                 }
             },
 
-            setLast(data){
-                this.lasts= data.lasts
+            async fetchProducts(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `products?collection_id=${id}`);
+
+                    this.products = res;
+                    console.log('res products: ', res);
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
 
             },
 

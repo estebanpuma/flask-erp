@@ -6,20 +6,18 @@
 
     <title>{% block title %}Guifer ERP{% endblock %}</title>
 
-    <!-- ✅ Bootstrap CSS (local) -->
+    <!-- Bootstrap CSS (local) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap/bootstrap.min.css') }}">
 
-    <!-- ✅ Bootstrap Icons (opcional) -->
+    <!-- Bootstrap Icons (local) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='icons/bootstrap/font/bootstrap-icons.min.css') }}">
 
-    <!-- ✅ Estilos personalizados -->
+    <!-- Estilos personalizados -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
-    <!-- ✅ Favicon -->
+    <!-- Favicon -->
     <link rel="icon" href="{{ url_for('static', filename='img/logo.png') }}">
 
-
-    <!-- Loader externo (define window.deferLoadingAlpine) -->
     <script defer src="{{ url_for('static', filename='js/alpine-loader.js') }}"></script>
 
 
@@ -80,10 +78,10 @@
             </div>
         </main>
     {% endif %}
-    <!-- ✅ Footer -->
+    <!-- Footer -->
     {% include 'shared/__footer.html' %}
+    {% include 'components/_genericForm.html' %}
 
-    <!-- ✅ JS personalizado opcional -->
 
 </body>
 </html>

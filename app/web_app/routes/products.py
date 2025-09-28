@@ -148,9 +148,7 @@ def product_collection_list():
 
 @products_bp.route("/collections/<int:id>")
 def product_collection_detail(id):
-    return render_template(
-        "products/collections/collection_detail.html", collection_id=id
-    )
+    return render_template("products/collections/collection_detail.html", id=id)
 
 
 # ----------------------------------------------------

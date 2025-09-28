@@ -908,27 +908,22 @@ class CollectionService:
     def patch_obj(obj: ProductCollection, data: dict) -> ProductCollection:
         print("entra a patch obj")
         dto = CollectionUpdateDTO(**data)
-        col = CollectionService.patch_line(obj, dto.name, dto.description, dto.n_hormas)
+        col = CollectionService.patch_line(obj, dto.name, dto.description)
         return col
 
     @staticmethod
     def patch_line(
-        obj: ProductCollection,
-        name: str = None,
-        description: str = None,
-        n_hormas: int = None,
+        obj: ProductCollection, name: str = None, description: str = NotImplemented
     ):
-        print(n_hormas)
-        print(obj)
+        print(name)
         print(obj.id)
         if name:
             if obj.name != name:
                 obj.name = name
         if description:
             obj.description = description
-        if n_hormas >= 0:
-            obj.n_hormas = n_hormas
-        if not name and not description and not n_hormas:
+
+        if not name and not description:
             raise ValueError("No se proporciono un campo permitido")
 
         try:
@@ -1164,6 +1159,11 @@ class LastTypeService:
     @staticmethod
     def patch_obj(obj: LastType, data: dict):
         """Actualiza uno o varios campo del objeto"""
+
+        if obj is None:
+            raise NotFoundError("Objeto no encontrado")
+
+        print("ingresa a patch lats")
         if data.get("code"):
             obj.code = data.get("code")
 

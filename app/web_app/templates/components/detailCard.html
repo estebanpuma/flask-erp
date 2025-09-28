@@ -1,4 +1,4 @@
-
+{% macro detail_card(item, fields, icon, kind) %}
 <div style="max-width: 560px;">
   <template x-if="error">
     <div class="alert alert-danger text-center my-4" x-text="error"></div>
@@ -127,3 +127,4 @@
   </template>
 
 </div>
+{% endmacro %}
