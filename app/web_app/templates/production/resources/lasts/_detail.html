@@ -16,7 +16,7 @@
             </div>
             <div>
                 <div class="text-muted">Tallas</div>
-                    <ul class="list-group list-group-flush">
+                    <ol class="list-group list-group-flush">
                         <template x-for="row in last.lasts" :key="row.id">
                             <li class="list-group-item list-group-item-action">
                             <div class="d-flex justify-content-between align-items-center">
@@ -28,7 +28,7 @@
                             </div>
                             </li>
                         </template>
-                    </ul>
+                    </ol>
             </div>
         </div>
     </div>
@@ -60,19 +60,18 @@
 
             async fetchLastType(id){
                 try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `last-types/${id}`);
+                    let res = await window.guifer.helpers.fetch.apiFetch('GET', `last-types/${id}`);
+
+                    // Ordenamos el array de hormas por talla (size) de menor a mayor
+                    if (res && res.lasts) {
+                        res.lasts.sort((a, b) => a.size - b.size);
+                    }
 
                     this.last = res;
                     console.log('res: ', res);
-                    this.setLast(res);
                 }catch(error){
                     console.error('API error: ', error)
                 }
-            },
-
-            setLast(data){
-                this.lasts= data.lasts
-
             },
 
             editField(field, data, label, api, type){

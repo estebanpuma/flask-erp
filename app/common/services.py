@@ -67,8 +67,8 @@ class CollectionCodeGenerator:
         key = linea.code
         if sublinea:
             key += sublinea.code
-
-        key += tipo.code
+        if tipo:
+            key += tipo.code
         return f"collection_counter_{key}"
 
     @staticmethod

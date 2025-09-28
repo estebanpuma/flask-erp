@@ -16,7 +16,7 @@
       <!-- Cabecera ------------------------------------------------ -->
       <h2 class="h4 d-flex align-items-center gap-2">
         Pedido <span x-text="order.order_number"></span>
-        <span x-html="window.guifer.components.statusBadge(order.status,'sale_order')"></span>
+        <span x-html="window.guifer.components.status.statusBadge(order.status,'sale_order')"></span>
       </h2>
 
       <dl class="row small">
@@ -51,10 +51,10 @@
       <!-- Acciones si pendiente ----------------------------------- -->
       <div class="d-flex gap-2 justify-content-end mt-3"
            x-show="order.status === 'Pendiente'">
-        <div x-html="window.guifer.components.actionBtn({
+        <div x-html="window.guifer.components.btn.actionBtn({
               label:'Rechazar', variant:'danger', icon:'x-circle'
             })" @click="changeStatus('Rechazada')"></div>
-        <div x-html="window.guifer.components.actionBtn({
+        <div x-html="window.guifer.components.btn.actionBtn({
               label:'Aprobar',  variant:'success', icon:'check-circle'
             })" @click="changeStatus('Aprobada')">
           </div>

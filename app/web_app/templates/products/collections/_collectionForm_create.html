@@ -1,65 +1,79 @@
-<form @submit.prevent="createCollection" class="needs-validation " autocomplete="off">
-  <div class="container pt-3 pb-5 px-2 rounded" style="max-width: 560px">
-    <h4 class="text-center mb-3">Nueva Colección</h4>
-    <div>
-      <label for="line">Linea</label>
-      <div class="form-floating mb-3">
+<form @submit.prevent="createCollection" class="needs-validation " autocomplete="off" x-data="createCollection()" x-init="init()">
+  <div class="container pt-3 pb-5 px-2 rounded" style="max-width: 480px">
 
-        <select id="line" class="form-select"
-        x-model="collection.line_id"
-        @change="previewCode()">
-          <option class="text-muted" >Selecciona línea</option>
-          <template x-for="line in lines" :key="line.id">
-            <option :value="line.id" x-text="line.name"></option>
-          </template>
-        </select>
-        <label class="">Línea</label>
-      </div>
+    <div class="mb-3" x-show="preview_code">
+      <div class="alert alert-secondary">Código: <strong  x-text="preview_code"></strong></div>
+    </div>
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" x-model="collection.name" placeholder="Nombre de colección" required>
+      <label class="ps-4 text-muted">Nombre de la colección</label>
     </div>
 
 
-      <div class="form-floating mb-3">
-        <select class="form-select form-select-lg ps-4 px-1 rounded-5" x-model="collection.subline_id"
-        @change="previewCode()">
-          <option value="">Selecciona sublínea(opcional)</option>
-          <template x-for="subline in sublines" :key="subline.id">
-            <option :value="subline.id" x-text="subline.name"></option>
-          </template>
-        </select>
-        <label class="ps-4 text-muted small">Sublínea(Opcional)</label>
-      </div>
 
-      <div class="form-floating mb-3">
-        <select class="form-select form-select-lg ps-4 rounded-5" x-model="collection.target_id"
-        @change="previewCode()" required>
-          <option value="">Selecciona tipo</option>
-          <template x-for="target in targets" :key="target.id">
-            <option :value="target.id" x-text="target.name"></option>
-          </template>
-        </select>
-        <label class="ps-4 text-muted small">Tipo de usuario</label>
-      </div>
+    <div class="form-floating mb-3">
+      <textarea class="form-control" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
+      <label class="">Descripción</label>
+    </div>
 
-      <div class="mb-3" x-show="preview_code">
-        <div class="alert alert-secondary rounded-5 fs-5">Código: <strong  x-text="preview_code"></strong></div>
-      </div>
-
-
-        <div class="form-floating mb-3">
-          <input type="text" class="ps-4 form-control form-control-lg rounded-5 fw-semibold" x-model="collection.name" placeholder="Nombre de colección" required>
-          <label class="ps-4 text-muted">Nombre de la colección</label>
-        </div>
-
-
-
-      <div class="form-floating mb-3">
-        <textarea class="ps-4 form-control form-control-lg rounded-5 fw-semibold" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
-        <label class="text-muted px-4">Descripción</label>
-      </div>
-
-      <div class="d-grid">
-        <button type="submit" class="btn btn-dark rounded-5">Crear colección</button>
-      </div>
+    <div class="d-grid">
+      <button type="submit" class="btn btn-dark" :disabled="loading" @click="createCollection">Crear colección</button>
+    </div>
   </div>
 
 </form>
+<script>
+
+
+function createCollection() {
+  return {
+    collection: { name: '', description: '', code:'' },
+    existing_code: false,
+    error: '',
+    preview_code: '',
+    loading: false,
+
+
+    init() {
+      this.previewCode();
+    },
+
+
+    async previewCode() {
+      try{
+        const res = await fetch(`/api/v1/product-collections/preview-code`);
+        const data = await res.json();
+        this.preview_code = data.preview_code;
+        this.collection.code = data.preview_code;
+        return data.preview_code;
+      }catch (err) {
+        console.error('Error previewing code:', err);
+      }
+    },
+
+    async createCollection() {
+
+      if(this.loadig === true)return
+      this.loading = true;
+      try {
+        const payload = {
+          ...this.collection,
+        };
+        const res = await fetch('/api/v1/product-collections', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Error creando la colección');
+        window.location.href = '/products/collections';
+      } catch (error) {
+        console.error('Error creando colección:', error);
+        alert('Ocurrió un error al crear la colección. Revisa la consola.');
+      }
+    }
+  }
+}
+</script>

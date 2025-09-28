@@ -378,13 +378,8 @@ class CollectionPatchResource(BasePatchResource):
 
 class NextCodeCollectionCodeResource(Resource):
     def get(self):
-        line_id = request.args.get("line_id", type=int)
-        subline_id = request.args.get("subline_id", type=int)
-        target_id = request.args.get("target_id", type=int)
 
-        number = CollectionService.preview_collection_code(
-            line_id, subline_id, target_id
-        )
+        number = CollectionService.preview_collection_code()
         if number:
             return {"preview_code": str(number)}
 

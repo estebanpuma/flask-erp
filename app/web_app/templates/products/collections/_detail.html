@@ -3,7 +3,7 @@
         <div x-text="error" class="alert alert-danger" role="alert"></div>
     </template>
 
-    <div class="card px-0">
+    <div class="card px-0 bg-light border-0">
         <div class="card-body">
             <div class="mb-2">
                 <div class="text-muted">Nombre de la colleción</div>
@@ -50,6 +50,10 @@
                                     x-text="products.name"></span>
                                  <span x-text="products.code"></span>
                             </div>
+                            </li>
+                        </template>
+                        <template x-if="products.length == 0">
+                            <li class="list-group-item list-group-item-action rounded-2" x-text="'No existen productos en esta colección.'">
                             </li>
                         </template>
                     </ul>

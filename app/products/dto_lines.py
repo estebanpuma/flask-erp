@@ -31,15 +31,12 @@ class SublineUpdateDTO(MyBase):
 
 class CollectionCreateDTO(MyBase):
 
-    line_id: int = Field(..., gt=0)
-    subline_id: Optional[int] = None
-    target_id: int = Field(None, gt=0)
     name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
+    code: str = Field(..., min_length=1, max_length=10, strip_whitespace=True)
     description: Optional[str] = None
 
 
 class CollectionUpdateDTO(MyBase):
     name: Optional[str] = None
     description: Optional[str] = None
-    n_hormas: Optional[int] = None
     is_active: Optional[bool] = None

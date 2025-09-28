@@ -4,7 +4,7 @@ from sqlalchemy.orm import joinedload
 
 from app import db
 
-from ..common.services import CollectionCodeGenerator, ProductCodeGenerator
+from ..common.services import ProductCodeGenerator
 from ..core.exceptions import ConflictError, NotFoundError, ValidationError
 from ..core.filters import apply_filters
 from ..core.utils import FileUploader
@@ -821,56 +821,36 @@ class CollectionService:
         with db.session.begin():
             dto = CollectionCreateDTO(**data)
             collection = CollectionService.create_collection(
-                line_id=dto.line_id,
-                subline_id=dto.subline_id,
-                target_id=dto.target_id,
+                code=dto.code,
                 name=dto.name,
                 description=dto.description,
             )
             return collection
 
     @staticmethod
-    def preview_collection_code(
-        line_id,
-        target_id,
-        subline_id=None,
-    ) -> int:
-        line = db.session.query(ProductLine).get(line_id)
-        subline = db.session.query(ProductSubLine).get(subline_id)
-        target = db.session.query(ProductTarget).get(target_id)
+    def preview_collection_code():
+        from ..common.services import SecuenceGenerator
 
-        code = CollectionCodeGenerator.preview_collection_number(line, subline, target)
+        code = SecuenceGenerator.get_next_number("collection_sec")
         return code
 
     @staticmethod
-    def create_collection(
-        line_id: int, subline_id: int, target_id: int, name: str, description: str
-    ):
+    def create_collection(name: str, description: str, code: str):
+        from ..common.services import SecuenceGenerator
 
-        line = db.session.query(ProductLine).get(line_id)
-        subline = db.session.query(ProductSubLine).get(subline_id)
-        target = db.session.query(ProductTarget).get(target_id)
-
-        code = CollectionCodeGenerator.get_next_collection_number(
-            linea=line, sublinea=subline, tipo=target
-        )
+        sec = SecuenceGenerator.get_next_number("collection_sec")
+        if sec != code:
+            code = sec
 
         # Validación de unicidad según restricción
-        query = db.session.query(ProductCollection).filter_by(
-            line_id=line_id, target_id=target_id, code=code
-        )
-
-        if subline_id is None:
-            query = query.filter(ProductCollection.subline_id.is_(None))
-        else:
-            query = query.filter_by(subline_id=subline_id)
+        query = db.session.query(ProductCollection).filter_by(code=code)
 
         if query.first():
             raise ConflictError(
                 f"Ya existe una colección con código {code} para la combinación seleccionada."
             )
 
-        aux_code = f"{line.code}{subline.code if subline else ''}{target.code}{code}"
+        aux_code = f"{code}"
         existing = ProductCollection.query.filter(
             ProductCollection.aux_code == aux_code
         ).first()
@@ -882,9 +862,6 @@ class CollectionService:
         new_collection = ProductCollection(
             code=code,
             aux_code=aux_code,
-            line_id=line_id,
-            subline_id=subline_id,
-            target_id=target_id,
             name=name,
             description=description,
         )
@@ -892,6 +869,7 @@ class CollectionService:
         db.session.add(new_collection)
         db.session.flush()
 
+        # Generar hormas automaticamente
         last_type = LastType(name=name, collection_id=new_collection.id)
         db.session.add(last_type)
         db.session.flush()
@@ -906,7 +884,6 @@ class CollectionService:
 
     @staticmethod
     def patch_obj(obj: ProductCollection, data: dict) -> ProductCollection:
-        print("entra a patch obj")
         dto = CollectionUpdateDTO(**data)
         col = CollectionService.patch_line(obj, dto.name, dto.description)
         return col
