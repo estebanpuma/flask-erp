@@ -72,16 +72,15 @@ class ProductCollection(BaseModel, SoftDeleteMixin):
     code = db.Column(db.Integer, nullable=False)  # 1, 2, 3, 4
     aux_code = db.Column(db.String(10), nullable=True)
 
-    line_id = db.Column(db.Integer, db.ForeignKey("product_lines.id"), nullable=False)
+    line_id = db.Column(db.Integer, db.ForeignKey("product_lines.id"), nullable=True)
     subline_id = db.Column(
         db.Integer, db.ForeignKey("product_sub_lines.id"), nullable=True
     )
     target_id = db.Column(
-        db.Integer, db.ForeignKey("product_targets.id"), nullable=False
+        db.Integer, db.ForeignKey("product_targets.id"), nullable=True
     )
 
     description = db.Column(db.String(255))
-    n_hormas = db.Column(db.Integer, nullable=True, default=0)
     image_url = db.Column(db.String(255))
 
     line = db.relationship("ProductLine", back_populates="collections")
