@@ -828,17 +828,24 @@ class CollectionService:
             return collection
 
     @staticmethod
-    def preview_collection_code():
+    def preview_collection_code(line_id: int):
         from ..common.services import SecuenceGenerator
 
-        code = SecuenceGenerator.get_next_number("collection_sec")
+        line = LineService.get_obj(line_id)
+        if line is None:
+            raise ValueError("Linea no encontrada")
+
+        code = SecuenceGenerator.get_next_number(f"collection_{line_id}")
         return code
 
     @staticmethod
-    def create_collection(name: str, description: str, code: str):
+    def create_collection(line_id: int, name: str, description: str, code: str):
         from ..common.services import SecuenceGenerator
 
-        sec = SecuenceGenerator.get_next_number("collection_sec")
+        line = LineService.get_obj(line_id)
+        if line is None:
+            raise ValueError("Linea no encontrada")
+        sec = SecuenceGenerator.get_next_number(f"collection_{line_id}")
         if sec != code:
             code = sec
 

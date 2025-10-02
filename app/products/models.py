@@ -72,13 +72,14 @@ class ProductCollection(BaseModel, SoftDeleteMixin):
     code = db.Column(db.Integer, nullable=False)  # 1, 2, 3, 4
     aux_code = db.Column(db.String(10), nullable=True)
 
-    line_id = db.Column(db.Integer, db.ForeignKey("product_lines.id"), nullable=True)
+    line_id = db.Column(db.Integer, db.ForeignKey("product_lines.id"), nullable=False)
     subline_id = db.Column(
         db.Integer, db.ForeignKey("product_sub_lines.id"), nullable=True
     )
     target_id = db.Column(
         db.Integer, db.ForeignKey("product_targets.id"), nullable=True
     )
+    last_type_id = db.Column(db.Integer, db.ForeignKey("last_types.id"), nullable=True)
 
     description = db.Column(db.String(255))
     image_url = db.Column(db.String(255))
@@ -87,16 +88,10 @@ class ProductCollection(BaseModel, SoftDeleteMixin):
     sub_line = db.relationship("ProductSubLine", back_populates="collections")
     target = db.relationship("ProductTarget", back_populates="collections")
 
+    last_type = db.relationship("LastType", back_populates="collections")
+
     products = db.relationship(
         "Product", back_populates="collection", cascade="all, delete-orphan"
-    )
-
-    # relación a stock de hormas por talla (buckets)
-    lasts = db.relationship(
-        "LastType",
-        back_populates="collection",
-        cascade="all, delete-orphan",
-        lazy="selectin",
     )
 
 
@@ -105,17 +100,13 @@ class LastType(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String())
     name = db.Column(db.String())
-    collection_id = db.Column(
-        db.Integer,
-        db.ForeignKey("product_collections.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    description = db.Column(db.String())
     lasts = db.relationship(
         "Last",
         back_populates="family",
         cascade="all, delete-orphan",
     )
-    collection = db.relationship("ProductCollection", back_populates="lasts")
+    collections = db.relationship("ProductCollection", back_populates="last_type")
 
 
 class Last(BaseModel):

@@ -1,6 +1,15 @@
 <form @submit.prevent="createCollection" class="needs-validation " autocomplete="off" x-data="createCollection()" x-init="init()">
   <div class="container pt-3 pb-5 px-2 rounded" style="max-width: 480px">
 
+    <div class="form-floating mb-3">
+      <select name="line" class="form-select form-control" x-model="collection.line" id="" required @change="previewCode()">
+        <option value="" disabled>Seleccione línea</option>
+        <template x-for="line in lines" :key="line.id">
+          <option :value="line.id" x-text="line.name"></option>
+        </template>
+      </select>
+      <label for="line">Línea</label>
+    </div>
     <div class="mb-3" x-show="preview_code">
       <div class="alert alert-secondary">Código: <strong  x-text="preview_code"></strong></div>
     </div>
@@ -27,27 +36,39 @@
 
 function createCollection() {
   return {
-    collection: { name: '', description: '', code:'' },
+    collection: { line:'', name: '', description: '', code:'' },
     existing_code: false,
     error: '',
     preview_code: '',
     loading: false,
+    lines: [],
 
 
     init() {
-      this.previewCode();
+      this.fetchLines();
     },
 
 
     async previewCode() {
       try{
-        const res = await fetch(`/api/v1/product-collections/preview-code`);
+        const res = await fetch(`/api/v1/product-collections/preview-code?q=${this.collection.line}`);
         const data = await res.json();
         this.preview_code = data.preview_code;
         this.collection.code = data.preview_code;
         return data.preview_code;
       }catch (err) {
         console.error('Error previewing code:', err);
+      }
+    },
+
+    async fetchLines(){
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', 'product-lines');
+        this.lines = res;
+        console.log('lines: ', this.lines);
+      }catch(err){
+        console.error('Error fetching lines:', err);
+        this.error = 'Error fetching lines';
       }
     },
 
