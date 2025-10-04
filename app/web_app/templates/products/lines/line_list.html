@@ -1,33 +1,98 @@
 {% extends "base.html" %}
-{% block title %}Líneas de Producto{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
-<div class="container mt-3" x-data="lineList()">
-  <div x-data="{ href: '/products/index', title: '👟 Lineas de productos' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
 
+{{ pageHeader(href='/products/index',
+              title=label.lines,
+              has_btn=True,
+              btn_href='/products/lines/create',
+              btn_label='Nueva Línea') }}
 
-  <a href="/products/lines/create" class="btn btn-dark">
-      <i class="bi bi-plus-circle me-1"></i> Nueva Línea
-    </a>
+<div x-data="linesList()">
 
-  <template x-if="lines.length === 0">
-    <p class="text-muted mt-4">No hay líneas registradas.</p>
+  <template x-if="error">
+    <div class="alert alert-danger" role="alert" x-text="error">
+
+    </div>
   </template>
 
-  <div class="list-group mt-4">
+  <ul class="list-group list-group-flush d-sm-block d-md-none" >
     <template x-for="line in lines" :key="line.id">
-      <a :href="`/products/lines/${line.id}`" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-        <div>
-          <h6 class="mb-1" x-text="line.name"></h6>
-          <small class="text-muted" x-text="line.description"></small>
+      <li class="list-group-item list-group-item-action">
+        <div class="d-flex justify-content-between align-items-start btn" @click="redirectLine(line.id)">
+          <div class="ms-2 me-auto text-start" >
+            <div class="fw-bold ms-0" x-text="line.name"></div>
+            <span class="text-muted small ms-0" x-text="line.code ? `Código: ${line.code}` : 'Sin código'"></span>
+          </div>
+          <div>
+            <span class="badge text-bg-primary rounded-pill" x-text="line.count_products + ' productos'"></span>
+            <span class="ms-2"><i class="bi bi-chevron-right"></i></span>
+          </div>
         </div>
-        <span class="badge bg-secondary rounded-pill" x-text="line.count_products || 0 + ' productos'"></span>
-        <i class="bi bi-chevron-right"></i>
-      </a>
+      </li>
     </template>
+  </ul>
+
+  <div class="table-responsive d-none d-md-block">
+    <table class="table table-hover table-sticky">
+      <thead>
+        <tr>
+          <th class="sticky-col" >{{label.line}}</th>
+          <th class="" >Código</th>
+          <th>N productos</th>
+        </tr>
+
+      </thead>
+      <tbody>
+        <template x-for="line in lines" :key="line.id">
+          <tr @click="redirectLine(line.id)" class="cursor-pointer">
+            <td class="sticky-col" x-text="line.name"></td>
+            <td class="" x-text="line.code"></td>
+            <td class="" x-text="line.count_products"></td>
+          </tr>
+        </template>
+        <template x-if="empty">
+          <tr>No exsiten lineas registradas</tr>
+        </template>
+
+      </tbody>
+    </table>
   </div>
+
 </div>
-<script src="{{ url_for('static', filename='js/product_lines_sublines.js') }}"></script>
+
+
+<script>
+function linesList(){
+  return{
+    lines:[],
+    error:'',
+    empty: false,
+
+
+    init(){
+      this.fetchLines()
+    },
+
+    async fetchLines(){
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', '/product-lines');
+        if(res){
+          this.lines = res;
+          if(!this.lines.length>0) this.empty = true
+        }
+      }catch(error){
+        console.error('error consultando API: ', error)
+        this.error = 'Error consultando API' + String(error)
+      }
+    },
+
+    redirectLine(id){
+      window.location.href = `/products/lines/${id}`
+    }
+  }
+}
+
+</script>
 
 {% endblock %}

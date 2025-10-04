@@ -821,6 +821,10 @@ class CollectionService:
         with db.session.begin():
             dto = CollectionCreateDTO(**data)
             collection = CollectionService.create_collection(
+                line_id=dto.line_id,
+                subline_id=dto.subline_id,
+                target_id=dto.target_id,
+                last_type_id=dto.last_type_id,
                 code=dto.code,
                 name=dto.name,
                 description=dto.description,
@@ -839,25 +843,54 @@ class CollectionService:
         return code
 
     @staticmethod
-    def create_collection(line_id: int, name: str, description: str, code: str):
+    def create_collection(
+        line_id: int,
+        target_id: int,
+        last_type_id: int,
+        name: str,
+        description: str,
+        code: str,
+        subline_id: int = None,
+    ):
         from ..common.services import SecuenceGenerator
 
         line = LineService.get_obj(line_id)
         if line is None:
             raise ValueError("Linea no encontrada")
-        sec = SecuenceGenerator.get_next_number(f"collection_{line_id}")
-        if sec != code:
+
+        subcode = line.code
+
+        if subline_id:
+            subline = SublineService.get_obj(subline_id)
+            if subline is None:
+                raise ValueError("Sublinea no encontrada")
+            subcode = f"{line.code}{subline.code}"
+
+        target = TargetService.get_obj(target_id)
+        if target is None:
+            raise ValueError("Target no encontrada")
+
+        subcode = f"{subcode}{target.code}"
+
+        if last_type_id:
+            last_type = LastTypeService.get_obj(last_type_id)
+            if last_type is None:
+                raise ValueError("Horma no encontrada")
+
+        if code:
+            aux_code = f"{subcode}{str(code)}"
+            # Validación de unicidad según restricción
+            query = db.session.query(ProductCollection).filter_by(code=code)
+
+            if query.first():
+                raise ConflictError(
+                    f"Ya existe una colección con código {code} para la combinación seleccionada."
+                )
+        else:
+            sec = SecuenceGenerator.get_next_number(f"collection_{subcode}")
             code = sec
+            aux_code = f"{subcode}{str(sec)}"
 
-        # Validación de unicidad según restricción
-        query = db.session.query(ProductCollection).filter_by(code=code)
-
-        if query.first():
-            raise ConflictError(
-                f"Ya existe una colección con código {code} para la combinación seleccionada."
-            )
-
-        aux_code = f"{code}"
         existing = ProductCollection.query.filter(
             ProductCollection.aux_code == aux_code
         ).first()
@@ -867,6 +900,10 @@ class CollectionService:
             )
         # Crear nueva colección
         new_collection = ProductCollection(
+            line_id=line_id,
+            subline_id=subline_id,
+            target_id=target_id,
+            last_type_id=last_type_id,
             code=code,
             aux_code=aux_code,
             name=name,
@@ -874,18 +911,6 @@ class CollectionService:
         )
 
         db.session.add(new_collection)
-        db.session.flush()
-
-        # Generar hormas automaticamente
-        last_type = LastType(name=name, collection_id=new_collection.id)
-        db.session.add(last_type)
-        db.session.flush()
-
-        lasts = []
-        for s in range(14, 44):
-            last = Last(family_id=last_type.id, size=s, qty=0)
-            lasts.append(last)
-        db.session.add_all(lasts)
 
         return new_collection
 
@@ -1134,6 +1159,35 @@ class LastTypeService:
     @staticmethod
     def get_obj(id: int) -> Last | None:
         return db.session.get(LastType, id)
+
+    @staticmethod
+    def create_obj(data: dict) -> LastType:
+        from .dto_products import LastTypeDTO
+
+        with db.session.begin():
+            dto = LastTypeDTO(**data)
+            new_last_type = LastTypeService.create_last_type(
+                code=dto.code, name=dto.name, description=dto.description
+            )
+            return new_last_type
+
+    @staticmethod
+    def create_last_type(code: str, name: str, description: str) -> LastType:
+        existing_code = db.session.query(LastType).filter_by(code=code).first()
+        if existing_code:
+            raise IntegrityError("Ya existe una familia de hormas con ese codigo")
+        new_last_type = LastType(code=code, name=name, description=description)
+        db.session.add(new_last_type)
+        new_last_type.lasts = []
+
+        # Generar hormas automaticamente
+
+        lasts = []
+        for s in range(14, 44):
+            last = Last(family=new_last_type, size=s, qty=0)
+            lasts.append(last)
+        db.session.add_all(lasts)
+        return new_last_type
 
     @staticmethod
     def get_obj_list(filters: dict = None) -> list[Last]:

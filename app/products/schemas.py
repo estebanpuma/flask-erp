@@ -22,6 +22,7 @@ line_fields = {
     "code": fields.String,
     "name": fields.String,
     "description": fields.String,
+    "count_products": fields.Integer,
 }
 
 subline_fields = {

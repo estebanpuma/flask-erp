@@ -1,26 +1,7 @@
-{#
-  Componente Offcanvas reutilizable para edición de un solo campo.
-  Se activa con un evento global de Alpine.js.
 
-  Uso:
-  1. Incluye este archivo en tu `base.html` o layout principal.
-     {% include 'components/_genericForm.html' %}
 
-  2. Desde cualquier parte de tu aplicación, dispara el evento `open-generic-editor`
-     con los detalles necesarios.
 
-     Ejemplo en un botón:
-     <button @click="$dispatch('open-generic-editor', {
-        title: 'Editar Nombre',
-        label: 'Nombre del Cliente',
-        field: 'name',
-        value: 'Cliente Actual',
-        type: 'text',
-        patchUrl: '/api/v1/clients/123',
-        help: 'El nombre debe tener al menos 3 caracteres.',
-        onSave: () => { console.log('¡Guardado!'); location.reload(); }
-     })">Editar Nombre</button>
-#}
+
 <div
     class="offcanvas offcanvas-end"
     tabindex="-1"

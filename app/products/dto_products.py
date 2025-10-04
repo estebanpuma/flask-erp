@@ -1,4 +1,7 @@
+from typing import Optional
+
 from ..common.parsers import parse_float, parse_ids_list, parse_int, parse_str
+from ..core.dto_base import MyBase
 from ..core.exceptions import ValidationError
 from .models import Product
 
@@ -121,3 +124,10 @@ class InlineMaterialsDTO:
         self.quantity = parse_float(
             data.get("quantity"), min_value=0, field="Cantidad de material"
         )
+
+
+class LastTypeDTO(MyBase):
+    id: int
+    name: str
+    description: Optional[str] = None
+    code: Optional[str] = None

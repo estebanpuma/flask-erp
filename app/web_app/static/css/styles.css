@@ -71,3 +71,8 @@ font-weight: 600;
   }
   /* ...resto igual... */
 }
+
+
+.cursor-pointer{
+    cursor: pointer;
+}

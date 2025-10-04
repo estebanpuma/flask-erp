@@ -114,7 +114,7 @@ def product_line_list():
 
 @products_bp.route("/lines/<int:id>")
 def product_line_detail(id):
-    return render_template("products/lines/line_detail.html", line_id=id)
+    return render_template("products/lines/line_detail.html", id=id)
 
 
 # -------------------------------------------------------

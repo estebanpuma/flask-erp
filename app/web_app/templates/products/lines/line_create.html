@@ -6,10 +6,6 @@
   <div x-data="{ href: '/products/lines', title: 'Cerar collecion de productos' }">
     {% include 'components/_pageHeader.html' %}
   </div>
-  {% include "products/collections/_collectionForm_create.html" %}
+  {% include "products/lines/_lineForm_create.html" %}
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/product_collections.js') }}"></script>
 {% endblock %}
