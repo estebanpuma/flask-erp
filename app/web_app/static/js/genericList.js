@@ -30,7 +30,7 @@ function genericList(apiUrl,baseHref, columns) {
 
         /* ① Mini-componente global (badge, botón, etc.) */
         if (typeof col.component === 'string') {
-          const comp = window.guifer?.components?.[col.component]
+          const comp = window.guifer?.components?.status?.[col.component]
           console.log('is-string', comp)
           if (comp) {
             const kind = col.props?.kind ?? 'default'
@@ -50,6 +50,7 @@ function genericList(apiUrl,baseHref, columns) {
 
         /* ④ Valor por defecto */
         return raw ?? '—'
+
       },
 
     async fetchItems() {

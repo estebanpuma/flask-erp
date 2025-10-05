@@ -1,6 +1,16 @@
 <div x-data="detailLine({{id}})">
     <div class="card px-0">
         <div class="card-body">
+            <!-- Fila de Estado -->
+            <div class="d-flex justify-content-end mb-2">
+                <span
+                    class="badge"
+                    :class="line.is_active ? 'text-bg-success' : 'text-bg-secondary'"
+                    x-text="line.is_active ? 'Activo' : 'Inactivo'">
+                </span>
+            </div>
+
+            <!-- Fila de Nombre -->
             <div class="mb-3">
                 <div class="text-muted">Nombre de la línea</div>
                 <div class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
@@ -10,21 +20,24 @@
                         field: 'name',
                         value: line.name,
                         type: 'text',
-                        patchUrl: '/api/v1/product-lines/{{id}}',
+                        patchUrl: `/api/v1/product-lines/${id}`,
                         help: 'El nombre debe tener al menos 3 caracteres.',
-                        onSave: () => { console.log('¡Guardado!');location.reload(); alert('GUuuardado!');  }
+                        onSave: (updated) => { line.name = updated.name; }
                     })">
                     <div x-text="line.name"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </div>
             </div>
+
+            <!-- Fila de Código -->
             <div class="mb-3">
                 <div class="text-muted">Código</div>
-                <div class="d-flex justify-content-between rounded-2 form-control cursor-pointer">
+                <div class="d-flex justify-content-between rounded-2 form-control bg-light">
                     <div  x-text="line.code?line.code:'Sin codigo'"></div>
-                    <div> <i class="bi bi-chevron-right"></i></div>
                 </div>
             </div>
+
+            <!-- Fila de Descripción -->
             <div class="mb-3">
                 <div class="text-muted">{{label.description}}</div>
                 <div class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
@@ -33,19 +46,30 @@
                         label: 'Descripción',
                         field: 'description',
                         value: line.description,
-                        type: 'text',
-                        patchUrl: '/api/v1/product-lines/{{id}}',
+                        type: 'textarea',
+                        patchUrl: `/api/v1/product-lines/${id}`,
                         help: '',
-                        onSave: () => { console.log('¡Guardado!');location.reload(); alert('✅Guardado!');  }
+                        onSave: (updated) => { line.description = updated.description; }
                     })">
                     <div  x-text="line.description?line.description:'Sin descripción'"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </div>
             </div>
+
+            <!-- Fila de estado -->
+            <div class="mb-3">
+                <div class="text-muted">Estado</div>
+                <div class="d-flex justify-content-between form-check  form-switch ps-0">
+                    <label  x-text="line.is_active ? 'Activo' : 'Inactivo'"></label>
+                    <input class="form-check-input" type="checkbox" role="switch" :checked="line.is_active" @click="toggleStatus()">
+                </div>
+
+            </div>
+            <!-- Fila de Total Productos -->
             <div class="mb-3">
                 <div class="text-muted">{{label.products}}</div>
                 <div class="d-flex justify-content-between rounded-2 ">
-                    <div class="">Numero de productos:</div>
+                    <div class="">Total productos:</div>
                     <div  x-text="line.count_products" class="badge text-bg-primary rounded-pill"></div>
 
                 </div>
@@ -54,20 +78,39 @@
             <div class="mb-3">
                 <div class="text-muted">{{label.collections}}</div>
                 <div class="d-flex justify-content-between rounded-2 ">
-                    <div class="">Numero de {{label.collections}}:</div>
+                    <div class="">Total {{label.collections}}:</div>
                     <div  x-text="collections.length" class="badge text-bg-primary rounded-pill"></div>
                 </div>
-                <div>
-                    <ol>
-                        <template x-for="collection in collections" :key="collection.id">
-                            <li class="list-group-item list-group-item-action">
-                                <div x-text="collection.name"></div>
-                            </li>
-                        </template>
-                    </ol>
-
-                </div>
             </div>
+            <div class="mb-3">
+                <div class="text-muted">Lista de {{label.collections}}</div>
+                <ol class="list-group rounded-top">
+                    <template x-for="collection in collections" :key="collection.id">
+                        <a :href="'/products/collections/'+collection.id" class="list-group-item list-group-item-action  d-flex justify-content-between cursor-pointer">
+                            <div class="d-flex align-items-center">
+                                <span
+                                class="rounded-circle me-2"
+                                style="display: inline-block; width: 8px; height: 8px;"
+                                :class="collection.is_active ? 'bg-success' : 'bg-secondary'">
+                                </span>
+                                <div x-text="collection.name"></div>
+                            </div>
+
+                            <div> <i class="bi bi-chevron-right"></i></div></div>
+                        </a>
+                    </template>
+                </ol>
+            </div>
+
+            <!-- Zona de Acciones Peligrosas -->
+            <div class="mt-5 pt-4 border-top">
+                <template x-if="line.count_products === 0">
+                    <button @click="deleteLine()" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar Línea Permanentemente
+                    </button>
+                </template>
+            </div>
+
         </div>
     </div>
 
@@ -81,17 +124,16 @@
             form:{},
             message:'',
             collections:[],
+            id: id,
 
             init(){
                 this.fetchLine(id);
-
+                this.fetchCollections(id);
             },
 
             async fetchLine(id){
-                try{
+                try {
                     let res = await window.guifer.helpers.fetch.apiFetch('GET', `product-lines/${id}`);
-
-                    // Ordenamos el array de hormas por talla (size) de menor a mayor
                     this.line = res;
                     console.log('res: ', res);
                 }catch(error){
@@ -111,39 +153,38 @@
                     }
             },
 
-            editField(field, data, label, api, type){
-                this.type = type??'text';
-                this.api = api;
-                this.original_value = data;
-                this.selectedField = field;
-                this.field_label = label;
-                this.form_model = data;
-                this._offcanvas.show();
-                this.form[field] = this.form_model;
-                console.log("Offcanvas abierto por JS.");
-            },
-
-            async saveField(){
-                let url = this.api
-                this.form[this.selectedField] = this.form_model;
-                console.log('save: ', this.form)
-                try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('PATCH', url, this.form );
-                    this.fetchLastType(id)
-                    console.log('repsonse: ', res)
-
-                    alert("Guardado");
-                    this.form = {};
-                    this._offcanvas.hide();
-                }
-                catch(err){
-                    console.error('ERROR API: ', err)
+            async toggleStatus() {
+                if (!confirm('¿Estás seguro de que quieres cambiar el estado, los productos de esta linea no estaran disponibles para la venta ni produccion?')) {
+                    return;
                 }
 
+                try {
+                    const newStatus = !this.line.is_active;
+                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', `product-lines/${this.id}`, { is_active: newStatus });
+                    console.log('updated: ', updated)
+                    if (updated) {
+                        this.line.is_active = updated.is_active;
+                        this.fetchCollections(this.id);
+                    }
+                } catch (error) {
+                    console.error('Error toggling status:', error);
+                    alert('No se pudo cambiar el estado.');
+                }
             },
 
-            resetField(){
-                this.form_model = this.original_value
+            async deleteLine() {
+                if (!confirm('¿Estás seguro de que quieres eliminar esta línea? Esta acción no se puede deshacer.')) {
+                    return;
+                }
+
+                try {
+                    await window.guifer.helpers.fetch.apiFetch('DELETE', `product-lines/${this.id}`);
+                    alert('Línea eliminada con éxito.');
+                    window.location.href = '/products/lines';
+                } catch (error) {
+                    console.error('Error deleting line:', error);
+                    alert('No se pudo eliminar la línea. Es posible que aún tenga colecciones o productos asociados.');
+                }
             }
 
         }

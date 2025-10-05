@@ -15,6 +15,7 @@ from .resources import (
     LastSyncResource,
     LastTypeGetResource,
     LastTypePatchResource,
+    LineDeleteResource,
     LineGetResource,
     LinePatchResource,
     LinePostResource,
@@ -72,6 +73,9 @@ products_api.add_resource(LinePatchResource, "/product-lines/<int:resource_id>")
 products_api.add_resource(
     SubLineGetResource, "/product-sublines", "/product-sublines/<int:resource_id>"
 )
+
+products_api.add_resource(LineDeleteResource, "/product-lines/<int:resource_id>")
+
 products_api.add_resource(SubLinePostResource, "/product-sublines")
 products_api.add_resource(SubLinePatchResource, "/product-sublines/<int:resource_id>")
 

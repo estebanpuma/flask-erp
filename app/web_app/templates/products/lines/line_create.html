@@ -1,11 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Crear Línea{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
 
 {% block content %}
-<div class="container mt-3" x-data="createCollection()" x-init="init()">
-  <div x-data="{ href: '/products/lines', title: 'Cerar collecion de productos' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
+
+<div class="mt-3">
+  {{ pageHeader(href='/products/lines', title='Nueva'+label.line)}}
   {% include "products/lines/_lineForm_create.html" %}
 </div>
 {% endblock %}

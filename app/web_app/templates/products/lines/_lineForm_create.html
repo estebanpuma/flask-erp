@@ -1,17 +1,24 @@
-<form @submit.prevent="createLine">
+<form @submit.prevent="newLine" x-data="createLine()">
 
   <div class="form-floating mb-3">
-    <input type="text" class="form-control text-uppercase"
+    <input type="text" class="form-control"
            id="name" placeholder="Ej: Escolar"
-           x-model="line.name" required>
+           x-model.debouce.350ms="line.name"
+           @input="checkName()"
+           required>
     <label for="name">Nombre de la línea</label>
+    <template x-if="existing_name" >
+        <span id="nameFeedback" class="text-danger">
+            🚫 El nombre ya existe.
+        </span>
+    </template>
   </div>
 
   <div class="form-floating mb-3">
     <input type="text" class="form-control text-uppercase"
            id="code" placeholder="Ej: Escolar"
-           x-model="line.code"
-           @input="checkCode()"
+           x-model.debouce.350ms="line.code"
+           @input="line.code = $event.target.value.toUpperCase(); checkCode()"
            required>
     <label for="code">Código de la línea</label>
     <template x-if="existing_code" >
@@ -29,7 +36,66 @@
   </div>
 
   <div class="d-flex justify-content-end mt-4">
-    <button type="submit" class="btn btn-dark">Guardar línea</button>
+    <button type="submit" @click="newLine()" class="btn btn-dark">Guardar línea</button>
   </div>
 
 </form>
+
+<script>
+function createLine(){
+  return{
+    line:{},
+    error:'',
+    message:'',
+    existing_code: false,
+    existing_name: false,
+    loading:false,
+
+
+    async newLine(){
+      this.loading = true;
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('POST', '/product-lines', this.line );
+        if(res){
+          alert('Guardado con éxito');
+          window.location.href = '/products/lines';
+        }else{
+          this.error = 'Error'
+          this.loading = false;
+        }
+      }catch(error){
+        console.error('API error: ', error)
+        this.error = 'Error' + String(error)
+      }
+    },
+
+    async checkName(){
+
+      this.existing_name = false;
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `/product-lines?name=${this.line.name}`);
+        if(res && res.length>0){
+          this.existing_name = true;
+          this.error = 'El nombre ya existe'
+        }
+      }catch(err){
+        console.error('ERROR API: ', err)
+      }
+    },
+
+    async checkCode(){
+      this.existing_code = false;
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `/product-lines?code=${this.line.code}`);
+        if(res && res.length>0){
+          this.existing_code = true;
+          this.error = 'El código ya existe'
+        }
+      }catch(err){
+        console.error('ERROR API: ', err)
+      }
+
+    }
+  }
+}
+</script>

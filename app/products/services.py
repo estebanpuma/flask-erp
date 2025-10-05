@@ -620,11 +620,16 @@ class LineService:
     def patch_obj(obj: ProductLine, data: dict) -> ProductLine:
         print("entra a patch obj")
         dto = LineUpdateDTO(**data)
-        job = LineService.patch_line(obj, dto.name, dto.description)
-        return job
+        obj = LineService.patch_line(obj, dto.name, dto.description, dto.is_active)
+        return obj
 
     @staticmethod
-    def patch_line(obj: ProductLine, name: str = None, description: str = None):
+    def patch_line(
+        obj: ProductLine,
+        name: str = None,
+        description: str = None,
+        is_active: bool = None,
+    ):
         print("entra a job")
         if name:
             if obj.name != name:
@@ -632,8 +637,35 @@ class LineService:
         if description:
             obj.description = description
 
+        if is_active is not None:
+            # 1. Actualizar el objeto principal
+            obj.is_active = is_active
+            # 2. Actualizar colecciones: Filtramos por la relación (ForeignKey)
+            db.session.query(ProductCollection).filter(
+                ProductCollection.line_id == obj.id  # o el nombre de tu Foreign Key
+            ).update(
+                {ProductCollection.is_active: is_active}, synchronize_session="fetch"
+            )
+
+            # 3. Actualizar productos:
+            db.session.query(Product).filter(
+                Product.line_id == obj.id  # o el nombre de tu Foreign Key
+            ).update({Product.is_active: is_active}, synchronize_session="fetch")
+
         try:
             db.session.commit()
+            return obj
+        except Exception as e:
+            current_app.logger.warning(f"error: {e}")
+            db.session.rollback()
+            raise str(e)
+
+    @staticmethod
+    def delete_obj(obj: ProductLine):
+        try:
+            db.session.delete(obj)
+            db.session.commit()
+            return True
         except Exception as e:
             current_app.logger.warning(f"error: {e}")
             db.session.rollback()
@@ -917,22 +949,33 @@ class CollectionService:
     @staticmethod
     def patch_obj(obj: ProductCollection, data: dict) -> ProductCollection:
         dto = CollectionUpdateDTO(**data)
-        col = CollectionService.patch_line(obj, dto.name, dto.description)
+        col = CollectionService.patch_line(
+            obj, dto.name, dto.description, dto.is_active
+        )
         return col
 
     @staticmethod
     def patch_line(
-        obj: ProductCollection, name: str = None, description: str = NotImplemented
+        obj: ProductCollection,
+        name: str = None,
+        description: str = None,
+        is_active: bool = None,
     ):
-        print(name)
-        print(obj.id)
         if name:
             if obj.name != name:
                 obj.name = name
         if description:
             obj.description = description
 
-        if not name and not description:
+        print("is active in patch cllection service", is_active)
+        if is_active is not None:
+            obj.is_active = is_active
+
+            db.session.query(Product).filter(Product.collection_id == obj.id).update(
+                {Product.is_active: is_active}, synchronize_session="fetch"
+            )
+
+        if name is None and description is None and is_active is None:
             raise ValueError("No se proporciono un campo permitido")
 
         try:

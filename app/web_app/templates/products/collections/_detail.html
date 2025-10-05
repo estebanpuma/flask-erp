@@ -5,8 +5,18 @@
 
     <div class="card px-0 bg-light border-0">
         <div class="card-body">
-            <div class="mb-2">
-                <div class="text-muted">Nombre de la colleción</div>
+            <!-- Fila de Estado -->
+            <div class="d-flex justify-content-end mb-2">
+                <span
+                    class="badge"
+                    :class="collection.is_active ? 'text-bg-success' : 'text-bg-secondary'"
+                    x-text="collection.is_active ? 'Activo' : 'Inactivo'">
+                </span>
+            </div>
+
+            <div class="mb-3">
+
+                <div class="text-muted">Nombre de {{label.collection}}</div>
                 <button class="d-flex justify-content-between rounded-2 form-control"
                 @click="$dispatch('open-generic-editor', {
                     title: 'Nombre',
@@ -22,7 +32,7 @@
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </button>
             </div>
-            <div class="mb-2">
+            <div class="mb-3">
                 <div class="text-muted">Código</div>
                 <button class="d-flex justify-content-between rounded-2 form-control "
                 @click="$dispatch('open-generic-editor', {
@@ -40,8 +50,44 @@
                 </button>
 
             </div>
+            <!-- Fila de Descripción -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.description}}</div>
+                <div class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                @click="$dispatch('open-generic-editor', {
+                        title: 'Descripción',
+                        label: 'Descripción',
+                        field: 'description',
+                        value: collection.description,
+                        type: 'textarea',
+                        patchUrl: `/api/v1/product-collections/${id}`,
+                        help: '',
+                        onSave: (updated) => { collection.description = updated.description; }
+                    })">
+                    <div  x-text="collection.description?collection.description:'Sin descripción'"></div>
+                    <div> <i class="bi bi-chevron-right"></i></div>
+                </div>
+            </div>
+            <!-- Fila de estado -->
+            <div class="mb-3">
+                <div class="text-muted">Estado</div>
+                <div class="d-flex justify-content-between form-check  form-switch ps-0">
+                    <label  x-text="collection.is_active ? 'Activo' : 'Inactivo'"></label>
+                    <input class="form-check-input" type="checkbox" role="switch" :checked="collection.is_active" @click="toggleStatus()">
+                </div>
+
+            </div>
+            <!-- Fila de Total Productos -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.products}}</div>
+                <div class="d-flex justify-content-between rounded-2 ">
+                    <div class="">Total productos:</div>
+                    <div  x-text="collection.count_products" class="badge text-bg-primary rounded-pill"></div>
+
+                </div>
+            </div>
             <div>
-                <div class="text-muted">Productos</div>
+                <div class="text-muted">{{label.products}}</div>
                     <ul class="list-group list-group-flush">
                         <template x-for="products in products" :key="products.id">
                             <li class="list-group-item list-group-item-action">
@@ -61,7 +107,7 @@
         </div>
     </div>
 
-    {% include 'production/resources/lasts/_editForm.html'%}
+
 </div>
 
 
@@ -79,12 +125,11 @@
             api:'',
             message:'',
             type:'',
-            _offcanvas: null,
+            id:id,
 
             init(){
                 console.log('init... id: ', id)
                 this.fetchCollection(id);
-                this._offcanvas = bootstrap.Offcanvas.getOrCreateInstance(this.$refs.offcanvas);
             },
 
             async fetchCollection(id){
@@ -113,40 +158,23 @@
 
             },
 
-            editField(field, data, label, api, type){
-                this.type = type??'text';
-                this.api = api;
-                this.original_value = data;
-                this.selectedField = field;
-                this.field_label = label;
-                this.form_model = data;
-                this._offcanvas.show();
-                this.form[field] = this.form_model;
-                console.log("Offcanvas abierto por JS.");
-            },
-
-            async saveField(){
-                let url = this.api
-                this.form[this.selectedField] = this.form_model;
-                console.log('save: ', this.form)
-                try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('PATCH', url, this.form );
-                    this.fetchLastType(id)
-                    console.log('repsonse: ', res)
-
-                    alert("Guardado");
-                    this.form = {};
-                    this._offcanvas.hide();
-                }
-                catch(err){
-                    console.error('ERROR API: ', err)
+            async toggleStatus() {
+                if (!confirm('¿Estás seguro de que quieres cambiar el estado, los productos de esta linea no estaran disponibles para la venta ni produccion?')) {
+                    return;
                 }
 
+                try {
+                    const newStatus = !this.collection.is_active;
+                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', `product-collections/${this.id}`, { is_active: newStatus });
+                    console.log('updated: ', updated)
+                    if (updated) {
+                        this.collection.is_active = updated.is_active;
+                    }
+                } catch (error) {
+                    console.error('Error toggling status:', error);
+                    alert('No se pudo cambiar el estado.');
+                }
             },
-
-            resetField(){
-                this.form_model = this.original_value
-            }
 
         }
     }

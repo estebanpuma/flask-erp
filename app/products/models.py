@@ -98,6 +98,10 @@ class ProductCollection(BaseModel, SoftDeleteMixin):
         "Product", back_populates="collection", cascade="all, delete-orphan"
     )
 
+    @property
+    def count_products(self):
+        return len(self.products)
+
 
 class LastType(BaseModel):
     __tablename__ = "last_types"

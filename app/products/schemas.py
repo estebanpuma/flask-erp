@@ -23,6 +23,7 @@ line_fields = {
     "name": fields.String,
     "description": fields.String,
     "count_products": fields.Integer,
+    "is_active": fields.Boolean,
 }
 
 subline_fields = {
@@ -154,7 +155,10 @@ collection_fields = {
     "line_name": fields.String(attribute="line.name"),
     "subline_name": fields.String(attribute="sub_line.name"),
     "target_name": fields.String(attribute="target.name"),
-    "n_hormas": fields.Integer,
+    "is_active": fields.Boolean,
+    "last_type_id": fields.Integer,
+    "last_type_name": fields.String(attribute="last_type.name"),
+    "count_products": fields.Integer(attribute="count_products"),
 }
 
 

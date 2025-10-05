@@ -1,30 +1,68 @@
 {% extends "base.html" %}
 {% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}{{label.collections}}{% endblock %}
 {% block content %}
 
-{{pageHeader('/products', 'Colecciones', has_btn=True, btn_label='Nueva colección', btn_href='/products/collections/create')}}
 
-<div
-    x-data="genericList(
-      '/api/v1/product-collections',
-      '/products/collections',
-      [
-        { field: 'name',        label: 'Nombre',      filterable: true  },
-        { field: 'code',        label: 'Código',      filterable: true  },
-        { field: 'line_name',        label: 'Linea',      filterable: true  },
-      ]
-    )"
-    x-init="init()"
-    class="table-responsive"
-  >
+{{pageHeader('/products/index', label.collections , has_btn=True, btn_label='Nueva colección', btn_href='/products/collections/create')}}
+
+<div x-data="genericList(
+        '/api/v1/product-collections',
+        '/products/collections',
+        [
+          { field: 'name', label: 'Nombre', filterable: true },
+          { field: 'code', label: 'Código', filterable: true },
+          { field: 'count_products', label: 'N° Productos' },
+          { field: 'is_active', label: 'Estado', filterable: true, component: 'statusBadge', props: { kind: 'is_active' } }
+        ]
+      )"
+      x-init="init()">
+
+  <template x-if="error">
+    <div class="alert alert-danger" role="alert" x-text="error"></div>
+  </template>
+
+  <!-- Vista Móvil con Buscador -->
+  <div class="d-md-none">
+    <div class="input-group my-3">
+      <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+      <input type="text" class="form-control border-start-0" placeholder="Buscar colección..." x-model="globalFilter" @input.debounce.300ms="filterItems()">
+    </div>
+
+    <ul class="list-group list-group-flush">
+      <template x-for="item in filteredItems" :key="item.id">
+        <li class="list-group-item list-group-item-action p-0">
+          <a :href="item.href" class="d-flex justify-content-between align-items-center text-decoration-none text-dark p-3">
+            <div class="me-auto text-start">
+              <div class="fw-bold" x-text="item.name"></div>
+
+              <div class="text-muted small" x-text="item.code ? `Código: ${item.code}` : 'Sin código'"></div>
+              <span class="badge rounded-pill" :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'" x-text="item.is_active ? 'Activo' : 'Inactivo'"></span>
+                <br>
+            </div>
+            <div class="text-end">
+
+                <span class="badge text-bg-primary rounded-pill mt-1" x-text="`${item.count_products} prod.`"></span>
+            </div>
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a>
+        </li>
+      </template>
+    </ul>
+    <template x-if="!loading && filteredItems.length === 0">
+        <div class="alert alert-secondary text-center mt-3">No se encontraron colecciones.</div>
+    </template>
+  </div>
+
+  <!-- Vista de Escritorio (Tabla Genérica) -->
+  <div class="d-none d-md-block">
     {% include 'components/listTable.html' %}
   </div>
 
-
-
+</div>
 
 {% endblock %}
-
 {% block scripts %}
+  {# Asegúrate de que este script esté disponible en tu base.html o aquí #}
   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}

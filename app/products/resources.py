@@ -312,6 +312,11 @@ class LinePatchResource(BasePatchResource):
     output_fields = line_fields
 
 
+class LineDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(LineService.get_obj)
+    service_delete = staticmethod(LineService.delete_obj)
+
+
 # ---------------------------------------------------------------
 # ---------------------------SubLine---------------------------------
 

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from 'components/_pageHeader.html' import pageHeader %}
-
+{% block title %}Nueva colección{% endblock %}
 {% block content %}
 
 <div class="mt-3">
-  {{ pageHeader(href='/products/collections', title='Crear nueva colección')}}
+  {{ pageHeader(href='/products/collections', title='Nueva colección')}}
   {% include "products/collections/_collectionForm_create.html" %}
 </div>
 {% endblock %}
