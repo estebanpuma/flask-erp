@@ -31,6 +31,8 @@ class SublineUpdateDTO(MyBase):
 
 class CollectionCreateDTO(MyBase):
     line: int = Field(..., gt=0)
+    subline: int = Field(..., gt=0)
+    target: int = Field(..., gt=0)
     name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
     code: str = Field(..., min_length=1, max_length=10, strip_whitespace=True)
     description: Optional[str] = None

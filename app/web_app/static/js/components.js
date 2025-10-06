@@ -42,7 +42,7 @@
     const text = kind==='is_active'?value==true?'Activo':"Inactivo":value
     return /*html*/`
       <span x-data
-            :class="'badge rounded-pill px-3 ${cls}'"
+            :class="'badge rounded-pill ${cls}'"
             x-text="'${text}'">
       </span>`;
   }

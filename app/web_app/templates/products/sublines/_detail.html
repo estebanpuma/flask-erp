@@ -1,0 +1,195 @@
+<div x-data="detail({{id}})">
+    <div class="card px-0">
+        <div class="card-body">
+            <!-- Fila de Estado -->
+            <div class="d-flex justify-content-end mb-2">
+                <span
+                    class="badge"
+                    :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'"
+                    x-text="item.is_active ? 'Activo' : 'Inactivo'">
+                </span>
+            </div>
+
+            <!-- Fila de Nombre -->
+            <div class="mb-3">
+                <div class="text-muted">Nombre de la línea</div>
+                <div class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                @click="$dispatch('open-generic-editor', {
+                        title: 'Nombre',
+                        label: 'Nombre',
+                        field: 'name',
+                        value: item.name,
+                        type: 'text',
+                        patchUrl: `/api/v1/product-sublines/${id}`,
+                        help: 'El nombre debe tener al menos 3 caracteres.',
+                        onSave: (updated) => { item.name = updated.name; }
+                    })">
+                    <div x-text="item.name"></div>
+                    <div> <i class="bi bi-chevron-right"></i></div>
+                </div>
+            </div>
+
+            <!-- Fila de Código -->
+            <div class="mb-3">
+                <div class="text-muted">Código</div>
+                <div class="d-flex justify-content-between rounded-2 form-control bg-light">
+                    <div  x-text="item.code?item.code:'Sin codigo'"></div>
+                </div>
+            </div>
+
+            <!-- Fila de Descripción -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.description}}</div>
+                <div
+                style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                @click="$dispatch('open-generic-editor', {
+                        title: 'Descripción',
+                        label: 'Descripción',
+                        field: 'description',
+                        value: item.description,
+                        type: 'textarea',
+                        patchUrl: `/api/v1/product-sublines/${id}`,
+                        help: '',
+                        onSave: (updated) => { item.description = updated.description; }
+                    })"
+                    >
+                    <div  x-text="item.description?item.description:'Sin descripción'"></div>
+                    <div > <i class="bi bi-chevron-right"></i></div>
+                </div>
+            </div>
+
+            <!-- Fila de estado -->
+            <div class="mb-3">
+                <div class="text-muted">Estado</div>
+                <div class="d-flex justify-content-between form-check  form-switch ps-0" @click="toggleStatus()">
+                    <label  x-text="item.is_active ? 'Activo' : 'Inactivo'" ></label>
+                    <input class="form-check-input" type="checkbox" role="switch" :checked="item.is_active" switch>
+                </div>
+
+            </div>
+            <!-- Fila de Total Productos -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.products}}</div>
+                <div class="d-flex justify-content-between rounded-2 ">
+                    <div class="">Total productos:</div>
+                    <div  x-text="item.count_products" class="badge text-bg-primary rounded-pill"></div>
+
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="text-muted">{{label.collections}}</div>
+                <div class="d-flex justify-content-between rounded-2 ">
+                    <div class="">Total {{label.collections}}:</div>
+                    <div  x-text="collections.length" class="badge text-bg-primary rounded-pill"></div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="text-muted">Lista de {{label.collections}}</div>
+                <ol class="list-group rounded-top">
+                    <template x-for="collection in collections" :key="collection.id">
+                        <a :href="'/products/collections/'+collection.id" class="list-group-item list-group-item-action  d-flex justify-content-between cursor-pointer">
+                            <div class="d-flex align-items-center">
+                                <span
+                                class="rounded-circle me-2"
+                                style="display: inline-block; width: 8px; height: 8px;"
+                                :class="collection.is_active ? 'bg-success' : 'bg-secondary'">
+                                </span>
+                                <div x-text="collection.name"></div>
+                            </div>
+
+                            <div> <i class="bi bi-chevron-right"></i></div></div>
+                        </a>
+                    </template>
+                </ol>
+            </div>
+
+            <!-- Zona de Acciones Peligrosas -->
+            <div class="mt-5 pt-4 border-top">
+                <template x-if="item.count_products === 0">
+                    <button @click="deleteItem()" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i> Eliminar Línea Permanentemente
+                    </button>
+                </template>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function detail(id){
+        return{
+            item:{},
+            error:'',
+            form:{},
+            message:'',
+            collections:[],
+            id: id,
+
+            init(){
+                this.fetchItem(id);
+                this.fetchCollections(id);
+            },
+
+            async fetchItem(id){
+                try {
+                    let res = await window.guifer.helpers.fetch.apiFetch('GET', `product-sublines/${id}`);
+                    this.item = res;
+                    console.log('res: ', res);
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error = 'Error consultando API' + String(error)
+                }
+            },
+
+            async fetchCollections(id) {
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `/product-collections?subline_id=${id}`);
+                    if (res) {
+                        this.collections = res;
+                    }
+                }
+                catch (error) {
+                    }
+            },
+
+            async toggleStatus() {
+                if (!confirm('¿Estás seguro de que quieres cambiar el estado, al inactivar los productos de esta linea no estarán disponible para la venta ni produccion?')) {
+                    this.is_active = this.is_active;
+                    return;
+                }
+
+                try {
+                    const newStatus = !this.item.is_active;
+                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', `product-sublines/${this.id}`, { is_active: newStatus });
+                    console.log('updated: ', updated)
+                    if (updated) {
+                        this.item.is_active = updated.is_active;
+                        this.fetchCollections(this.id);
+                    }
+                } catch (error) {
+                    console.error('Error toggling status:', error);
+                    alert('No se pudo cambiar el estado.');
+                }
+            },
+
+            async deleteItem() {
+                if (!confirm('¿Estás seguro de que quieres eliminar este registro? Esta acción no se puede deshacer.')) {
+                    return;
+                }
+
+                try {
+                    await window.guifer.helpers.fetch.apiFetch('DELETE', `product-sublines/${this.id}`);
+                    alert('Registro eliminado con éxito.');
+                    window.location.href = '/products/sublines';
+                } catch (error) {
+                    console.error('Error deleting:', error);
+                    alert('No se pudo eliminar el registro. Es posible que aún tenga colecciones o productos asociados.');
+                }
+            }
+
+        }
+    }
+</script>

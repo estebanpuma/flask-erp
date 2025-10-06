@@ -2,24 +2,41 @@
   <div class="container pt-3 pb-5 px-2 rounded" style="max-width: 480px">
 
     <div class="form-floating mb-3">
+      <input type="text" class="form-control" x-model="collection.name" placeholder="Nombre de colección" required>
+      <label class="ps-4 text-muted">Nombre de la {{label.collection}}</label>
+    </div>
+
+    <div class="form-floating mb-3">
       <select name="line" class="form-select form-control" x-model="collection.line" id="" required @change="previewCode()">
-        <option value="" disabled>Seleccione línea</option>
+        <option value="" disabled>Seleccione {{label.line}}</option>
         <template x-for="line in lines" :key="line.id">
           <option :value="line.id" x-text="line.name"></option>
         </template>
       </select>
-      <label for="line">Línea</label>
-    </div>
-    <div class="mb-3" x-show="preview_code">
-      <div class="alert alert-secondary">Código: <strong  x-text="preview_code"></strong></div>
+      <label for="line">{{label.line}}</label>
     </div>
     <div class="form-floating mb-3">
-      <input type="text" class="form-control" x-model="collection.name" placeholder="Nombre de colección" required>
-      <label class="ps-4 text-muted">Nombre de la colección</label>
+      <select name="subline" class="form-select form-control" x-model="collection.subline" id=""  @change="previewCode()">
+        <option value="" disabled>Seleccione {{label.subline}}</option>
+        <template x-for="subline in sublines" :key="subline.id">
+          <option :value="subline.id" x-text="subline.name"></option>
+        </template>
+      </select>
+      <label for="subline">{{label.subline}}(Opcional)</label>
     </div>
-
-
-
+        <div class="form-floating mb-3">
+      <select name="target" class="form-select form-control" x-model="collection.target" id="" required @change="previewCode()">
+        <option value="" disabled>Seleccione {{label.target}}</option>
+        <template x-for="target in targets" :key="target.id">
+          <option :value="target.id" x-text="target.name"></option>
+        </template>
+      </select>
+      <label for="target">{{label.target}}</label>
+    </div>
+    <div class="mb-3 form-floating">
+      <input type="text" class="form-control" x-model="collection.code" placeholder="Code" required>
+      <label class="ps-4 text-muted">Código:</label>
+    </div>
     <div class="form-floating mb-3">
       <textarea class="form-control" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
       <label class="">Descripción</label>
@@ -42,10 +59,14 @@ function createCollection() {
     preview_code: '',
     loading: false,
     lines: [],
+    sublines: [],
+    targets:[],
 
 
     init() {
       this.fetchLines();
+      this.fetchSubLines();
+      this.fetchTargets();
     },
 
 
@@ -69,6 +90,28 @@ function createCollection() {
       }catch(err){
         console.error('Error fetching lines:', err);
         this.error = 'Error fetching lines';
+      }
+    },
+
+    async fetchSubLines(){
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', 'product-sublines');
+        this.sublines = res;
+        console.log('lines: ', this.sublines);
+      }catch(err){
+        console.error('Error fetching sublines:', err);
+        this.error = 'Error fetching sublines';
+      }
+    },
+
+    async fetchTargets(){
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', 'product-targets');
+        this.targets = res;
+
+      }catch(err){
+        console.error('Error fetching targets:', err);
+        this.error = 'Error fetching targets';
       }
     },
 

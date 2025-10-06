@@ -1,8 +1,8 @@
 <!-- Componente reutilizable de encabezado de página -->
 {% macro pageHeader(href='', title='', subtitle='', has_btn=False, btn_href='', btn_label='' )%}
 
-
-<div class="d-flex align-items-center">
+<div class="">
+  <div class="d-flex align-items-center">
     <a href="{{href}}" class="text-decoration-none btn btn-back ps-0">
       <i class="bi bi-arrow-left h1 fw-bold"></i>
     </a>
@@ -24,5 +24,8 @@
 </div>
 <div class="text-muted small">{{subtitle}}</div>
 
+
+
+</div>
 
 {% endmacro %}

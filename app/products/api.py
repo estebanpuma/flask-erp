@@ -49,6 +49,7 @@ from .resources import (
     SizeDeleteResource,
     SizeGetResource,
     SizePostResource,
+    SublineDeleteResource,
     SubLineGetResource,
     SubLinePatchResource,
     SubLinePostResource,
@@ -78,6 +79,8 @@ products_api.add_resource(LineDeleteResource, "/product-lines/<int:resource_id>"
 
 products_api.add_resource(SubLinePostResource, "/product-sublines")
 products_api.add_resource(SubLinePatchResource, "/product-sublines/<int:resource_id>")
+products_api.add_resource(SublineDeleteResource, "/product-sublines/<int:resource_id>")
+
 
 products_api.add_resource(
     TargetGetResource, "/product-targets", "/product-targets/<int:resource_id>"

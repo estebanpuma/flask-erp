@@ -705,11 +705,18 @@ class SublineService:
     def patch_obj(obj: ProductSubLine, data: dict) -> ProductSubLine:
         print("entra a patch obj")
         dto = SublineUpdateDTO(**data)
-        job = SublineService.patch_subline(obj, dto.name, dto.description)
-        return job
+        obj = SublineService.patch_subline(
+            obj, dto.name, dto.description, dto.is_active
+        )
+        return obj
 
     @staticmethod
-    def patch_subline(obj: ProductSubLine, name: str = None, description: str = None):
+    def patch_subline(
+        obj: ProductSubLine,
+        name: str = None,
+        description: str = None,
+        is_active: bool = None,
+    ):
         print("entra a job")
         if name:
             if obj.name != name:
@@ -717,8 +724,31 @@ class SublineService:
         if description:
             obj.description = description
 
+        if is_active is not None:
+            obj.is_active = is_active
+            db.session.query(ProductCollection).filter(
+                ProductCollection.subline_id == obj.id
+            ).update(
+                {ProductCollection.is_active: is_active}, synchronize_session="fetch"
+            )
+            db.session.query(Product).filter(Product.subline_id == obj.id).update(
+                {Product.is_active: is_active}, synchronize_session="fetch"
+            )
+
         try:
             db.session.commit()
+            return obj
+        except Exception as e:
+            current_app.logger.warning(f"error: {e}")
+            db.session.rollback()
+            raise str(e)
+
+    @staticmethod
+    def delete_obj(obj: ProductSubLine):
+        try:
+            db.session.delete(obj)
+            db.session.commit()
+            return True
         except Exception as e:
             current_app.logger.warning(f"error: {e}")
             db.session.rollback()

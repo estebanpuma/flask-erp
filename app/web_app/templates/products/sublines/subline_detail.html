@@ -1,45 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Detalle de Línea{% endblock %}
-{% from 'components/detailCard.html' import detail_card %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}{{label.subline}}{% endblock %}
 
 {% block content %}
-  {# 1. Page header #}
-  <div x-data="{ href: '/products/sublines', title: 'Detalle de Sublínea' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
 
-  {# 2. Contenedor Alpine para el detalle #}
-  <div
-    x-data="genericDetail(
-      `/api/v1/product-sublines/{{ subline_id }}`,
-      ['code','name','description']
-    )"
-    x-init="init()"
-    class="mt-4"
-  >
-    <!-- Error -->
-    <template x-if="error">
-      <div class="alert alert-danger" x-text="error"></div>
-    </template>
+<div>
+    {{ pageHeader(href='/products/sublines', title=label.subline)}}
 
-    <!-- Loading -->
-    <template x-if="!error && loading">
-      <div class="text-center text-muted">Cargando detalles…</div>
-    </template>
-
-    <!-- Perfil básico -->
-    <template x-if="!error && !loading">
-      {% set fields = [
-        ('Código',       'code'),
-        ('Nombre',       'name'),
-        ('Descripción',  'description')
-      ] %}
-      {{ detail_card('item', fields, '📐') }}
-    </template>
-  </div>
-{% endblock %}
+    {% include 'products/sublines/_detail.html' %}
 
 
-{% block scripts %}
-  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
+</div>
 {% endblock %}

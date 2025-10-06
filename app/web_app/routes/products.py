@@ -131,7 +131,7 @@ def product_subline_list():
 
 @products_bp.route("/sublines/<int:id>")
 def product_subline_detail(id):
-    return render_template("products/sublines/subline_detail.html", subline_id=id)
+    return render_template("products/sublines/subline_detail.html", id=id)
 
 
 # -------------------------------------------------------

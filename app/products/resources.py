@@ -340,6 +340,11 @@ class SubLinePatchResource(BasePatchResource):
     output_fields = subline_fields
 
 
+class SublineDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(SublineService.get_obj)
+    service_delete = staticmethod(SublineService.delete_obj)
+
+
 # --------------------------------------------------------------
 # ------------------------------Target----------------------------
 class TargetGetResource(BaseGetResource):

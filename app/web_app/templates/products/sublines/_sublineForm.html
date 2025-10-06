@@ -1,22 +1,29 @@
-<form @submit.prevent="createsubLine">
+<form @submit.prevent="newObj" x-data="createObj()">
 
   <div class="form-floating mb-3">
-    <input type="text" class="form-control text-uppercase"
+    <input type="text" class="form-control"
            id="name" placeholder="Ej: Escolar"
-           x-model="subline.name" required>
-    <label for="name">Nombre de la sublínea</label>
+           x-model.debouce.350ms="obj.name"
+           @input="checkName()"
+           required>
+    <label for="name">Nombre de la {{label.subline}}</label>
+    <template x-if="existing_name" >
+        <span id="nameFeedback" class="text-danger">
+            🚫 El nombre ya existe.
+        </span>
+    </template>
   </div>
 
   <div class="form-floating mb-3">
     <input type="text" class="form-control text-uppercase"
            id="code" placeholder="Ej: Escolar"
-           x-model="subline.code"
-           @input="checkCode()"
+           x-model.debouce.350ms="obj.code"
+           @input.debouce.350ms="obj.code = $event.target.value.toUpperCase(); checkCode()"
            required>
-    <label for="code">Código de la sublínea</label>
+    <label for="code">Código de la {{label.subline}}</label>
     <template x-if="existing_code" >
         <span id="codeFeedback" class="text-danger">
-             🚫 El código ya existe.
+            🚫 El código ya existe.
         </span>
     </template>
   </div>
@@ -24,12 +31,73 @@
   <div class="form-floating mb-3">
     <textarea class="form-control" id="description"
               placeholder="Descripción" style="height: 80px"
-              x-model="subline.description"></textarea>
+              x-model="obj.description"></textarea>
     <label for="description">Descripción (opcional)</label>
   </div>
 
   <div class="d-flex justify-content-end mt-4">
-    <button type="submit" class="btn btn-dark">Guardar Sublinea</button>
+    <button type="submit" @click="newObj()" class="btn btn-dark" :disabled="loading">Guardar</button>
   </div>
 
 </form>
+
+<script>
+function createObj(){
+  return{
+    api:'/product-sublines',
+    bref:'/products/sublines',
+    obj:{},
+    error:'',
+    message:'',
+    existing_code: false,
+    existing_name: false,
+    loading:false,
+
+
+    async newObj(){
+      this.loading = true;
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('POST', this.api, this.obj );
+        if(res){
+          alert('Guardado con éxito');
+          window.location.href = this.bref;
+        }else{
+          this.error = 'Error'
+          this.loading = false;
+        }
+      }catch(error){
+        console.error('API error: ', error)
+        this.error = 'Error' + String(error)
+      }
+    },
+
+    async checkName(){
+
+      this.existing_name = false;
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `${this.api}?name=${this.obj.name}`);
+        if(res && res.length>0){
+          this.existing_name = true;
+          this.error = 'El nombre ya existe'
+        }
+      }catch(err){
+        console.error('ERROR API: ', err)
+      }
+    },
+
+    async checkCode(){
+      this.existing_code = false;
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', `${this.api}?code=${this.obj.code}`);
+        if(res && res.length>0){
+          this.existing_code = true;
+          this.error = 'El código ya existe'
+        }
+      }catch(err){
+        console.error('ERROR API: ', err)
+      }
+
+    }
+  }
+}
+</script>

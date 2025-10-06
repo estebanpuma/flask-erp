@@ -1,15 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Crear Línea{% endblock %}
-
+{% block title %}Crear{{label.subline}}{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader%}
 {% block content %}
-<div class="container mt-3" x-data="createSubLine()" x-init="init()">
-  <div x-data="{ href: '/products/sublines', title: '👟 Crear Sublineas de productos' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
+  {{pageHeader(href='/products/sublines', title=label.new_subline)}}
   {% include "products/sublines/_sublineForm.html" %}
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/product_lines_sublines.js') }}"></script>
 {% endblock %}

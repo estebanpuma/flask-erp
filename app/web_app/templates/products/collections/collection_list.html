@@ -12,6 +12,7 @@
         [
           { field: 'name', label: 'Nombre', filterable: true },
           { field: 'code', label: 'Código', filterable: true },
+          { field: 'line_name', label: 'Línea', filterable: true },
           { field: 'count_products', label: 'N° Productos' },
           { field: 'is_active', label: 'Estado', filterable: true, component: 'statusBadge', props: { kind: 'is_active' } }
         ]
@@ -37,12 +38,11 @@
               <div class="fw-bold" x-text="item.name"></div>
 
               <div class="text-muted small" x-text="item.code ? `Código: ${item.code}` : 'Sin código'"></div>
-              <span class="badge rounded-pill" :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'" x-text="item.is_active ? 'Activo' : 'Inactivo'"></span>
-                <br>
+              <span class="badge text-bg-primary rounded-pill mt-1" x-text="`${item.count_products} prod.`"></span>
             </div>
             <div class="text-end">
-
-                <span class="badge text-bg-primary rounded-pill mt-1" x-text="`${item.count_products} prod.`"></span>
+              <span class="badge rounded-pill" :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'" x-text="item.is_active ? 'Activo' : 'Inactivo'"></span>
+                <br>
             </div>
             <i class="bi bi-chevron-right ms-2"></i>
           </a>

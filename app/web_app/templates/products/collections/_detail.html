@@ -3,8 +3,8 @@
         <div x-text="error" class="alert alert-danger" role="alert"></div>
     </template>
 
-    <div class="card px-0 bg-light border-0">
-        <div class="card-body">
+    <div class="card bg-light border-0">
+        <div class="card-body px-0">
             <!-- Fila de Estado -->
             <div class="d-flex justify-content-end mb-2">
                 <span
@@ -53,7 +53,7 @@
             <!-- Fila de Descripción -->
             <div class="mb-3">
                 <div class="text-muted">{{label.description}}</div>
-                <div class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                <div style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
                 @click="$dispatch('open-generic-editor', {
                         title: 'Descripción',
                         label: 'Descripción',
@@ -77,6 +77,30 @@
                 </div>
 
             </div>
+            <!-- Fila de linea -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.line}}</div>
+                <div class="d-flex">
+                    <div  x-text="collection.line_name?collection.line_name:'Sin linea'"></div>
+
+                </div>
+            </div>
+            <!-- Fila de sublinea -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.subline}}</div>
+                <div class="d-flex">
+                    <div  x-text="collection.subline_name?collection.subline_name:'Sin sublinea'"></div>
+                </div>
+            </div>
+
+            <!-- Fila de familia de hormas -->
+            <div class="mb-3">
+                <div class="text-muted">{{label.last}}</div>
+                <div class="d-flex">
+                    <div  x-text="collection.last_code?collection.last_code:'Sin horma asignada'"></div>
+                </div>
+            </div>
+
             <!-- Fila de Total Productos -->
             <div class="mb-3">
                 <div class="text-muted">{{label.products}}</div>

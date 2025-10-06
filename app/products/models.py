@@ -49,6 +49,10 @@ class ProductSubLine(BaseModel, SoftDeleteMixin):
     def __repr__(self):
         return f"<ProductSubLine(name={self.name})>"
 
+    @property
+    def count_products(self):
+        return len(self.products)
+
 
 class ProductTarget(BaseModel, SoftDeleteMixin):
     __tablename__ = "product_targets"

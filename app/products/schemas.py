@@ -31,6 +31,8 @@ subline_fields = {
     "code": fields.String,
     "name": fields.String,
     "description": fields.String,
+    "count_products": fields.Integer,
+    "is_active": fields.Boolean,
 }
 
 
@@ -158,6 +160,7 @@ collection_fields = {
     "is_active": fields.Boolean,
     "last_type_id": fields.Integer,
     "last_type_name": fields.String(attribute="last_type.name"),
+    "last_code": fields.String(attribute="last_type.code"),
     "count_products": fields.Integer(attribute="count_products"),
 }
 
