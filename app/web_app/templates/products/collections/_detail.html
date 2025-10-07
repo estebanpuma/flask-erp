@@ -2,6 +2,9 @@
     <template x-if="error">
         <div x-text="error" class="alert alert-danger" role="alert"></div>
     </template>
+    <template x-if="message">
+        <div x-text="message" class="alert-success" role="alert"></div>
+    </template>
 
     <div class="card bg-light border-0">
         <div class="card-body px-0">
@@ -123,8 +126,14 @@
                             </li>
                         </template>
                         <template x-if="products.length == 0">
-                            <li class="list-group-item list-group-item-action rounded-2" x-text="'No existen productos en esta colección.'">
+                            <div>
+                                <li class="list-group-item list-group-item-action rounded-2" x-text="'No existen productos en esta colección.'">
+
                             </li>
+                                <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar colección</button>
+                            </div>
+
+
                         </template>
                     </ul>
             </div>
@@ -180,6 +189,25 @@
                     this.error= error
                 }
 
+            },
+
+            async deleteObj(id){
+                if (!confirm('¿Estás seguro de que quieres eliminar esta colección?')) {
+                    return;
+                }
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', `product-collections/${id}`);
+                    if (res) {
+                        alert('Colección eliminada con éxito');
+                        this.message = 'Colección eliminada con éxito';
+                        window.location.href = '/products/collections';
+                    } else {
+                        this.error = 'Error al eliminar la colección';
+                    }
+                } catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
             },
 
             async toggleStatus() {

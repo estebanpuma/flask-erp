@@ -102,6 +102,9 @@ class ProductCollection(BaseModel, SoftDeleteMixin):
         "Product", back_populates="collection", cascade="all, delete-orphan"
     )
 
+    def __repr__(self):
+        return f"<ProductCollection(name={self.name})>"
+
     @property
     def count_products(self):
         return len(self.products)

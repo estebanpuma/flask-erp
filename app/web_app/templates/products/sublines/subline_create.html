@@ -2,7 +2,10 @@
 {% block title %}Crear{{label.subline}}{% endblock %}
 {% from 'components/_pageHeader.html' import pageHeader%}
 {% block content %}
+<div style="max-width: 560px;" class="mx-auto">
   {{pageHeader(href='/products/sublines', title=label.new_subline)}}
   {% include "products/sublines/_sublineForm.html" %}
+</div>
+
 
 {% endblock %}

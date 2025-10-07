@@ -386,6 +386,11 @@ class CollectionPatchResource(BasePatchResource):
     output_fields = collection_fields
 
 
+class CollectionDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(CollectionService.get_obj)
+    service_delete = staticmethod(CollectionService.delete_obj)
+
+
 class NextCodeCollectionCodeResource(Resource):
     def get(self):
         q = request.args.get("q")

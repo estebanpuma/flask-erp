@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask_restful import Api
 
 from .resources import (
+    CollectionDeleteResource,
     CollectionGetResource,
     CollectionGetSpecificResource,
     CollectionPatchResource,
@@ -99,6 +100,10 @@ products_api.add_resource(
 products_api.add_resource(CollectionPostResource, "/product-collections")
 products_api.add_resource(
     CollectionPatchResource, "/product-collections/<int:resource_id>"
+)
+
+products_api.add_resource(
+    CollectionDeleteResource, "/product-collections/<int:resource_id>"
 )
 
 products_api.add_resource(

@@ -883,10 +883,10 @@ class CollectionService:
         with db.session.begin():
             dto = CollectionCreateDTO(**data)
             collection = CollectionService.create_collection(
-                line_id=dto.line_id,
-                subline_id=dto.subline_id,
-                target_id=dto.target_id,
-                last_type_id=dto.last_type_id,
+                line_id=dto.line,
+                subline_id=dto.subline,
+                target_id=dto.target,
+                last_type_id=dto.last_type,
                 code=dto.code,
                 name=dto.name,
                 description=dto.description,
@@ -942,7 +942,9 @@ class CollectionService:
         if code:
             aux_code = f"{subcode}{str(code)}"
             # Validación de unicidad según restricción
-            query = db.session.query(ProductCollection).filter_by(code=code)
+            query = db.session.query(ProductCollection).filter_by(
+                code=code, line_id=line_id, subline_id=subline_id, target_id=target_id
+            )
 
             if query.first():
                 raise ConflictError(
@@ -997,7 +999,6 @@ class CollectionService:
         if description:
             obj.description = description
 
-        print("is active in patch cllection service", is_active)
         if is_active is not None:
             obj.is_active = is_active
 
@@ -1011,6 +1012,19 @@ class CollectionService:
         try:
             db.session.commit()
             return obj
+        except Exception as e:
+            current_app.logger.warning(f"error: {e}")
+            db.session.rollback()
+            raise str(e)
+
+    @staticmethod
+    def delete_obj(obj: ProductCollection):
+        try:
+            if obj.count_products > 0:
+                raise IntegrityError("No se puede eliminar una colección con productos")
+            db.session.delete(obj)
+            db.session.commit()
+            return True
         except Exception as e:
             current_app.logger.warning(f"error: {e}")
             db.session.rollback()

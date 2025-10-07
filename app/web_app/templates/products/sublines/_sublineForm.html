@@ -4,7 +4,8 @@
     <input type="text" class="form-control"
            id="name" placeholder="Ej: Escolar"
            x-model.debouce.350ms="obj.name"
-           @input="checkName()"
+           @input.debouce.350ms="checkName()"
+           @input="obj.name = $event.target.value.toUpperCase()"
            required>
     <label for="name">Nombre de la {{label.subline}}</label>
     <template x-if="existing_name" >

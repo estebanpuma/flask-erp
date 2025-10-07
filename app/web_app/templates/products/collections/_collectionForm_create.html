@@ -1,10 +1,23 @@
 <form @submit.prevent="createCollection" class="needs-validation " autocomplete="off" x-data="createCollection()" x-init="init()">
-  <div class="container pt-3 pb-5 px-2 rounded" style="max-width: 480px">
+  <div class="container pt-3 pb-5 px-2 rounded" >
+    <template x-if="error">
+      <div class="alert alert-danger" role="alert" x-text="error"></div>
 
+    </template>
+    <template x-if="message">
+      <div class="alert alert-success" role="alert" x-text="message"></div>
+    </template>
     <div class="form-floating mb-3">
-      <input type="text" class="form-control" x-model="collection.name" placeholder="Nombre de colección" required>
+      <input type="text" class="form-control" x-model="collection.name"
+       placeholder="Nombre de colección" required
+       @input.debounce.350ms="checkName()"
+       @input="collection.name = $event.target.value.toUpperCase()"
+       >
       <label class="ps-4 text-muted">Nombre de la {{label.collection}}</label>
     </div>
+    <template x-if="existing_name">
+      <div class="text-danger">Ya existe una colección con ese nombre</div>
+    </template>
 
     <div class="form-floating mb-3">
       <select name="line" class="form-select form-control" x-model="collection.line" id="" required @change="previewCode()">
@@ -21,6 +34,7 @@
         <template x-for="subline in sublines" :key="subline.id">
           <option :value="subline.id" x-text="subline.name"></option>
         </template>
+        <option value="">Ninguna</option>
       </select>
       <label for="subline">{{label.subline}}(Opcional)</label>
     </div>
@@ -30,13 +44,26 @@
         <template x-for="target in targets" :key="target.id">
           <option :value="target.id" x-text="target.name"></option>
         </template>
+
       </select>
       <label for="target">{{label.target}}</label>
     </div>
     <div class="mb-3 form-floating">
-      <input type="text" class="form-control" x-model="collection.code" placeholder="Code" required>
+      <input type="text"
+            class="form-control"
+            x-model="collection.code"
+            placeholder="Code"
+            required
+            @input="collection.code = collection.code.replace(/[^0-9]/g, '')"
+            @input.debounce.350ms="checkCode()"
+            inputmode="numeric"
+            pattern="[0-9]*">
+
       <label class="ps-4 text-muted">Código:</label>
     </div>
+    <template x-if="existing_code">
+      <div class="text-danger">Ya existe una colección con ese código</div>
+    </template>
     <div class="form-floating mb-3">
       <textarea class="form-control" x-model="collection.description" placeholder="Descripción" style="height: 100px"></textarea>
       <label class="">Descripción</label>
@@ -53,14 +80,17 @@
 
 function createCollection() {
   return {
-    collection: { line:'', name: '', description: '', code:'' },
+    collection: { line:'', subline:'', target:'', name: '', description: '', code:'' },
     existing_code: false,
+    existing_name: false,
     error: '',
     preview_code: '',
     loading: false,
     lines: [],
     sublines: [],
     targets:[],
+    message:'',
+
 
 
     init() {
@@ -69,6 +99,27 @@ function createCollection() {
       this.fetchTargets();
     },
 
+    async checkName() {
+      this.existing_name = false;
+      if (!this.collection.name || this.collection.name.length < 2) return;
+      try {
+
+        const res = await fetch(`/api/v1/product-collections?name=${this.collection.name}`);
+        const data = await res.json();
+        if(data && data.length>0){
+          this.existing_name = true;
+          return
+        }
+
+      } catch (err) {
+        console.error('Error checking name:', err);
+      }
+    },
+
+    async checkCode(){
+      this.existing_code = false;
+
+    },
 
     async previewCode() {
       try{
@@ -86,7 +137,6 @@ function createCollection() {
       try{
         const res = await window.guifer.helpers.fetch.apiFetch('GET', 'product-lines');
         this.lines = res;
-        console.log('lines: ', this.lines);
       }catch(err){
         console.error('Error fetching lines:', err);
         this.error = 'Error fetching lines';
@@ -115,27 +165,64 @@ function createCollection() {
       }
     },
 
-    async createCollection() {
+    // En tu componente Alpine.js o en un helper global
+    cleanPayload(data) {
+        const cleaned = {};
+        for (const key in data) {
+            if (data[key] === "") {
+                // Convierte la cadena vacía a null
+                cleaned[key] = null;
+            } else {
+                // Mantiene todos los demás valores (números, strings con contenido, null, etc.)
+                cleaned[key] = data[key];
+            }
+        }
+        return cleaned;
+    },
 
+    chechRequiredFields(){
+      if(this.collection.name==='' || this.collection.line==='' || this.collection.target==='' || this.collection.code===''){
+        return true;
+      }else{
+        return false;
+      }
+    },
+
+    async createCollection() {
+      if(this.chechRequiredFields()){
+        this.error = 'Por favor, complete todos los campos obligatorios.'
+        return;
+      }
       if(this.loadig === true)return
       this.loading = true;
       try {
         const payload = {
           ...this.collection,
         };
+        const cleanedPayload = this.cleanPayload(payload);
         const res = await fetch('/api/v1/product-collections', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(cleanedPayload)
         });
 
-        if (!res.ok) throw new Error('Error creando la colección');
+        if (!res.ok){
+          throw new Error('Error creando la colección');
+          this.error = 'Error creando la colección';
+          alert('Ocurrió un error al crear la colección')
+          this.loading = false;
+          return
+        }
+        this.message= 'Colección creada con éxito'
         window.location.href = '/products/collections';
       } catch (error) {
         console.error('Error creando colección:', error);
         alert('Ocurrió un error al crear la colección. Revisa la consola.');
+        this.error = 'Error: ' + String(error)
+        this.loading = false;
+        return
       }
     }
   }
