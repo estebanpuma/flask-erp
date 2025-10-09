@@ -1,4 +1,4 @@
-from ..common.parsers import parse_float, parse_int, parse_str
+from ..common.parsers import parse_bool, parse_float, parse_int, parse_str
 from ..core.exceptions import ValidationError
 from .models import Product, ProductDesign, ProductVariant, ProductVariantMaterialDetail
 
@@ -8,6 +8,9 @@ class ProductEntity:
 
     def __init__(self, data: dict):
         self.code = parse_str(data.get("code"), field="code").upper()
+        self.old_code = parse_str(
+            data.get("old_code"), field="old_code", nullable=True
+        ).upper()
         self.name = parse_str(data.get("name"), field="name")
         self.description = parse_str
         self.line_id = parse_int(data.get("line_id"), field="line_id", nullable=True)
@@ -21,6 +24,7 @@ class ProductEntity:
     def to_model(self):
         return Product(
             code=self.code,
+            old_code=self.old_code,
             name=self.name,
             description=self.description,
             line_id=self.line_id,
@@ -31,16 +35,27 @@ class ProductEntity:
 class PatchProductEntity:
     """Entidad que actualiza el producto"""
 
-    EDITABLE_FIELDS = {"name", "description", "line_id", "sub_line_id"}
+    EDITABLE_FIELDS = {
+        "name",
+        "description",
+        "line_id",
+        "sub_line_id",
+        "is_active",
+        "old_code",
+    }
 
     def __init__(self, data: dict):
         self.name = parse_str(data.get("name"), field="name", nullable=True)
         self.description = parse_str(
             data.get("description"), field="description", nullable=True
         )
+        self.old_code = parse_str(data.get("old_code"), field="old_code", nullable=True)
         self.line_id = parse_int(data.get("line_id"), field="line_id", nullable=True)
         self.sub_line_id = parse_int(
             data.get("sub_line_id"), field="sub_line_id", nullable=True
+        )
+        self.is_active = parse_bool(
+            data.get("is_active"), field="is_active", nullable=True
         )
         self._validate(data)
 
@@ -53,12 +68,16 @@ class PatchProductEntity:
     def apply_changes(self, instance: Product) -> Product:
         if self.name:
             instance.name = self.name
+        if self.old_code:
+            instance.old_code = self.old_code
         if self.description:
             instance.description = self.description
         if self.line_id:
             instance.line_id = self.line_id
         if self.sub_line_id:
             instance.sub_line = self.sub_line_id
+        if self.is_active is not None:
+            instance.is_active = self.is_active
         return instance
 
 
@@ -68,6 +87,9 @@ class ProductDesignEntity:
     def __init__(self, data: dict):
         # input
         self.product_id = parse_int(data.get("product_id"), field="product_id")
+        self.old_product_code = parse_str(
+            data.get("old_code"), field="old_code", nullable=True
+        )
         self.name = parse_str(data.get("name"), field="name", nullable=True)
         self.description = data.get("description")
         self.color_ids = data.get("color_ids", [])
@@ -100,7 +122,8 @@ class ProductDesignEntity:
         """Retorna un modelo del producto"""
         return ProductDesign(
             product_id=self.product_id,
-            code=self.code,
+            code=self._generate_code(self.product_code, self.color_codes),
+            old_code=self._generate_code(self.old_product_code, self.color_codes),
             name=self.name,
             description=self.description,
         )

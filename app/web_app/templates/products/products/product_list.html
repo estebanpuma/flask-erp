@@ -1,15 +1,16 @@
 {% from 'components/floatingButton.html' import floating_button %}
 {% extends 'base.html' %}
-
+{% from 'components/_pageHeader.html' import pageHeader%}
 {% block title %}Productos{% endblock %}
 
 {% block content %}
-<div x-data="{ href: '/products/index', title: 'Lista de productos' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
-<div>
-{{ floating_button('/products/create', 'Nuevo producto') }}
-</div>
+
+{{ pageHeader(href='/products/index',
+              title=label.products,
+              has_btn=True,
+              btn_label='Nuevo producto',
+              btn_href='/products/create'
+              ) }}
 
   <div
       x-data="genericList(
@@ -18,12 +19,21 @@
         [
           { field: 'code',        label: 'Código',      filterable: true  },
           { field: 'name',        label: 'Nombre',      filterable: true  },
+          { field: 'collection.name', label: 'Colección', filterable: true  },
+          { field: 'is_active', label: 'Estado', filterable: true, component: 'statusBadge', props: { kind: 'is_active' } }
         ]
       )"
       x-init="init()"
-      class="table-responsive"
     >
+    <div class="d-none d-md-block">
       {% include 'components/listTable.html' %}
+    </div>
+
+    <div class="d-block d-md-none">
+      {% include 'components/listCard.html' %}
+    </div>
+
+
   </div>
 
 

@@ -1,13 +1,13 @@
-function productWizard({ productId = null, startStep = null } = {}) {
+function productWizard({  startStep = null } = {}) {
   return {
     // Configuración inicial
     startStep,
     step: startStep || 1,
-    productId,
     // Payload central
     productData: {
       code: '',
       name: '',
+      old_code:null,
       line_id: null,
       subline_id: null,
       target_id: null,
@@ -42,31 +42,12 @@ function productWizard({ productId = null, startStep = null } = {}) {
       this.fetchLines();
       this.fetchSubLines();
       this.fetchTargets();
-      // Si productId existe, cargamos datos base
-      if (this.productId) this.loadProductContext();
       // Carga pasos necesarios según startStep
       if (this.step <= 2) {
         this.fetchColors();
       }
       if (this.step <= 3) this.fetchSeries();
 
-    },
-
-    // --- Contexto producto (solo si editing design) ---
-    async loadProductContext() {
-      try {
-        const prod = await (await fetch(`/api/v1/products/${this.productId}`)).json();
-        this.productData.code = prod.code;
-        // Si startStep>1, precarga diseños existentes...
-        this.productData.designs = (await (await fetch(`/api/v1/product-designs?product_id=${this.productId}`)).json())
-          .map(d => ({ color_ids: d.colors.id, design_code: d.code }));
-        console.log('this product_designs', this.productData.designs)
-        this.existingDesignCodes = this.productData.designs.map(d => d.design_code);
-        console.log('this existing codes init', this.existingDesignCodes)
-      } catch (e) {
-        console.error(e);
-        this.error = 'Error cargando datos del producto.';
-      }
     },
 
     // --- Pasos comunes ---
@@ -101,7 +82,7 @@ function productWizard({ productId = null, startStep = null } = {}) {
       console.log('init collections')
       if(this.productData.line_id && this.productData.target_id){
         try {
-                const res = await fetch(`/api/v1/product-collections/specific?${params}`);
+                const res = await fetch(`/api/v1/product-collections?${params}`);
                 this.collections = await res.json();
                 if(this.collections === null || this.collections.length==0){
                   alert('No hay colecciones para esta linea. Cree una coleccion')
@@ -205,9 +186,8 @@ function productWizard({ productId = null, startStep = null } = {}) {
 
     sizeSeries: [],
     selectedSeriesId: '',
-    selectedSerie:'',
-    sizes: [],
-    variants: [],
+    generatedVariants:[],
+    selectedSerie:{},
 
 
     async fetchSeries(){
@@ -223,52 +203,52 @@ function productWizard({ productId = null, startStep = null } = {}) {
 
     async loadSizes() {
       if (!this.selectedSeriesId) {
-        this.sizes = [];
-        this.variants = [];
         this.productData.variants = [];
+        this.generatedVariants =[];
         return;
       }
+      this.selectedSerie = this.sizeSeries.find(s => s.id === this.selectedSeriesId);
+
 
       const res = await fetch(`/api/v1/series/${this.selectedSeriesId}/sizes`);
-      const data = await res.json();
-      this.sizes = data;
-      console.log('sosiz', data)
-      this.generateVariants();
-      this.fecthSerie();
-    },
-
-    async fecthSerie(){
-      try{
-        const resSerie = await fetch(`/api/v1/series/${this.selectedSeriesId}`);
-        const dataSerie = await resSerie.json();
-        this.selectedSerie = dataSerie;
-
-      }catch(err){
-        console.error('error: ', err);
-      }
+      const sizes = await res.json();
+      this.generateVariants(sizes);
     },
 
     removeSerie() {
       this.selectedSeriesId = '';
-      this.productData.variants='';
-      this.variants = [];
+      this.productData.variants = [];
+      this.selectedSerieSizes = [];
       this.selectedSerie = '';
     },
 
-    generateVariants() {
-      if (!this.productData.designs.length || !this.sizes.length) return console.error('No mismo');
-      this.productData.variants = [] // solo una serie permitida
+    generateVariants(sizes) {
+      if (!this.productData.designs.length || !sizes.length) {
+        this.productData.variants = [];
+        this.generatedVariants = [];
+        return;
+      }
+
       const design = this.productData.designs[0]; // solo uno permitido
-      console.log('fessddi', design)
       const prefix = design.design_code;
-      this.variants = [];
-      this.variants = this.sizes.map(size => ({
+
+      this.generatedVariants = sizes.map(size => ({
         size_id: size.id,
         size_name: size.value,
         variant_code: `${prefix}${size.value}`,
+        series_id: this.selectedSeriesId, // Guardamos la serie para el backend
+        check: true,
       }));
-      this.productData.variants.push({series_ids:[this.selectedSeriesId]})
     },
+
+    addVariants(){
+      let selected = this.generatedVariants.filter(s => s.check);
+      this.productData.variants = selected
+      console.info('variants selected: ', this.productData.variants)
+    },
+
+
+
 
 //------------------------------STEP4--------------------------------
 //--------------------------------------------------------------------------

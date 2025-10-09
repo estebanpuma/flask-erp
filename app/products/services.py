@@ -68,6 +68,7 @@ class ProductService:
         line_id: int,
         target_id: int,
         collection_id: int,
+        old_code: str = None,
         subline_id: int = None,
         description: str = None,
     ) -> Product:
@@ -87,6 +88,7 @@ class ProductService:
 
         product = Product(
             code=code,
+            old_code=old_code,
             name=name,
             line_id=line_id,
             subline_id=subline_id,
@@ -97,7 +99,6 @@ class ProductService:
         db.session.add(product)
         db.session.flush()  # Para obtener el ID
 
-        current_app.logger.info(f" pos 0:{designs[0]}")
         # Si se proporcionan diseños, los crea Actualmente solo uno
         designs_data = []
         designs_data.append(designs[0])
@@ -106,12 +107,13 @@ class ProductService:
             new_designs = DesignService.bulk_create_designs(product.id, designs_data)
 
         if variants:
-            # Crear variantes para TODOS los diseños___ Atuamente solo uno
+            # Crear variantes
 
-            variants = VariantService.bulk_create_variants(
+            VariantService.bulk_create_variants(
                 design_id=new_designs[0].id,
                 design_code=new_designs[0].code,
-                series_ids=variants[0].series_ids,
+                # series_ids=variants[0].series_ids,
+                sizes_ids=[size.size_id for size in variants],
                 materials=materials,
             )
 
@@ -139,11 +141,11 @@ class ProductService:
         """Actualiza el producto"""
 
         if "line_id" in data:
-            line = LineService.get_line(data["line_id"])
+            line = LineService.get_obj(data["line_id"])
             if line is None:
                 raise ValidationError("No existe liena con esa id")
         if "sub_line_id" in data:
-            subline = SublineService.get_subline(data["sub_line_id"])
+            subline = SublineService.get_obj(data["sub_line_id"])
             if subline is None:
                 raise ValidationError("N exise sublina con esa id")
 
@@ -203,7 +205,7 @@ class DesignService:
 
     @staticmethod
     def patch_obj(instance: ProductDesign, data: dict) -> ProductDesign:
-        EDITABLE_FIELDS = {"description", "name"}
+        EDITABLE_FIELDS = {"description", "name", "is_active", "old_code"}
         invalid_fields = set(data.keys()) - EDITABLE_FIELDS
         if invalid_fields:
             raise ValidationError(f"Campos no editables: {invalid_fields}")
@@ -211,6 +213,10 @@ class DesignService:
             instance.description = str(data["description"])
         if "name" in data:
             instance.name = str(data["name"])
+        if "is_active" in data:
+            instance.is_active = bool(data["is_active"])
+        if "old_code" in data:
+            instance.old_code = str(data["old_code"])
         try:
             db.session.commit()
             return instance
@@ -232,13 +238,12 @@ class DesignService:
     @staticmethod
     def create_obj(data: dict):
         """Crea un diseño con sus variantes y materiales."""
-        current_app.logger.info(f"dara:{data}")
+
         with db.session.begin():
             dto = ProductDesignCreateDTO(data)
             design = DesignService.create_design(
                 product_id=dto.product_id,
                 color_ids=dto.color_ids,
-                # series_ids=dto.series_ids,
                 name=dto.name,
                 description=dto.description,
                 variants=dto.variants,
@@ -250,13 +255,12 @@ class DesignService:
     def create_design(
         product_id: int,
         color_ids: list[int],
-        # series_ids:list[int],
         variants: list,
         materials: list,
         name: str = None,
         description: str = None,
     ) -> ProductDesign:
-        """Funcion para crear un diseño con sus variantes y materiales."""
+        """Funcion para crear un diseño/color con sus variantes y materiales."""
 
         product = Product.query.get(product_id)
         if not product:
@@ -273,13 +277,19 @@ class DesignService:
         colors_codes = [c.code.upper() for c in colors]
         color_part = "".join(colors_codes)
         c_code = f"{product.code}{str(color_part)}"
+        if product.old_code:
+            old_code = f"{product.old_code}{str(color_part)}"
+
         # Genera el diseño
         design = ProductDesign(
-            product_id=product_id, name=name, description=description, code=c_code
+            product_id=product_id,
+            old_code=old_code if old_code else None,
+            name=name,
+            description=description,
+            code=c_code,
         )
 
         db.session.add(design)
-        print(f"hasta aqui los designs: {design}")
         design.colors.extend(colors)
         db.session.flush()
 
@@ -287,7 +297,7 @@ class DesignService:
         VariantService.bulk_create_variants(
             design_id=design.id,
             design_code=design.code,
-            series_ids=variants[0].series_ids,
+            sizes_ids=[variant.size_id for variant in variants],
             materials=materials,
         )
 
@@ -324,19 +334,20 @@ class DesignService:
             colors_codes = [c.code.upper() for c in colors]
             color_part = "".join(colors_codes)
             c_code = f"{product.code}{str(color_part)}"
+            old_code = (
+                f"{product.old_code}{str(color_part)}" if product.old_code else None
+            )
+            name = f"{product.name}-{color_part}" if product.name else None
 
-            print(f"Colores en buldesing; {colors}")
             # Crear diseño (sin commit)
             design = ProductDesign(
                 product_id=product_id,
                 code=c_code,
+                old_code=old_code,
+                name=name,
             )
-            print(f"desig en bulk desig : {design}")
             design.colors.extend(colors)
-            current_app.logger.info(f"design.colors: {design.colors}")
             designs.append(design)
-
-            # designs_and_materials.append({'design':design, 'materials':design_data.materials, "series_ids": design_data["series_ids"]})
 
         db.session.add_all(designs)
 
@@ -359,7 +370,7 @@ class VariantService:
             with db.session.begin():
                 variants = VariantService.add_new_series_to_design(
                     design_id=data["design_id"],
-                    series_ids=data["series_ids"],
+                    sizes_ids=[size.size_id for size in data["variants"]],
                     materials=data["materials"],
                 )
                 return variants
@@ -369,51 +380,52 @@ class VariantService:
 
     @staticmethod
     def bulk_create_variants(
-        design_id: int, design_code: str, series_ids: list, materials: list
+        design_id: int,
+        design_code: str,
+        # series_ids: list, cambo 09-10-2025 para pasar a sizes no series
+        sizes_ids: list,
+        materials: list,
     ):
         """Crea todas las variantes para un diseño con sus materiales."""
         # Validación temprana de series (mejor performance)
-        series = SizeSeries.query.filter(SizeSeries.id.in_(series_ids)).all()
-        if len(series) != len(series_ids):
-            missing_ids = set(series_ids) - {s.id for s in series}
-            raise ValidationError(f"Series no encontradas: {missing_ids}")
+        sizes = Size.query.filter(Size.id.in_(sizes_ids)).all()
+        if len(sizes) != len(sizes_ids):
+            missing_ids = set(sizes_ids) - {s.id for s in sizes}
+            raise ValidationError(f"Sizes no encontradas: {missing_ids}")
 
         variants = []
 
         # Creación de todas las variantes primero
-        for serie in series:
-            serie_materials = materials  # Materiales compartidos para
+        for size in sizes:
+            variant = ProductVariantEntity(
+                {
+                    "design_id": design_id,
+                    "size_id": size.id,
+                    "design_code": design_code,
+                    "size_value": size.value,
+                    "materials": materials,
+                }
+            ).to_model()
 
-            for size in serie.sizes:
-                variant = ProductVariantEntity(
-                    {
-                        "design_id": design_id,
-                        "size_id": size.id,
-                        "design_code": design_code,
-                        "size_value": size.value,
-                        "materials": serie_materials,
-                    }
-                ).to_model()
+            db.session.add(variant)
+            variants.append(variant)
 
-                db.session.add(variant)
-                variants.append(variant)
-
-                # Asignar materiales específicos de la serie
-                # no hago flush porque ya tengo la relacion SQLALchemy
-                # no incluyo variant_id porque la relacion lo hace por mi
-                for mat in serie_materials:
-                    variant.materials.append(
-                        ProductVariantMaterialDetail(
-                            material_id=mat.material_id,
-                            quantity=mat.quantity,
-                        )
+            # Asignar materiales específicos de la serie/tallas
+            # no hago flush porque ya tengo la relacion SQLALchemy
+            # no incluyo variant_id porque la relacion lo hace por mi
+            for mat in materials:
+                variant.materials.append(
+                    ProductVariantMaterialDetail(
+                        material_id=mat.material_id,
+                        quantity=mat.quantity,
                     )
+                )
 
         return variants
 
     @staticmethod
     def add_new_series_to_design(
-        design_id: int, series_ids: list, materials: list
+        design_id: int, sizes_ids: list, materials: list
     ) -> list[ProductVariant]:
         """Añade nuevas variantes a un diseño existente."""
         design = ProductDesign.query.get(design_id)
@@ -422,7 +434,7 @@ class VariantService:
         return VariantService.bulk_create_variants(
             design_id=design.id,
             design_code=design.code,
-            series_ids=series_ids,
+            sizes_ids=sizes_ids,
             materials=materials,
         )
 
@@ -448,6 +460,8 @@ class VariantService:
             instance.barcode = data["barcode"]
         if "stock" in data:
             instance.stock = data["stock"]
+        if "is_active" in data:
+            instance.is_active = data["is_active"]
 
         try:
             db.session.commit()
@@ -463,7 +477,16 @@ class VariantService:
 
     @staticmethod
     def delete_obj(instance):
-        pass
+        if not instance:
+            raise NotFoundError("No se encontro la variante para borrar")
+        try:
+            db.session.delete(instance)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            current_app.logger.warning("Error al borrar variante")
+            raise
 
 
 class ProductVariantMaterialService:
@@ -1089,6 +1112,8 @@ class ColorService:
             instance.hex_value = data["hex_value"]
         if "description" in data:
             instance.description = data["description"]
+        if "is_active" in data:
+            instance.is_active = data["is_active"]
 
         try:
             db.session.commit()

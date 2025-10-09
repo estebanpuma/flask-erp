@@ -150,7 +150,7 @@ class Product(BaseModel, SoftDeleteMixin):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(50), unique=True, nullable=False)  # Ej: CDU101
     # number = db.Column = (db.Integer, nullable=False)
-
+    old_code = db.Column(db.String(50), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     line_id = db.Column(db.Integer, db.ForeignKey("product_lines.id"), nullable=False)
@@ -200,6 +200,7 @@ class ProductDesign(BaseModel, SoftDeleteMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    old_code = db.Column(db.String(50), nullable=True)
     code = db.Column(db.String(50), nullable=False)  # Ej: C001NE
     name = db.Column(db.String(50), nullable=True)
     description = db.Column(db.String(255))
@@ -243,6 +244,8 @@ class ProductVariant(BaseModel, SoftDeleteMixin):
     size_id = db.Column(db.Integer, db.ForeignKey("sizes.id"), nullable=False)
 
     code = db.Column(db.String(50), unique=True, nullable=False)  # Ej: C001NE40
+    old_code = db.Column(db.String(50), nullable=True)
+
     barcode = db.Column(db.String(50), unique=True)
     stock = db.Column(db.Integer, default=0)
 
@@ -409,7 +412,7 @@ class ProductPriceHistory(BaseModel, SoftDeleteMixin):
     )
 
 
-class Color(BaseModel):
+class Color(BaseModel, SoftDeleteMixin):
     __tablename__ = "colors"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -420,6 +423,10 @@ class Color(BaseModel):
 
     def __repr__(self):
         return f"<Color: {self.code}-{self.name}>"
+
+    @property
+    def count_products(self):
+        return len(self.designs)
 
 
 class Size(BaseModel):
@@ -444,16 +451,23 @@ series_sizes = db.Table(
 )
 
 
-class SizeSeries(BaseModel):
+class SizeSeries(BaseModel, SoftDeleteMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
+    code = db.Column(db.String(10), nullable=False)
     description = db.Column(db.String(200))
     start_size = db.Column(db.Integer, nullable=False)
     end_size = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(20), nullable=False)  # 'hombre', 'mujer', 'niño'
 
-    sizes = db.relationship("Size", secondary=series_sizes, backref="series")
+    sizes = db.relationship(
+        "Size", secondary=series_sizes, backref="series", cascade="all, delete"
+    )
 
     def validate_category(self):
         if self.category not in [s.value for s in SizeCategory]:
             raise ValueError(f"Categoria '{self.category}' no es válido.")
+
+    @property
+    def count_sizes(self):
+        return len(self.sizes)

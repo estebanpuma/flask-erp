@@ -10,26 +10,26 @@
     <select class="form-select" id="size_series_id" x-model="selectedSeriesId" @change="loadSizes">
       <option value="">Selecciona una serie</option>
       <template x-for="serie in sizeSeries" :key="serie.id">
-        <option :value="serie.id" x-text="serie.name+'-'+serie.category+'-'+'('+serie.start_size+'-'+serie.end_size+')'"></option>
+        <option :value="serie.id" x-text="serie.name+'-'+serie.code+'-'+'('+serie.start_size+'-'+serie.end_size+')'"></option>
       </template>
     </select>
     <label for="size_series_id">Serie de tallas</label>
   </div>
 
   <!-- Vista previa de serie seleccionada -->
-  <div class="mb-4" x-show="sizes.length > 0">
+  <div class="mb-4" x-show="selectedSerie.code">
     <h6 class="mb-2">Serie seleccionada:</h6>
     <div class="d-flex flex-wrap gap-2">
-        <template x-if="sizes">
+        <template x-if="selectedSerie">
              <span class="badge bg-dark"
-             x-text="'serie '+ selectedSerie.name + '[' + selectedSerie.start_size + '-' + selectedSerie.end_size + '] (' + selectedSerie.category +')'"></span>
+             x-text="'serie '+ selectedSerie.name + '[' + selectedSerie.start_size + '-' + selectedSerie.end_size + '] (' + selectedSerie.name +')'"></span>
         </template>
 
     </div>
   </div>
 
   <!-- Variantes generadas -->
-  <div x-show="productData.variants.length > 0" >
+  <div x-show="generatedVariants.length > 0" >
     <div class="d-flex justify-content-between align-items-center bg-dark">
       <h6 class="mb-2 text-white">🧩 Variantes generadas:</h6>
       <button class="btn btn-sm btn-outline-dark" @click="removeSerie()" type="button">
@@ -38,14 +38,18 @@
     </div>
 
     <ul class="list-group">
-      <template x-for="variant in variants" :key="variant.size_id">
+      <template x-for="variant in generatedVariants" :key="variant.size_id">
         <li class="list-group-item d-flex justify-content-between">
           <span x-text="variant.variant_code"></span>
-          <small class="text-muted" x-text="variant.size_name"></small>
+          <small class="badge bg-secondary" x-text="variant.size_name"></small>
+          <div class="form-check">
+             <input type="checkbox" class="form-check-input" x-model="variant.check">
+          </div>
         </li>
       </template>
 
     </ul>
+    <button class="btn btn-dark" @click="addVariants()">Confirmar tallas</button>
   </div>
 
   <!-- Acciones -->

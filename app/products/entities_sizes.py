@@ -1,4 +1,4 @@
-from ..common.parsers import parse_float, parse_int, parse_str
+from ..common.parsers import parse_bool, parse_float, parse_int, parse_str
 from ..core.exceptions import ValidationError
 from .models import Size, SizeSeries
 
@@ -9,9 +9,10 @@ class SeriesEntity:
     def __init__(self, data: dict):
         print(f"data inside entity: {data}")
         self.name = parse_str(data.get("name"), field="name").upper()
+        self.code = parse_str(data.get("code"), field="code").upper()
         self.start_size = parse_int(data.get("start_size"))
         self.end_size = parse_int(data.get("end_size"))
-        self.category = parse_str(data.get("category"))
+        self.category = parse_str(data.get("category")).upper()
         self.description = parse_str(data.get("description"), nullable=True)
 
         self.validate()
@@ -29,6 +30,7 @@ class SeriesEntity:
     def to_model(self) -> SizeSeries:
         return SizeSeries(
             name=self.name,
+            code=self.code,
             start_size=self.start_size,
             end_size=self.end_size,
             description=self.description,
@@ -40,12 +42,15 @@ class SeriesUpdateEntity:
     """Entidad solo para actualización con campos editables declarados."""
 
     # Campos permitidos para actualización
-    EDITABLE_FIELDS = {"name", "description"}
+    EDITABLE_FIELDS = {"name", "description", "is_active"}
 
     def __init__(self, data: dict):
         self.name = parse_str(data.get("name")) if "name" in data else None
         self.description = (
             parse_str(data.get("description")) if "description" in data else None
+        )
+        self.is_active = (
+            parse_bool(data.get("is_active")) if "is_active" in data else None
         )
         self._validate(data)
 
@@ -63,6 +68,8 @@ class SeriesUpdateEntity:
             instance.name = self.name
         if self.description is not None:
             instance.description = self.description
+        if self.is_active is not None:
+            instance.is_active = self.is_active
         return instance
 
 

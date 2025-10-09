@@ -12,43 +12,33 @@
             <div class="d-flex justify-content-end mb-2">
                 <span
                     class="badge"
-                    :class="collection.is_active ? 'text-bg-success' : 'text-bg-secondary'"
-                    x-text="collection.is_active ? 'Activo' : 'Inactivo'">
+                    :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'"
+                    x-text="item.is_active ? 'Activo' : 'Inactivo'">
                 </span>
             </div>
 
             <div class="mb-3">
 
-                <div class="text-muted">Nombre de {{label.collection}}</div>
+                <div class="text-muted">Nombre de {{label.product}}</div>
                 <button class="d-flex justify-content-between rounded-2 form-control"
                 @click="$dispatch('open-generic-editor', {
                     title: 'Nombre',
                     label: 'Nombre',
                     field: 'name',
-                    value: collection.name,
+                    value: item.name,
                     type: 'text',
-                    patchUrl: '/api/v1/product-collections/{{id}}',
+                    patchUrl: apiFetch,
                     help: 'El nombre debe tener al menos 3 caracteres.',
-                    onSave: () => { console.log('¡Guardado!'); alert('GUuuardado!'); location.reload(); }
+                    onSave: () => { console.log('¡Guardado!'); alert('Guardado!'); location.reload(); }
                 })">
-                    <div x-text="collection.name"></div>
+                    <div x-text="item.name"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </button>
             </div>
             <div class="mb-3">
                 <div class="text-muted">Código</div>
-                <button class="d-flex justify-content-between rounded-2 form-control "
-                @click="$dispatch('open-generic-editor', {
-                        title: 'Código',
-                        label: 'Código',
-                        field: 'code',
-                        value: collection.code,
-                        type: 'text',
-                        patchUrl: '/api/v1/product-collections/{{id}}',
-                        help: 'El código tener al menos 3 caracteres.',
-                        onSave: () => { console.log('¡Guardado!');location.reload(); alert('GUuuardado!');  }
-                    })">
-                    <div  x-text="collection.code?collection.code:'Sin codigo'"></div>
+                <button class="d-flex justify-content-between rounded-2 form-control ">
+                    <div  x-text="item.code?item.code:'Sin codigo'"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </button>
 
@@ -61,13 +51,13 @@
                         title: 'Descripción',
                         label: 'Descripción',
                         field: 'description',
-                        value: collection.description,
+                        value: item.description,
                         type: 'textarea',
-                        patchUrl: `/api/v1/product-collections/${id}`,
+                        patchUrl: apiFetch,
                         help: '',
-                        onSave: (updated) => { collection.description = updated.description; }
+                        onSave: (updated) => { item.description = updated.description; }
                     })">
-                    <div  x-text="collection.description?collection.description:'Sin descripción'"></div>
+                    <div  x-text="item.description?item.description:'Sin descripción'"></div>
                     <div> <i class="bi bi-chevron-right"></i></div>
                 </div>
             </div>
@@ -75,8 +65,8 @@
             <div class="mb-3">
                 <div class="text-muted">Estado</div>
                 <div class="d-flex justify-content-between form-check  form-switch ps-0">
-                    <label  x-text="collection.is_active ? 'Activo' : 'Inactivo'"></label>
-                    <input class="form-check-input" type="checkbox" role="switch" :checked="collection.is_active" @click="toggleStatus()">
+                    <label  x-text="item.is_active ? 'Activo' : 'Inactivo'"></label>
+                    <input class="form-check-input" type="checkbox" role="switch" :checked="item.is_active" @click="toggleStatus()">
                 </div>
 
             </div>
@@ -84,7 +74,7 @@
             <div class="mb-3">
                 <div class="text-muted">{{label.line}}</div>
                 <div class="d-flex">
-                    <div  x-text="collection.line_name?collection.line_name:'Sin linea'"></div>
+                    <div  x-text="item.line_name?item.line_name:'Sin linea'"></div>
 
                 </div>
             </div>
@@ -92,7 +82,7 @@
             <div class="mb-3">
                 <div class="text-muted">{{label.subline}}</div>
                 <div class="d-flex">
-                    <div  x-text="collection.subline_name?collection.subline_name:'Sin sublinea'"></div>
+                    <div  x-text="item.subline_name?item.subline_name:'Sin sublinea'"></div>
                 </div>
             </div>
 
@@ -100,41 +90,39 @@
             <div class="mb-3">
                 <div class="text-muted">{{label.last}}</div>
                 <div class="d-flex">
-                    <div  x-text="collection.last_code?collection.last_code:'Sin horma asignada'"></div>
+                    <div  x-text="item.last_code?item.last_code:'Sin horma asignada'"></div>
                 </div>
             </div>
 
             <!-- Fila de Total Productos -->
             <div class="mb-3">
-                <div class="text-muted">{{label.products}}</div>
+                <div class="text-muted">{{label.designs}}</div>
                 <div class="d-flex justify-content-between rounded-2 ">
-                    <div class="">Total productos:</div>
-                    <div  x-text="collection.count_products" class="badge text-bg-primary rounded-pill"></div>
+                    <div class="">Total colores:</div>
+                    <div  x-text="item.count_products" class="badge text-bg-primary rounded-pill"></div>
 
                 </div>
             </div>
             <div>
                 <div class="text-muted">{{label.products}}</div>
                     <ul class="list-group list-group-flush">
-                        <template x-for="products in products" :key="products.id">
-                            <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectProducts(products.id)" >
+                        <template x-for="pcolor in pcolors" :key="pcolor.id">
+                            <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectPcolors(pcolor.id)" >
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-semibold badge text-bg-secondary"
-                                    x-text="products.name"></span>
-                                 <span x-text="products.code"></span>
+                                    x-text="pcolor.name"></span>
+                                 <span x-text="pcolor.code"></span>
                             </div>
                             </li>
                         </template>
-                        <template x-if="products.length == 0">
+                        <div>
                             <div>
-                                <li class="list-group-item list-group-item-action rounded-2" x-text="'No existen productos en esta colección.'">
 
-                            </li>
-                                <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar colección</button>
+                                <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar {{label.producto}}</button>
                             </div>
 
 
-                        </template>
+                        </div>
                     </ul>
             </div>
         </div>
@@ -147,42 +135,41 @@
 <script>
     function detail(id){
         return{
-            collection:{},
-            products:[],
+            item:{},
+            pcolors:[],
             error:'',
-            form:{},
-            field_label:'',
-            selectedField:'',
-            form_model:'',
-            original_value: '',
             api:'',
             message:'',
             type:'',
             id:id,
+            apiFetch: `products/${id}`,
+            api: `/products/${id}`,
+
+
 
             init(){
                 console.log('init... id: ', id)
-                this.fetchCollection(id);
+                this.fetchItem(id);
             },
 
-            async fetchCollection(id){
+            async fetchItem(id){
                 try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-collections/${id}`);
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiFetch);
 
-                    this.collection = res;
+                    this.item = res;
                     console.log('res: ', res);
-                    this.fetchProducts(id)
+                    this.fetchPColors(id)
                 }catch(error){
                     console.error('API error: ', error)
                     this.error= error
                 }
             },
 
-            async fetchProducts(id){
+            async fetchPColors(id){
                 try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `products?collection_id=${id}`);
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-designs?product_id=${id}`);
 
-                    this.products = res;
+                    this.pcolors = res;
                     console.log('res products: ', res);
                 }catch(error){
                     console.error('API error: ', error)
@@ -191,23 +178,23 @@
 
             },
 
-            redirectProducts(id){
-                window.location.href = `/products/${id}`;
+            redirectPcolors(id){
+                window.location.href = `/product-designs/${id}`;
             },
 
 
             async deleteObj(id){
-                if (!confirm('¿Estás seguro de que quieres eliminar esta colección?')) {
+                if (!confirm('¿Estás seguro de que quieres eliminar este registro')) {
                     return;
                 }
                 try {
-                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', `product-collections/${id}`);
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', this.apiFetch);
                     if (res) {
-                        alert('Colección eliminada con éxito');
-                        this.message = 'Colección eliminada con éxito';
-                        window.location.href = '/products/collections';
+                        alert('Registro eliminado con éxito');
+                        this.message = 'Registro eliminado con éxito';
+                        window.location.href = this.api;
                     } else {
-                        this.error = 'Error al eliminar la colección';
+                        this.error = 'Error al eliminar registro';
                     }
                 } catch (error) {
                     console.error('API error: ', error);
@@ -221,11 +208,11 @@
                 }
 
                 try {
-                    const newStatus = !this.collection.is_active;
-                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', `product-collections/${this.id}`, { is_active: newStatus });
+                    const newStatus = !this.item.is_active;
+                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', this.apiFetch, { is_active: newStatus });
                     console.log('updated: ', updated)
                     if (updated) {
-                        this.collection.is_active = updated.is_active;
+                        this.item.is_active = updated.is_active;
                     }
                 } catch (error) {
                     console.error('Error toggling status:', error);

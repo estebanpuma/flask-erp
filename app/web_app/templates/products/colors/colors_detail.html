@@ -1,46 +1,19 @@
 {% extends "base.html" %}
-{% from 'components/detailCard.html' import detail_card %}
+{% from 'components/_pageHeader.html' import pageHeader%}
 {% block title %}Detalle de Color{% endblock %}
 
 {% block content %}
-<div class="container mt-3" >
+<div class="custom-max-width">
 
-  <div x-data="{ href: '/products/colors', title: '🎨 Color' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
+  {{ pageHeader(href='/products/colors',
+                title='Colores',
+                has_btn=False,
+                ) }}
 
-    <div
-      x-data="genericDetail(
-        '/api/v1/colors/{{ color_id }}',
-
-          [
-             { field:'code',        label:'Código' },
-            { field:'name',        label:'Nombre' },
-            { field:'hex_value',        label:'HEX' },
-            { field: 'description',  label: 'Descripción'},
-            { field:'is_active', label:'Status' },
-          ],
-
-          '🎨'
-
-      )"
-    >
-    {% include "components/detailCard.html" %}
-
-    <!-- Mensaje de error -->
-    <template x-if="error">
-      <div class="alert alert-danger" x-text="error"></div>
-    </template>
-
-  </div>
-
-
-
+  {% include 'products/colors/_detail.html'  %}
 
 </div>
-{% endblock %}
 
-{% block scripts %}
-  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
-   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+
+
 {% endblock %}

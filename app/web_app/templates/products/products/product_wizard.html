@@ -45,4 +45,14 @@
     </div>
   </template>
 
+  <!-- Paso 5: Imágenes (después de crear) -->
+  <template x-if="step === 5">
+    <div>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 x-text="`🖼️ Subir Imágenes`"></h4>
+      </div>
+      {% include 'products/wizard/_step5_images.html' %}
+    </div>
+  </template>
+
 </div>

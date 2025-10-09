@@ -1,17 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Crear Color{% endblock %}
-
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
-<div x-data="{ href: '/products/colors', title: ' Crear nuevo color' }">
-    {% include 'components/_pageHeader.html' %}
-</div>
+
 
 <div class="container mt-3" x-data="colorsForm()">
+  {{ pageHeader(href='/products/colors',
+                title='Nuevo color',
+                has_btn=False,
+                ) }}
 
   {% include "products/colors/_colorsForm_create.html" %}
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/colorsForm.js') }}"></script>
 {% endblock %}

@@ -27,12 +27,12 @@
             class="form-select"
             required
           >
-            <option value="">Selecciona línea</option>
+            <option value="">Selecciona {{label.line}}</option>
             <template x-for="l in lines" :key="l.id">
               <option :value="l.id" x-text="l.code + '-'+ l.name"></option>
             </template>
           </select>
-          <label for="lineSelect">Línea <span class="text-danger">*</span></label>
+          <label for="lineSelect">{{label.line}} <span class="text-danger">*</span></label>
         </div>
 
         <!-- Sublínea (opcional) -->
@@ -43,12 +43,12 @@
             @change="fetchCollections()"
             class="form-select"
           >
-            <option value="" class="text-muted">(Opcional)</option>
+            <option value="" class="text-muted">Seleccione una sublínea</option>
             <template x-for="s in sublines" :key="s.id">
               <option :value="s.id" x-text="s.code + '-'+ s.name"></option>
             </template>
           </select>
-          <label for="sublineSelect">Sublínea</label>
+          <label for="sublineSelect">{{label.subline}}(Opcional)</label>
         </div>
 
         <!-- Target (obligatorio) -->
@@ -60,12 +60,12 @@
             class="form-select"
             required
           >
-            <option value="">Selecciona target</option>
+            <option value="">Selecciona {{ label.target }}</option>
             <template x-for="t in targets" :key="t.id">
               <option :value="t.id" x-text="t.code+'-'+t.name"></option>
             </template>
           </select>
-          <label for="targetSelect">Target <span class="text-danger">*</span></label>
+          <label for="targetSelect">{{label.target}} <span class="text-danger">*</span></label>
         </div>
 
         <!-- Colección (obligatorio) -->
@@ -78,27 +78,47 @@
               class="form-select"
               required
             >
-              <option value="">Selecciona colección</option>
+              <option value="">Selecciona {{label.collection}}</option>
               <template x-for="c in collections" :key="c.id">
                 <option :value="c.id" x-text="c.code + '-' + c.name"></option>
               </template>
             </select>
-            <label for="collectionSelect">Colección <span class="text-danger">*</span></label>
+            <label for="collectionSelect">{{label.collection}}<span class="text-danger">*</span></label>
           </div>
         </template>
         <div class="text-center text-muted mb-3" x-show="loading">
           Cargando colecciones…
         </div>
 
-        <!-- Preview de Código -->
-        <template x-if="productData.code!==''">
-        <div class="mb-3 text-start " >
-          <label class="form-label">Código:</label>
-          <div class="fs-5 fw-bold">
 
-            <span x-text="productData.code"></span>
+        <!-- Código -->
+        <template x-if="productData.code!==''">
+          <div>
+            <!-- Codigo nuevo -->
+            <div class="mb-3 form-floating" >
+              <input type="text" x-model="productData.code" class="form-control" >
+              <label class="form-label">Código:</label>
+            </div>
+            <!-- Codigo antiguo -->
+            <div x-data="{open:false}">
+              <div class="d-flex justify-content-between align-items-center mb-3 cursor-pointer" @click="open=!open">
+                <div  class="text-muted fst-italic">-Código antiguo?</div>
+                <div><i class="bi bi-chevron-down"></i></div>
+              </div>
+              <div x-show="open">
+                <div class="form-floating mb-3">
+                  <input
+                    type="text"
+                    id="oldCode"
+                    class="form-control"
+                    x-model="productData.old_code"
+                    placeholder="Código antiguo"
+                  >
+                  <label for="oldCode">Código antiguo (Opcional)</label>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
         </template>
 
         <!-- Nombre del Modelo -->
@@ -125,8 +145,9 @@
           <label for="productDescription">Descripción</label>
         </div>
 
+
         <!-- Navegación -->
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between mt-4">
           <button
             type="button"
             @click="prevStep()"

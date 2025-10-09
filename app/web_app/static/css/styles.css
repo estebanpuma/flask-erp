@@ -76,3 +76,11 @@ font-weight: 600;
 .cursor-pointer{
     cursor: pointer;
 }
+
+
+.custom-max-width{
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+
+}

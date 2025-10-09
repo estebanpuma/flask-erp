@@ -17,7 +17,7 @@ def product_list():
 
 @products_bp.route("/<int:id>")
 def product_detail(id):
-    return render_template("products/products/product_detail.html", product_id=id)
+    return render_template("products/products/product_detail.html", id=id)
 
 
 @products_bp.route("/create", methods=["GET"])
@@ -27,6 +27,9 @@ def create_product_view():
 
 # ----------------------------------------------------
 # ------------------------DEsigns--------------------
+@products_bp.route("/designs/<int:id>")
+def design_detail(id):
+    return render_template("products/products/product_detail.html", id=id)
 
 
 @products_bp.route("/<int:product_id>/desings")
@@ -35,7 +38,7 @@ def design_list(product_id):
 
 
 @products_bp.route("/<int:product_id>/designs/<int:design_id>")
-def design_detail(product_id, design_id):
+def product_design_detail(product_id, design_id):
     return render_template(
         "products/designs/design_detail.html",
         design_id=design_id,
@@ -167,7 +170,7 @@ def size_list():
 
 @products_bp.route("/series/<int:id>")
 def size_detail(id):
-    return render_template("products/sizes/series_detail.html", serie_id=id)
+    return render_template("products/sizes/series_detail.html", id=id)
 
 
 # ----------------------------------------------------
@@ -186,4 +189,4 @@ def color_list():
 
 @products_bp.route("/colors/<int:id>")
 def color_detail(id):
-    return render_template("products/colors/colors_detail.html", color_id=id)
+    return render_template("products/colors/colors_detail.html", id=id)

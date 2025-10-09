@@ -15,6 +15,8 @@ color_fields = {
     "hex_value": fields.String,
     "name": fields.String,
     "description": fields.String,
+    "count_products": fields.Integer,
+    "is_active": fields.Boolean,
 }
 
 line_fields = {
@@ -39,12 +41,15 @@ subline_fields = {
 size_series_fields = {
     "id": fields.Integer,
     "name": fields.String,
+    "code": fields.String,
     "description": fields.String,
     "start_size": fields.Integer,
     "end_size": fields.Integer,
     "category": fields.String,
     "is_active": fields.Boolean,
+    "count_sizes": fields.Integer,
 }
+
 
 size_fields = {
     "id": fields.Integer,
@@ -98,6 +103,8 @@ small_product_fields = {
     "subline": fields.Nested(line_fields),
     "target": fields.Nested(line_fields),
     "collection": fields.Nested(line_fields),
+    "line_name": fields.String(attribute="line.name"),
+    "subline_name": fields.String(attribute="sub_line.name"),
 }
 color_names_field = fields.List(fields.String(attribute="name"), attribute="colors")
 
@@ -135,6 +142,8 @@ product_fields = {
     "collection_id": fields.Integer,
     "line": fields.Nested(line_fields),
     "subline": fields.Nested(line_fields),
+    "line_name": fields.String(attribute="line.name"),
+    "subline_name": fields.String(attribute="sub_line.name"),
     "target": fields.Nested(line_fields),
     "collection": fields.Nested(line_fields),
     "designs": fields.List(fields.Nested(product_design_fields)),

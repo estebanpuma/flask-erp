@@ -76,11 +76,12 @@ class SizeSeriesService:
     def delete_obj(obj):
         try:
             db.session.delete(obj)
+            db.session.commit()
             return True
         except Exception as e:
             db.session.rollback()
             current_app.logger.warning(f"No se pudo eliminar la serie. e:{str(e)}")
-            raise
+            raise str(e)
 
 
 class SizeService:

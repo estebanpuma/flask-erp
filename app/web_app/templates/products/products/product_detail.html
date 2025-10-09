@@ -1,68 +1,12 @@
 {% extends "base.html" %}
-{% from 'components/detailCard.html' import detail_card %}
 {% from 'components/_pageHeader.html' import pageHeader %}
 {% block title %}Detalle de Línea{% endblock %}
 
 {% block content %}
-<div class="container mt-3" >
+<div class="custom-max-width">
 
-{{pageHeader('/products', 'Detalle del producto')}}
-
-  <div
-      x-data="genericDetail(
-        '/api/v1/products/{{ product_id }}',
-
-          [
-            { field:'line.name', label:'Línea'},
-            { field:'collection.name', label:'Colección'},
-            { field:'code',        label:'Código' },
-            { field:'name',        label:'Nombre' },
-            { field:'description', label:'Descripción' },
-          ],
-
-          '👟'
-
-      )"
-    >
-    {% include "components/detailCard.html" %}
-
-    <!-- Mensaje de error -->
-    <template x-if="error">
-      <div class="alert alert-danger" x-text="error"></div>
-    </template>
-
-  </div>
-
-   <div>
-      <a class="btn btn-dark" :href="'/products/{{product_id}}/designs/create'"> crear</a>
-    </div>
-
-  <!-- Una vez que llega `item`, mostramos la lista de disenos -->
-  <div class="card border-0 shadow rounded-4 p-3 mt-3">
-    <h4>Diseños/Colores</h4>
-    <div
-        x-data="genericList(
-          `/api/v1/product-designs?product_id={{product_id}}`,
-          '/products/{{product_id}}/designs',
-          [
-            { field: 'code',        label: 'Código',      filterable: true  },
-            { field: 'created_at',  label: 'Fecha de creación',      filterable: true  },
-            { field: 'is_active',   label: 'Status',      filterable: true  },
-          ]
-        )"
-        x-init="init()"
-        class="table-responsive"
-      >
-        {% include 'components/listTable.html' %}
-    </div>
-  </div>
-
-
+  {{pageHeader('/products', 'Detalle del producto')}}
+  {% include 'products/products/_detail.html' %}
 
 </div>
-{% endblock %}
-
-{% block scripts %}
-  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}

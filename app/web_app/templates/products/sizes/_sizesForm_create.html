@@ -2,8 +2,22 @@
 
   <div class="form-floating mb-3">
     <input type="text" class="form-control text-uppercase"
-           id="code" placeholder="Ej: Escolar"
+           id="name" placeholder="Ej: Escolar"
            x-model="serie.name"
+           @input.debounce200ms = "serie.name = serie.name.toUpperCase()"
+           required>
+    <label for="name">Nombre</label>
+    <template  >
+        <span id="codeFeedback" class="text-danger">
+             🚫 El nombre ya existe.
+        </span>
+    </template>
+  </div>
+
+  <div class="form-floating mb-3">
+    <input type="text" class="form-control text-uppercase"
+           id="code" placeholder="Ej: Escolar"
+           x-model="serie.code"
            required>
     <label for="code">Código de la serie</label>
     <template  >
@@ -16,30 +30,88 @@
  <div class="form-floating mb-3">
     <select class="form-select" x-model="serie.category" required>
       <option value="">Selecciona Tipo</option>
-      <option value="Hombre">Hombre</option>
-      <option value="Mujer">Mujer</option>
-      <option value="Niño">Niño</option>
-      <option value="Niña">Niña</option>
+      <option value="HOMBRE">HOMBRE</option>
+      <option value="MUJER">MUJER</option>
+      <option value="INFANTIL">INFANTIL</option>
+      <option value="BEBE">BEBE</option>
     </select>
     <label>Tipo</label>
   </div>
 
   <div class="form-floating mb-3">
     <input class="form-control" id="description"
-              placeholder="Descripción" style="height: 80px"
-              x-model="serie.start_size" type="number" required></input>
+              placeholder="Descripción"
+              x-model.number="serie.start_size" type="number" required></input>
     <label for="description">Talla inicio</label>
   </div>
 
   <div class="form-floating mb-3">
     <input class="form-control" id="description"
-              placeholder="Descripción" style="height: 80px"
-              x-model="serie.end_size" type="number" required></input>
+              placeholder="Descripción"
+              x-model.number="serie.end_size" type="number" required></input>
     <label for="description">Talla fin</label>
   </div>
+  <div class="form-floating mb-3">
+    <textarea class="form-control" id="description" x-model="serie.description"
+              placeholder="Descripción" style="height: 80px">
+        </textarea>
+        <label for="description">Descripción</label>
 
+  </div>
   <div class="d-flex justify-content-end mt-4">
-    <button type="submit" class="btn btn-dark">Guardar Serie</button>
+    <button type="submit" class="btn btn-dark">Guardar</button>
   </div>
 
 </form>
+<script>
+  function sizesForm() {
+  return {
+    loading: false,
+    serie: {
+      name: '',
+      code:'',
+      description: '',
+      category:'',
+      start_size: '',
+      end_size: '',
+    },
+    message: '',
+    success: false,
+
+    init() {
+      // Opcional: lógica inicial
+    },
+
+
+    async submitForm() {
+      this.loading = true;
+      this.message = '';
+      try {
+        const res = await fetch('/api/v1/series', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.serie),
+        });
+        const data = await res.json();
+        this.success = res.ok;
+        this.message = this.success ? '✅ Serie creada' : (data.message || '❌ Error al crear serie');
+        if (this.success) {
+          this.serie.name = '';
+          this.serie.code = '';
+          this.serie.description = '';
+          alert(this.message)
+          window.location.href = '/products/series';
+        }
+      } catch (err) {
+        console.error(err);
+        this.success = false;
+        this.message = '❌ Error de conexión';
+        console.log(this.message)
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+}
+
+</script>

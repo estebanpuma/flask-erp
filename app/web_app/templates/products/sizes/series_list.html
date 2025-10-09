@@ -1,30 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Líneas de Producto{% endblock %}
+{% block title %}{{label.series}}{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader%}
 {% block content %}
 
-<div x-data="{ href: '/products/index', title: 'Series/Tallas' }">
-    {% include 'components/_pageHeader.html' %}
-</div>
-
-<a href="/products/series/create" class="btn btn-dark">
-        <i class="bi bi-plus-circle me-1"></i> Nueva serie
-</a>
+{{ pageHeader(href='/products/index',
+              title='Series',
+              has_btn=True,
+              btn_label='Nueva serie',
+              btn_href='/products/series/create'
+              ) }}
 
 <div
     x-data="genericList(
       `/api/v1/series`,
       '/products/series',
       [
-        { field: 'name',        label: 'Código',      filterable: true  },
+        { field: 'name',        label: 'Nombre',      filterable: true  },
+        { field: 'code',        label: 'Código',      filterable: true  },
         { field: 'start_size',  label: 'Talla inicio',      filterable: true  },
-        { field: 'end_size',        label: 'Talla fin',      filterable: true  },
-        { field: 'category',   label: 'categoría',      filterable: true  },
+        { field: 'end_size',    label: 'Talla fin',      filterable: true  },
+        { field: 'category',    label: 'categoría',      filterable: true  },
       ]
     )"
-    class="table-responsive"
   >
+
+
+  <template x-if="error">
+    <div class="alert alert-danger" role="alert" x-text="error"></div>
+  </template>
+
+    <!-- Vista de Escritorio (Tabla Genérica) -->
+  <div class="d-none d-md-block">
     {% include 'components/listTable.html' %}
   </div>
+
+      <!-- Vista Móvil con Buscador -->
+  <div class="d-md-none">
+    {% include 'components/listCard.html' %}
+
+  </div>
+
+</div>
 
 
 

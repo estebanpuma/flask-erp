@@ -17,9 +17,10 @@ class OrderStatus(str, Enum):
 
 
 class SizeCategory(str, Enum):
-    MAN = "Hombre"
-    WOMAN = "Mujer"
-    KID = "Infantil"
+    MAN = "HOMBRE"
+    WOMAN = "MUJER"
+    KID = "INFANTIL"
+    BABY = "BEBE"
 
     @classmethod
     def has_value(cls, value):

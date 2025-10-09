@@ -14,6 +14,9 @@ class ProductCreateDTO:
         self.description = parse_str(
             data.get("description"), field="Descripcion", nullable=True
         )
+        self.old_code = parse_str(
+            data.get("old_code"), field="Codigo antiguo", nullable=True
+        )
         self.line_id = parse_int(data.get("line_id"), field="Linea")
         self.subline_id = parse_int(
             data.get("sub_line_id"), field="Sublinea", nullable=True
@@ -28,13 +31,14 @@ class ProductCreateDTO:
 class ProductPatchDTO:
     """DTO que actualiza el producto"""
 
-    EDITABLE_FIELDS = {"name", "description", "line_id", "sub_line_id"}
+    EDITABLE_FIELDS = {"name", "description", "line_id", "sub_line_id", "old_code"}
 
     def __init__(self, data: dict):
         self.name = parse_str(data.get("name"), field="name", nullable=True)
         self.description = parse_str(
             data.get("description"), field="description", nullable=True
         )
+        self.old_code = parse_str(data.get("old_code"), field="old_code", nullable=True)
         self.line_id = parse_int(data.get("line_id"), field="line_id", nullable=True)
         self.sub_line_id = parse_int(
             data.get("sub_line_id"), field="sub_line_id", nullable=True
@@ -57,6 +61,8 @@ class ProductPatchDTO:
             instance.line_id = self.line_id
         if self.sub_line_id:
             instance.sub_line = self.sub_line_id
+        if self.old_code:
+            instance.old_code = self.old_code
         return instance
 
 
@@ -92,9 +98,10 @@ class InlineProductDesignDTO:
 class InlineVariantDTO:
     def __init__(self, data: dict):
         # input
-        self.series_ids = parse_ids_list(
-            data.get("series_ids"), field="Ids de serie", min_value=1
-        )
+        self.size_id = parse_int(data.get("size_id"), field="Id de talla")
+        # self.series_ids = parse_ids_list(
+        # data.get("series_ids"), field="Ids de serie", min_value=1
+        # )
 
 
 class ProductVariantCreateDTO:
