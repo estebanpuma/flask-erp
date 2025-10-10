@@ -85,5 +85,4 @@
     ui:{ showToast,badgeClass },
     fetch: {apiFetch},
   })
-  console.log(window.guifer.helpers.fetch)
 })(window)

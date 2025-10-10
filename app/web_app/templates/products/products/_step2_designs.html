@@ -1,0 +1,57 @@
+<div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Color del producto</h5>
+      <!-- Instrucción -->
+      <div class="mb-3">
+        <p>Selecciona uno o más colores para el diseño de este producto. El orden en que los selecciones definirá el código del diseño.</p>
+      </div>
+
+      <!-- Selector de colores -->
+      <div class="mb-3">
+        <label class="form-label">Colores disponibles:</label>
+        <div class="d-flex flex-wrap gap-2">
+          <template x-for="color in availableColors" :key="color.id">
+            <button type="button"
+                    class="btn btn-outline-dark btn-sm"
+                    :class="{'active': isColorSelected(color.id)}"
+                    @click="toggleColor(color)">
+              <span x-text="`${color.name} (${color.code})`"></span>
+            </button>
+          </template>
+        </div>
+      </div>
+
+
+
+      <!-- Colores seleccionados (en orden) -->
+      <div class="mt-4">
+        <h6 class="mb-2">🎨 Colores seleccionados:</h6>
+        <template x-if="selectedColors.length === 0">
+          <p class="text-muted">No has seleccionado ningún color aún.</p>
+        </template>
+
+        <ul class="list-group">
+          <template x-for="(color, index) in selectedColors" :key="color.id">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                <strong x-text="`${index + 1}. ${color.name} (${color.code})`"></strong>
+              </span>
+              <button class="btn btn-sm btn-outline-danger" @click="removeColor(color)">
+                <i class="bi bi-x"></i>
+              </button>
+            </li>
+          </template>
+        </ul>
+      </div>
+
+      <!-- Vista previa del código del diseño -->
+      <div class="alert alert-dark mt-4" x-show="selectedColors.length > 0">
+        Código del diseño: <strong x-text="productData.code + getDesignSuffix()"></strong>
+      </div>
+    </div>
+  </div>
+
+
+</div>

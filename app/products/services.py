@@ -1,3 +1,5 @@
+import json
+
 from flask import current_app
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import joinedload
@@ -8,6 +10,7 @@ from ..common.services import ProductCodeGenerator
 from ..core.exceptions import ConflictError, NotFoundError, ValidationError
 from ..core.filters import apply_filters
 from ..core.utils import FileUploader
+from ..media.models import MediaFile
 from .dto_lines import (
     CollectionCreateDTO,
     CollectionUpdateDTO,
@@ -29,6 +32,7 @@ from .models import (
     Product,
     ProductCollection,
     ProductDesign,
+    ProductDesignImage,
     ProductLine,
     ProductSubLine,
     ProductTarget,
@@ -43,9 +47,24 @@ class ProductService:
 
     @staticmethod
     def create_obj(data: dict):
-
+        """Crea un nuevo producto."""
         with db.session.begin():
-            dto = ProductCreateDTO(data)
+            # Determinar si el payload viene como un string JSON (de multipart) o ya es un dict (de application/json)
+            if "data" in data:
+                # Si 'data' existe, es probable que sea un string JSON de un FormData
+                payload_source = data["data"]
+            else:
+                # Si no, los datos son el payload completo
+                payload_source = data
+
+            # Si la fuente es un string, la parseamos. Si ya es un dict, la usamos directamente.
+            payload = (
+                json.loads(payload_source)
+                if isinstance(payload_source, str)
+                else payload_source
+            )
+
+            dto = ProductCreateDTO.model_validate(payload)
             product = ProductService.create_product(
                 target_id=dto.target_id,
                 collection_id=dto.collection_id,
@@ -53,9 +72,9 @@ class ProductService:
                 description=dto.description,
                 line_id=dto.line_id,
                 subline_id=dto.subline_id,
-                designs=dto.designs,
-                materials=dto.materials,
-                variants=dto.variants,
+                designs=dto.colors,
+                media_ids=dto.media_ids,
+                old_code=dto.old_code,
             )
             return product
 
@@ -63,11 +82,10 @@ class ProductService:
     def create_product(
         name: str,
         designs: list,
-        variants: list,
-        materials: list,
         line_id: int,
         target_id: int,
         collection_id: int,
+        media_ids: list[int] = None,
         old_code: str = None,
         subline_id: int = None,
         description: str = None,
@@ -99,23 +117,15 @@ class ProductService:
         db.session.add(product)
         db.session.flush()  # Para obtener el ID
 
-        # Si se proporcionan diseños, los crea Actualmente solo uno
-        designs_data = []
-        designs_data.append(designs[0])
+        print("product", product)
 
-        if designs_data:
-            new_designs = DesignService.bulk_create_designs(product.id, designs_data)
-
-        if variants:
-            # Crear variantes
-
-            VariantService.bulk_create_variants(
-                design_id=new_designs[0].id,
-                design_code=new_designs[0].code,
-                # series_ids=variants[0].series_ids,
-                sizes_ids=[size.size_id for size in variants],
-                materials=materials,
-            )
+        DesignService.create_design(
+            product_id=product.id,
+            color_ids=designs,
+            name=name,
+            description=description,
+            media_ids=media_ids,
+        )
 
         return product
 
@@ -237,7 +247,7 @@ class DesignService:
 
     @staticmethod
     def create_obj(data: dict):
-        """Crea un diseño con sus variantes y materiales."""
+        """Crea un diseño simple"""
 
         with db.session.begin():
             dto = ProductDesignCreateDTO(data)
@@ -246,8 +256,6 @@ class DesignService:
                 color_ids=dto.color_ids,
                 name=dto.name,
                 description=dto.description,
-                variants=dto.variants,
-                materials=dto.materials,
             )
             return design
 
@@ -255,60 +263,61 @@ class DesignService:
     def create_design(
         product_id: int,
         color_ids: list[int],
-        variants: list,
-        materials: list,
         name: str = None,
+        media_ids: list[int] = None,
         description: str = None,
     ) -> ProductDesign:
         """Funcion para crear un diseño/color con sus variantes y materiales."""
 
-        product = Product.query.get(product_id)
+        product: Product = Product.query.get(product_id)
         if not product:
             raise ValidationError(f"No existe el producto con id: {product_id}")
-
-        color_ids = color_ids
-        colors = []
+        print("color IDS: ", color_ids, "and type: ", type(color_ids))
+        colors: list[Color] = []
+        color_ids = [c.id for c in color_ids]
+        print("parsed color IDS: ", color_ids, "and type: ", type(color_ids))
         for color_id in color_ids:
+            print("color_id: ", color_id)
             color = Color.query.get(color_id)
             if not color:
                 raise ValidationError(f"No existe el color con id: {str(color_id)}")
             colors.append(color)
-
+        print("colors: ", colors)
         colors_codes = [c.code.upper() for c in colors]
         color_part = "".join(colors_codes)
         c_code = f"{product.code}{str(color_part)}"
-        if product.old_code:
-            old_code = f"{product.old_code}{str(color_part)}"
-
+        old_code = f"{product.old_code}{str(color_part)}" if product.old_code else None
         # Genera el diseño
         design = ProductDesign(
             product_id=product_id,
-            old_code=old_code if old_code else None,
+            old_code=old_code,
             name=name,
             description=description,
             code=c_code,
         )
-
+        print("design: ", design)
         db.session.add(design)
         design.colors.extend(colors)
-        db.session.flush()
 
-        # Crea variantes para cada serie/talla
-        VariantService.bulk_create_variants(
-            design_id=design.id,
-            design_code=design.code,
-            sizes_ids=[variant.size_id for variant in variants],
-            materials=materials,
-        )
+        # Asociar imágenes si se proporcionaron IDs
+        if media_ids:
+            # Recuperamos los MediaFile dentro de la sesión actual
+            media_files_to_associate = (
+                db.session.query(MediaFile).filter(MediaFile.id.in_(media_ids)).all()
+            )
+            if len(media_files_to_associate) != len(media_ids):
+                raise ValidationError("Uno o más IDs de imágenes no son válidos.")
 
-        from .pricing_service import PricingService
-
-        PricingService(db.session).calculate_price(
-            design_id=design.id,
-            override_markup_pct=None,
-            include_tax=False,
-            force_recalc=True,
-        )
+            # Limpiamos asociaciones viejas (si las hubiera)
+            design.image_associations.clear()
+            for i, media_file in enumerate(media_files_to_associate):
+                # Creamos una instancia del objeto de asociación
+                association = ProductDesignImage(
+                    media_file=media_file,
+                    is_primary=(i == 0),  # La primera imagen es la primaria por defecto
+                    order=i,
+                )
+                design.image_associations.append(association)
 
         return design
 

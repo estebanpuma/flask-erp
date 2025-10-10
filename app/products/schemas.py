@@ -105,13 +105,19 @@ small_product_fields = {
     "collection": fields.Nested(line_fields),
     "line_name": fields.String(attribute="line.name"),
     "subline_name": fields.String(attribute="sub_line.name"),
+    "collection_name": fields.String(attribute="collection.name"),
+    "target_name": fields.String(attribute="target.name"),
+    "created_at": fields.String,
 }
 color_names_field = fields.List(fields.String(attribute="name"), attribute="colors")
 
-design_images = {
-    "id": fields.Integer,
-    "filename": fields.String,
+# Nuevo esquema para el objeto de asociación ProductDesignImage
+design_image_association_fields = {
+    "id": fields.Integer(attribute="media_file.id"),
+    "filename": fields.String(attribute="media_file.filename"),
+    "url": fields.String(attribute="media_file.url"),
     "is_primary": fields.Boolean,
+    "order": fields.Integer,
 }
 
 product_design_fields = {
@@ -119,16 +125,18 @@ product_design_fields = {
     "code": fields.String,
     "description": fields.String,
     "product_id": fields.Integer,
-    "colors": fields.List(
-        fields.Nested(color_fields)
-    ),  # o fields.String si prefieres mostrar nombres
+    "colors": fields.List(fields.Nested(color_fields)),
     "color_names": color_names_field,
-    "images": fields.List(fields.Nested(design_images)),
+    "images": fields.List(
+        fields.Nested(design_image_association_fields), attribute="image_associations"
+    ),
     "variants": fields.List(fields.Nested(variants_small)),
     "created_at": DateFormat,
     "is_active": fields.Boolean,
     "product": fields.Nested(small_product_fields),
     "current_price": fields.Float,
+    "status": fields.String,
+    "old_code": fields.String,
 }
 
 product_fields = {
@@ -144,11 +152,15 @@ product_fields = {
     "subline": fields.Nested(line_fields),
     "line_name": fields.String(attribute="line.name"),
     "subline_name": fields.String(attribute="sub_line.name"),
+    "collection_name": fields.String(attribute="collection.name"),
+    "target_name": fields.String(attribute="target.name"),
     "target": fields.Nested(line_fields),
     "collection": fields.Nested(line_fields),
     "designs": fields.List(fields.Nested(product_design_fields)),
     "created_at": fields.String,
     "is_active": fields.Boolean,
+    "old_code": fields.String,
+    "status": fields.String,
 }
 
 collection_fields = {

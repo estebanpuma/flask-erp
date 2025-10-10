@@ -1,100 +1,64 @@
-from flask import abort, current_app, request, send_from_directory
+from flask import current_app, request, send_from_directory
 from flask_restful import Resource, marshal
 from werkzeug.exceptions import HTTPException
 
 from ..core.exceptions import ConflictError, ValidationError
 from ..core.utils import error_response, success_response, validation_error_response
-from .schemas import general_image_fields
+from .schemas import media_file_fields
 from .services import ImageService
 
 
-class ImageListGetReource(Resource):
-    def get(self, module: str, model_id: int):
+class MediaUploadResource(Resource):
+    """
+    Endpoint para subir uno o más archivos a un módulo específico.
+    No asocia los archivos, solo los sube y crea los registros MediaFile.
+    """
+
+    def post(self, module: str):
         try:
-            image_srv = ImageService()
-            images = image_srv.list(module=module, model_id=model_id)
-            return success_response(marshal(images, general_image_fields))
+            if "files" not in request.files:
+                return error_response(
+                    "No se encontraron archivos en la clave 'files'.", 400
+                )
 
-        except ValidationError as e:  # ¡Primero las excepciones más específicas!
-            # Aquí capturas tu ValidationError lanzado desde el servicio.
-            # Puedes personalizar el mensaje o la estructura de la respuesta.
-            return validation_error_response(
-                str(e)
-            )  # O e.messages si es un diccionario/lista de Marshmallow
+            files = request.files.getlist("files")
+            if not files or files[0].filename == "":
+                return error_response("No se seleccionó ningún archivo.", 400)
 
-        except ConflictError:
-            # Esta es la segunda excepción más específica que tienes, relacionada con la base de datos
-            return error_response("Error de referecia", 400)
-
-        except HTTPException as e:
-            # Las excepciones de Flask/Werkzeug (como Abort) también son más específicas que Exception.
-            # Puedes optar por relanzarlas para que sean manejadas por un manejador de errores global de Flask.
-            raise e
-
-        except Exception as e:  # ¡Finalmente, la excepción más general!
-            # Este es el último recurso para cualquier error no esperado.
-            return error_response(
-                f"Ha ocurrido un error interno inesperado: {str(e)}", 500
-            )
-
-    def post(self, module: str, model_id: int):
-        try:
-            files = request.files
-            if files:
+            uploaded_media = []
+            with current_app.app_context():
                 img_svc = ImageService()
-                # para cada campo declarado
-                images = []
-                for field_name, otr in files.items():
-                    for fs in files.getlist(field_name):
-                        img = img_svc.upload(
-                            module,
-                            model_id,
-                            fs,
-                            is_primary=(fs.filename == request.form.get("primary")),
-                        )
-                        images.append(img)
-                return success_response(marshal(images, general_image_fields), 200)
-            else:
-                return error_response("Sin atributo images", 500)
+                for file_storage in files:
+                    media_file = img_svc.upload(module, file_storage)
+                    uploaded_media.append(media_file)
+
+            return success_response(marshal(uploaded_media, media_file_fields), 201)
+
+        except (ValidationError, ValueError) as e:
+            return validation_error_response(str(e))
         except Exception as e:
             current_app.logger.warning(f"error: {e}")
             return error_response(str(e), 500)
 
 
-class ImageResource(Resource):
+class MediaServeResource(Resource):
+    """
+    Endpoint seguro para servir archivos desde el directorio de uploads.
+    """
+
     def get(self, module: str, filename: str):
         try:
-
             image_srv = ImageService()
             directory = image_srv.serve_media(module, filename)
             return send_from_directory(directory, filename)
 
-        except ValidationError as e:  # ¡Primero las excepciones más específicas!
-            # Aquí capturas tu ValidationError lanzado desde el servicio.
-            # Puedes personalizar el mensaje o la estructura de la respuesta.
-            return validation_error_response(
-                str(e)
-            )  # O e.messages si es un diccionario/lista de Marshmallow
-
+        except ValidationError as e:
+            return validation_error_response(str(e))
         except ConflictError:
-            # Esta es la segunda excepción más específica que tienes, relacionada con la base de datos
             return error_response("Error de referencia", 400)
-
         except HTTPException as e:
-            # Las excepciones de Flask/Werkzeug (como Abort) también son más específicas que Exception.
-            # Puedes optar por relanzarlas para que sean manejadas por un manejador de errores global de Flask.
             raise e
-
-        except Exception as e:  # ¡Finalmente, la excepción más general!
-            # Este es el último recurso para cualquier error no esperado.
+        except Exception as e:
             return error_response(
                 f"Ha ocurrido un error interno inesperado: {str(e)}", 500
             )
-
-    def delete(self, module: str, image_id: int):
-        image_svc = ImageService()
-        try:
-            image_svc.delete(module, image_id)
-            return "Imagen eliminada", 204
-        except ValueError as e:
-            abort(404, str(e))

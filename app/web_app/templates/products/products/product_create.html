@@ -3,21 +3,10 @@
 {% from 'components/_pageHeader.html' import pageHeader %}
 
 {% block content %}
-  <div >
+  <div class="mx-auto">
     {{ pageHeader(href='/products', title=label.new_product) }}
-      <div x-data="productWizard()">
-        {% include 'products/products/product_wizard.html' %}
-        <button class="btn btn-outline-danger btn-sm" @click="resetWizard()">Cancelar</button>
-      </div>
+
+    {% include 'products/products/_form.html'%}
   </div>
 
-
-
-
-
-
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/productsForm.js') }}" ></script>
 {% endblock %}

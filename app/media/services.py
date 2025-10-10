@@ -5,19 +5,12 @@ from werkzeug.utils import safe_join, secure_filename
 
 from app import db
 
-from ..core.exceptions import NotFoundError
-from ..products.models import DesignImage, ProductImage
+from ..core.exceptions import NotFoundError, ValidationError
+from ..products.models import ProductDesign
+from .models import MediaFile
 
 
 class ImageService:
-    """
-    Servicio genérico para subir, listar y eliminar imágenes de Products y Designs.
-    """
-
-    MODEL_MAP = {
-        "products": (ProductImage, "product_id"),
-        "designs": (DesignImage, "design_id"),
-    }
 
     def __init__(self, storage=None):
         # Recupera la instancia de almacenamiento inyectada en app.extensions
@@ -25,8 +18,6 @@ class ImageService:
 
     def _validate_and_save(self, module, file_storage):
         # Validaciones básicas
-        if module not in self.MODEL_MAP:
-            raise ValueError(f"Módulo no válido: {module}")
         if not file_storage:
             raise ValueError("No se proporcionó archivo.")
 
@@ -40,32 +31,68 @@ class ImageService:
         print(f"is saved: {saved_name}")
         return saved_name
 
-    def upload(self, module, model_id, file_storage, is_primary=False):
-        with db.session.begin():
-            # Guarda el archivo y crea el registro en BD
-            saved_name = self._validate_and_save(module, file_storage)
-            model_class, fk_field = self.MODEL_MAP[module]
-            kwargs = {
-                fk_field: model_id,
-                "filename": saved_name,
-                "file_path": f"/{module}/{saved_name}",
-                "is_primary": is_primary,
-            }
-            img = model_class(**kwargs)
-            db.session.add(img)
-            print(f"this is img: {img}")
-            return img
+    def upload(self, module, file_storage):
+        """
+        Sube un archivo, lo guarda y crea un registro MediaFile genérico.
+        No lo asocia a ningún modelo específico todavía.
+        """
+        # Asegura que el nombre del archivo sea seguro
+        filename = secure_filename(file_storage.filename)
 
-    def list(self, module, model_id):
-        # Devuelve todos los registros de imagen para un modelo
-        model_class, fk_field = self.MODEL_MAP[module]
-        filter_kwargs = {fk_field: model_id}
-        return model_class.query.filter_by(**filter_kwargs).all()
+        # 1. Verificar si ya existe un archivo con este nombre en el módulo.
+        existing_file = (
+            db.session.query(MediaFile)
+            .filter_by(filename=filename, module=module)
+            .first()
+        )
+        if existing_file:
+            # Si ya existe, simplemente lo retornamos. No creamos uno nuevo.
+            return existing_file
+
+        # 2. Si no existe, procedemos con la creación normal.
+        saved_name = self._validate_and_save(module, file_storage)
+        media_file = MediaFile(
+            filename=saved_name,
+            file_path=f"/{module}/{saved_name}",
+            module=module,
+            mime_type=file_storage.mimetype,
+            size=file_storage.content_length,
+        )
+        db.session.add(media_file)
+        db.session.flush()  # Hacemos flush para asegurarnos de que el objeto tiene un ID antes de retornarlo.
+        return media_file
+
+    def associate_images_to_design(self, design_id, media_ids, primary_media_id=None):
+        """Asocia una lista de MediaFiles a un ProductDesign."""
+        design = db.session.get(ProductDesign, design_id)
+        if not design:
+            raise NotFoundError(f"Diseño con ID {design_id} no encontrado.")
+
+        media_files = (
+            db.session.query(MediaFile).filter(MediaFile.id.in_(media_ids)).all()
+        )
+        if len(media_files) != len(media_ids):
+            raise ValidationError("Uno o más IDs de imágenes no son válidos.")
+
+        # Limpia asociaciones viejas y añade las nuevas
+        design.images.clear()
+        for i, media_file in enumerate(media_files):
+            is_primary = (
+                primary_media_id is not None and media_file.id == primary_media_id
+            )
+            # Esta es una forma de añadir a una tabla de asociación con campos extra
+            # Se necesita una clase de asociación para hacerlo más limpio, pero esto funciona
+            stmt = db.insert(db.table("product_design_images")).values(
+                design_id=design.id,
+                media_file_id=media_file.id,
+                is_primary=is_primary,
+                order=i,
+            )
+            db.session.execute(stmt)
 
     def delete(self, module, image_id):
         # Elimina tanto el archivo como el registro en BD
-        model_class, _ = self.MODEL_MAP[module]
-        img = model_class.query.get(image_id)
+        img = db.session.get(MediaFile, image_id)
         if not img:
             raise ValueError("Imagen no encontrada.")
 

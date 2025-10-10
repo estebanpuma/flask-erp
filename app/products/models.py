@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 import sqlalchemy as sa
 
@@ -163,15 +163,13 @@ class Product(BaseModel, SoftDeleteMixin):
     collection_id = db.Column(
         db.Integer, db.ForeignKey("product_collections.id"), nullable=False
     )
+    status = db.Column(db.String(), default="DRAFT")
 
     line = db.relationship("ProductLine", back_populates="products")
     sub_line = db.relationship("ProductSubLine", back_populates="products")
     target = db.relationship("ProductTarget", back_populates="products")
     collection = db.relationship("ProductCollection", back_populates="products")
 
-    images = db.relationship(
-        "ProductImage", back_populates="product", cascade="all, delete-orphan"
-    )
     designs = db.relationship(
         "ProductDesign", back_populates="product", cascade="all, delete-orphan"
     )
@@ -195,6 +193,27 @@ product_design_colors = db.Table(
 )
 
 
+class ProductDesignImage(db.Model):
+    """
+    Objeto de Asociación que conecta ProductDesign con MediaFile,
+    y contiene metadatos adicionales como is_primary y order.
+    """
+
+    __tablename__ = "product_design_images"
+    design_id = db.Column(
+        "design_id", db.Integer, db.ForeignKey("product_designs.id"), primary_key=True
+    )
+    media_file_id = db.Column(
+        "media_file_id", db.Integer, db.ForeignKey("media_files.id"), primary_key=True
+    )
+    is_primary = db.Column(db.Boolean, default=False, nullable=False)
+    order = db.Column(db.Integer, default=0, nullable=False)
+
+    # Relaciones para acceder a los objetos padre
+    design = db.relationship("ProductDesign", back_populates="image_associations")
+    media_file = db.relationship("MediaFile")
+
+
 class ProductDesign(BaseModel, SoftDeleteMixin):
     __tablename__ = "product_designs"
 
@@ -204,7 +223,9 @@ class ProductDesign(BaseModel, SoftDeleteMixin):
     code = db.Column(db.String(50), nullable=False)  # Ej: C001NE
     name = db.Column(db.String(50), nullable=True)
     description = db.Column(db.String(255))
+    status = db.Column(db.String(), default="DRAFT")
 
+    # precios
     current_price = db.Column(db.Numeric(12, 2), nullable=False, default=0)
 
     # override manual opcional
@@ -229,8 +250,11 @@ class ProductDesign(BaseModel, SoftDeleteMixin):
     variants = db.relationship(
         "ProductVariant", back_populates="design", cascade="all, delete-orphan"
     )
-    images = db.relationship(
-        "DesignImage", back_populates="design", cascade="all, delete-orphan"
+
+    image_associations = db.relationship(
+        "ProductDesignImage",
+        back_populates="design",
+        cascade="all, delete-orphan",
     )
 
 
@@ -313,46 +337,6 @@ class ProductVariantOperationDetail(db.Model):
         ),
         db.Index("ix_variant_seq", "variant_id", "sequence"),
     )
-
-
-class ProductImage(db.Model):
-    __tablename__ = "product_images"
-    id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
-    filename = db.Column(db.String(255), nullable=False)
-    is_primary = db.Column(db.Boolean, default=False)
-    uploaded_at = db.Column(db.DateTime, default=datetime.now)
-    order = db.Column(db.Integer, default=0)
-
-    product = db.relationship("Product", back_populates="images")
-
-    @property
-    def url(self):
-        # asume que usas send_from_directory en /api/v1/products/<id>/images/<filename>
-        return f"/api/v1/products/{self.product_id}/images/{self.filename}"
-
-
-class DesignImage(BaseModel):
-    __tablename__ = "design_images"
-
-    id = db.Column(db.Integer, primary_key=True)
-    design_id = db.Column(db.Integer, db.ForeignKey("product_designs.id"))
-    is_primary = db.Column(db.Boolean, default=False)
-    filename = db.Column(db.String(255), nullable=False)
-    file_path = db.Column(db.String(255), nullable=False)
-    order = db.Column(db.Integer, default=0)
-
-    design = db.relationship("ProductDesign", back_populates="images")
-
-    @property
-    def url(self):
-        # asume que usas send_from_directory en /api/v1/products/<id>/images/<filename>
-        return f"/api/v1/product-designs/{self.design_id}/images/{self.filename}"
-
-    def __repr__(self):
-        return (
-            f"<ProductVariantImage(variant_id={self.design_id}, file={self.filename})>"
-        )
 
 
 class ProductVariantMaterialDetail(BaseModel):

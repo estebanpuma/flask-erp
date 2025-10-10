@@ -1,0 +1,151 @@
+    <div class="card mb-3">
+      <div class="card-body container">
+
+        <h5 class="card-title mb-4">Categoría</h5>
+
+        <div  class="row">
+          <div class="col-md-6">
+            <!-- Línea (obligatorio) -->
+            <div class="form-floating mb-3">
+              <select
+                id="lineSelect"
+                x-model="productData.line_id"
+                @change="fetchCollections(), resetError()"
+                class="form-select"
+                required
+              >
+                <option value="">Selecciona {{label.line}}</option>
+                <template x-for="l in lines" :key="l.id">
+                  <option :value="l.id" x-text="l.code + '-'+ l.name"></option>
+                </template>
+              </select>
+              <label for="lineSelect">{{label.line}} <span class="text-danger">*</span></label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <!-- Sublínea (opcional) -->
+            <div class="form-floating mb-3">
+              <select
+                id="sublineSelect"
+                x-model="productData.subline_id"
+                @change="fetchCollections(), resetError()"
+                class="form-select"
+              >
+                <option value="" class="text-muted">Seleccione una sublínea</option>
+                <template x-for="s in sublines" :key="s.id">
+                  <option :value="s.id" x-text="s.code + '-'+ s.name"></option>
+                </template>
+              </select>
+              <label for="sublineSelect">{{label.subline}}(Opcional)</label>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="row">
+          <div class="col-md-6">
+            <!-- Target (obligatorio) -->
+            <div class="form-floating mb-3">
+              <select
+                id="targetSelect"
+                x-model="productData.target_id"
+                @change="fetchCollections(), resetError()"
+                class="form-select"
+                required
+              >
+                <option value="">Selecciona {{ label.target }}</option>
+                <template x-for="t in targets" :key="t.id">
+                  <option :value="t.id" x-text="t.code+'-'+t.name"></option>
+                </template>
+              </select>
+              <label for="targetSelect">{{label.target}} <span class="text-danger">*</span></label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <!-- Colección (obligatorio) -->
+            <template x-if="!loading">
+              <div class="form-floating mb-3">
+                <select
+                  id="collectionSelect"
+                  x-model="productData.collection_id"
+                  @change="await fetchNextCode()"
+                  class="form-select"
+                  required
+                >
+                  <option value="">Selecciona {{label.collection}}</option>
+                  <template x-for="c in collections" :key="c.id">
+                    <option :value="c.id" x-text="c.code + '-' + c.name"></option>
+                  </template>
+                </select>
+                <label for="collectionSelect">{{label.collection}}<span class="text-danger">*</span></label>
+              </div>
+            </template>
+            <div class="text-center text-muted mb-3" x-show="loading">
+              Cargando colecciones…
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body container">
+        <h5 class="card-title mb-4">Información del producto</h5>
+        <!-- Código -->
+        <div x-show="productData.code!==''" x-cloak>
+            <!-- Codigo nuevo -->
+             <div class="mb-3 ">
+                <div class="form-floating" >
+                  <input type="text" x-model="productData.code" class="form-control" @change="setName()"
+                  @input.debounce350ms="checkCode()">
+                  <label class="form-label">Código:</label>
+                </div>
+                <div class="text-danger fst-italic" x-show="error_code" x-text="error_code"></div>
+             </div>
+
+            <!-- Codigo antiguo -->
+            <div x-data="{open:false}">
+              <div class="d-flex justify-content-between align-items-center mb-3 cursor-pointer" @click="open=!open">
+                <div  class="text-muted fst-italic">-Código antiguo?</div>
+                <div><i class="bi bi-chevron-down"></i></div>
+              </div>
+              <div x-show="open">
+                <div class="form-floating mb-3">
+                  <input
+                    type="text"
+                    id="oldCode"
+                    class="form-control"
+                    x-model="productData.old_code"
+                    placeholder="Código antiguo"
+                  >
+                  <label for="oldCode">Código antiguo (Opcional)</label>
+                </div>
+              </div>
+            </div>
+        </div>
+        <!-- Nombre del Modelo -->
+        <div class="form-floating mb-3">
+          <input
+            type="text"
+            id="productName"
+            class="form-control"
+            x-model="productData.name"
+            placeholder="Nombre del modelo"
+          >
+          <label for="productName">Nombre del Modelo</label>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-floating mb-3">
+          <textarea
+            id="productDescription"
+            class="form-control"
+            x-model="productData.description"
+            placeholder="Descripción"
+            style="height: 80px;"
+          ></textarea>
+          <label for="productDescription">Descripción</label>
+        </div>
+
+      </div>
+    </div>

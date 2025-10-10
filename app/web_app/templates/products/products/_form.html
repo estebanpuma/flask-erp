@@ -1,0 +1,314 @@
+<form action="" x-data="newItem()">
+    <div>
+              <!-- Mensaje de error si el diseño ya existe -->
+      <template x-if="error">
+        <div class="alert alert-danger" x-text="error"></div>
+      </template>
+
+      {% include 'products/products/_step1_basicData.html' %}
+      {% include 'products/products/_step2_designs.html' %}
+      {% include 'products/products/_step3_media.html'%}
+
+      <div class="col-md-6">
+        <div class="d-grid gap-2 ">
+            <button class="btn btn-dark" type="button" @click="submitProduct" :disabled="submitting">Guardar</button>
+        </div>
+      </div>
+    </div>
+</form>
+
+<script>
+function newItem(){
+    return{
+    productData: {
+        code: '',
+        name: '',
+        old_code:null,
+        line_id: null,
+        subline_id: null,
+        target_id: null,
+        collection_id: null,
+        description: '',
+        },
+    error_code:null,
+    //catalogos y estados
+    lines: [],
+    sublines: [],
+    targets: [],
+    collections: [],
+    // Flags + combinación de prefijo
+    loading: false,
+    submitting: false,
+    error:   '',
+    code_combination:'',////???
+    availableColors: [],
+    selectedColors: [], // Estructura: [{id, name, code, images: [], primary_image: null}]
+    existingDesignCodes: null,
+    newDesignCode: null,
+    isDuplicateDesign: true,
+
+    init() {
+        console.log('init: productForm')
+        this.fetchLines();
+        this.fetchSubLines();
+        this.fetchTargets();
+        this.fetchColors();
+    },
+
+    // --- Datos Básicos y Clasificación ---
+
+    async fetchLines() {
+      try {
+        this.lines = await (await fetch('/api/v1/product-lines')).json();
+      } catch (e) { console.error(e);
+        this.error = 'No pudimos cargar líneas.';
+       }
+    },
+
+    async fetchSubLines() {
+      try {
+        this.sublines = await (await fetch('/api/v1/product-sublines')).json();
+      } catch (e) { console.error(e);
+        this.error = 'No pudimos cargar sublíneas.';
+      }
+    },
+
+    async fetchTargets() {
+      try {
+        this.targets = await (await fetch('/api/v1/product-targets')).json();
+      } catch (e) { console.error(e);
+        this.error = 'No pudimos cargar targets.';
+      }
+    },
+
+    // Filtra colecciones cada vez que cambia línea/sub-línea/target
+    async fetchCollections() {
+      const params = new URLSearchParams();
+      if (this.productData.line_id)   params.append('line_id',   this.productData.line_id);
+      if (this.productData.subline_id) params.append('subline_id', this.productData.subline_id);
+      if (this.productData.target_id) params.append('target_id', this.productData.target_id);
+      this.productData.code='';
+      this.loading = true;
+      if(this.productData.line_id && this.productData.target_id){
+        try {
+                const res = await fetch(`/api/v1/product-collections?${params}`);
+                this.collections = await res.json();
+                if(this.collections === null || this.collections.length==0){
+                  this.error = 'No hay collecciones para esta linea y target. Cree una.';
+                }
+              } catch (e) {
+                console.error(e);
+                this.error = 'No pudimos cargar colecciones.';
+              } finally {
+                this.loading = false;
+              }
+      }else{
+        console.info('Debe escoger una linea y un target')
+      }
+    },
+
+    // Genera el código completo (prefijo + auto-incremental)
+    async fetchNextCode() {
+      const params = new URLSearchParams();
+      if (this.productData.line_id)   params.append('line_id',   this.productData.line_id);
+      if (this.productData.subline_id) params.append('subline_id', this.productData.subline_id);
+      if (this.productData.target_id) params.append('target_id', this.productData.target_id);
+      if (this.productData.collection_id) params.append('collection_id', this.productData.collection_id);
+
+      // Solo si hay prefijo válido
+      if (!this.productData.line_id, !this.productData.target_id, !this.productData.collection_id) return console.info('seleccione params');
+      try {
+        const res  = await fetch(`/api/v1/products/next-code?${params}`);
+        const data = await res.json();
+        this.productData.code = data || '';
+        this.setName();
+        this.checkCode();
+      } catch {
+        this.error = 'Error al generar código.';
+      }
+    },
+
+    setName(){
+        const selectedCollection = this.collections.find(c => c.id === Number(this.productData.collection_id));
+        if (selectedCollection) {
+            let name = selectedCollection.name;
+            if (this.productData.code) {
+            name = name + ' ' + this.productData.code.slice(-3);
+            }
+            this.productData.name = name;
+        }
+    },
+
+    async checkCode() {
+      try{
+        const res = await window.guifer.helpers.fetch.apiFetch('GET', '/products?code=' + this.productData.code);
+        if(res && res.length>0){
+          this.error_code = 'Ya existe un porducto con este codigo'
+        }else{
+          this.error_code = ''
+        }
+      }catch(err){
+        console.error(err)
+      }
+    },
+
+    async fetchColors(){
+      try{
+        const resColors = await fetch('/api/v1/colors');
+        const dataColors = await resColors.json();
+        this.availableColors = dataColors;
+      }catch(err){
+        this.error = 'No pudimos cargar colores.';
+        console.error('error:', err)
+      }
+    },
+
+    toggleColor(color) {
+        console.log('color toogled:', color)
+      if (this.isColorSelected(color.id)) {
+        this.removeColor(color);
+      } else {
+        this.selectedColors.push({
+            id: color.id,
+            name: color.name,
+            code: color.code,
+        });
+      }
+      console.log('selectedColors:', this.selectedColors)
+    },
+
+    isColorSelected(id) {
+      return this.selectedColors.some(c => c.id === id);
+    },
+
+    removeColor(color) {
+      this.selectedColors = this.selectedColors.filter(c => c.id !== color.id);
+      console.log('removed?', this.selectedColors)
+    },
+
+    resetError() {
+      this.error = '';
+    },
+
+
+    getDesignSuffix() {
+        let suffix ='';
+        if(this.selectedColors.length>0 && this.productData.code){
+            this.selectedColors.forEach(color => {
+                suffix += color.code;
+            });
+        }else{
+            suffix = 'Compelete los campos';
+        }
+        return suffix
+    },
+
+
+    files: [], // Aquí guardaremos los objetos File para el envío
+    previews: [], // Aquí guardaremos las URLs para las miniaturas
+
+    onPick(e){
+      // 1. Obtenemos los archivos seleccionados
+      const newFiles = Array.from(e.target.files);
+      this.files.push(...newFiles); // Añadimos los nuevos archivos a nuestra lista
+
+      // 2. Generamos las previsualizaciones (miniaturas)
+      newFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            this.previews.push(event.target.result);
+        };
+        reader.readAsDataURL(file); // Esto crea una URL base64 para la preview
+      });
+
+      // Limpiamos el input para que el usuario pueda seleccionar los mismos archivos de nuevo si los borra
+      e.target.value = '';
+    },
+
+    removeImage(index) {
+        // Quitamos tanto el archivo como su previsualización
+        this.files.splice(index, 1);
+        this.previews.splice(index, 1);
+    },
+
+    async submitProduct() {
+        this.submitting = true;
+        this.error = '';
+        if (!this.productData.line_id ||
+        !this.productData.target_id ||
+        !this.productData.collection_id ||
+        !this.productData.code ||
+        !this.selectedColors.length > 0) {
+            this.error = "Informacion incompleta";
+            this.submitting = false;
+            return;
+        }
+
+        // --- FASE 1: Subir las imágenes (si existen) ---
+        let uploadedImageIds = [];
+        if (this.files.length > 0) {
+            const imageFormData = new FormData();
+            this.files.forEach((file) => {
+                // El backend espera la clave 'files'
+                imageFormData.append('files', file, file.name);
+            });
+
+            try {
+                // Usamos el nuevo endpoint genérico de subida
+                const imgRes = await fetch(`/api/v1/media/upload/designs`, {
+                    method: 'POST',
+                    body: imageFormData,
+                });
+
+                if (!imgRes.ok) {
+                    throw new Error('Falló la subida de imágenes.');
+                }
+                const uploadedImages = await imgRes.json();
+                // Guardamos solo los IDs de las imágenes subidas
+                uploadedImageIds = uploadedImages.map(img => img.id);
+
+            } catch (e) {
+                this.error = e.message;
+                this.submitting = false;
+                return; // Detenemos si la subida de imágenes falla
+            }
+        }
+
+        // --- FASE 2: Crear el producto y asociar las imágenes ---
+        const productPayload = {
+            name: this.productData.name,
+            code: this.productData.code,
+            old_code: this.productData.old_code,
+            line_id: this.productData.line_id,
+            subline_id: this.productData.subline_id,
+            target_id: this.productData.target_id,
+            collection_id: this.productData.collection_id,
+            description: this.productData.description,
+            colors: this.selectedColors.map(c => ({ id: c.id })),
+            // Adjuntamos los IDs de las imágenes que acabamos de subir
+            media_ids: uploadedImageIds
+        };
+
+        try {
+            const res = await fetch('/api/v1/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productPayload),
+            });
+            const newProduct = await res.json();
+            if (res.ok) {
+                alert('✅ Producto creado y imágenes subidas correctamente.');
+                window.location.href = `/products/${newProduct.id}`;
+            } else {
+                throw new Error(newProduct.message || 'Error al crear el producto.');
+            }
+        } catch (e) {
+            this.error = e.message;
+        } finally {
+            this.submitting = false;
+        }
+        },
+
+    }
+}
+</script>
