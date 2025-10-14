@@ -280,7 +280,7 @@ function newItem(){
             code: this.productData.code,
             old_code: this.productData.old_code,
             line_id: this.productData.line_id,
-            subline_id: this.productData.subline_id,
+            subline_id: this.productData.subline_id?this.productData.subline_id:null,
             target_id: this.productData.target_id,
             collection_id: this.productData.collection_id,
             description: this.productData.description,
@@ -298,7 +298,7 @@ function newItem(){
             const newProduct = await res.json();
             if (res.ok) {
                 alert('✅ Producto creado y imágenes subidas correctamente.');
-                window.location.href = `/products/${newProduct.id}`;
+                window.location.href = `/products/${newProduct.id}/designs/${newProduct.designs[0].id}`;
             } else {
                 throw new Error(newProduct.message || 'Error al crear el producto.');
             }

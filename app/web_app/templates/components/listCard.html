@@ -28,7 +28,11 @@
 
             </div>
             <div class="text-end">
-              <span class="badge rounded-pill" :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'" x-text="item.is_active ? 'Activo' : 'Inactivo'"></span>
+              <span
+                  class="badge"
+                  :class="setStatusClass(item.lifecycle_status)"
+                  x-text="getLifeStatus(item.lifecycle_status)">
+              </span>
                 <br>
             </div>
             <i class="bi bi-chevron-right ms-2"></i>

@@ -48,7 +48,7 @@ class ImageService:
         if existing_file:
             # Si ya existe, simplemente lo retornamos. No creamos uno nuevo.
             return existing_file
-
+        print("imageSerivce: ", existing_file)
         # 2. Si no existe, procedemos con la creación normal.
         saved_name = self._validate_and_save(module, file_storage)
         media_file = MediaFile(
@@ -74,21 +74,34 @@ class ImageService:
         if len(media_files) != len(media_ids):
             raise ValidationError("Uno o más IDs de imágenes no son válidos.")
 
-        # Limpia asociaciones viejas y añade las nuevas
-        design.images.clear()
-        for i, media_file in enumerate(media_files):
+        # Obtener el orden máximo actual para continuar desde ahí
+        max_order = (
+            db.session.query(db.func.max(db.table("product_design_images").c.order))
+            .filter_by(design_id=design.id)
+            .scalar()
+            or -1
+        )
+
+        # No se limpian las asociaciones viejas, solo se añaden las nuevas
+        # design.images.clear()
+        for i, media_file in enumerate(media_files, start=1):
             is_primary = (
                 primary_media_id is not None and media_file.id == primary_media_id
             )
+            # Si no hay imágenes, la primera que se sube es primaria
+            if not design.images and i == 1 and primary_media_id is None:
+                is_primary = True
+
             # Esta es una forma de añadir a una tabla de asociación con campos extra
-            # Se necesita una clase de asociación para hacerlo más limpio, pero esto funciona
-            stmt = db.insert(db.table("product_design_images")).values(
+            from ..products.models import ProductDesignImage
+
+            association = ProductDesignImage(
                 design_id=design.id,
                 media_file_id=media_file.id,
                 is_primary=is_primary,
-                order=i,
+                order=max_order + i,
             )
-            db.session.execute(stmt)
+            db.session.add(association)
 
     def delete(self, module, image_id):
         # Elimina tanto el archivo como el registro en BD
@@ -99,9 +112,13 @@ class ImageService:
         # Borra el archivo físico
         self.storage.delete(module, img.filename)
         # Borra el registro
-        db.session.delete(img)
-        db.session.commit()
-        return True
+        try:
+            db.session.delete(img)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            raise
 
     def serve_media(self, module, filename):
         # 1) Validar módulo

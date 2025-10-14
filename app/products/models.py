@@ -204,7 +204,10 @@ class ProductDesignImage(db.Model):
         "design_id", db.Integer, db.ForeignKey("product_designs.id"), primary_key=True
     )
     media_file_id = db.Column(
-        "media_file_id", db.Integer, db.ForeignKey("media_files.id"), primary_key=True
+        "media_file_id",
+        db.Integer,
+        db.ForeignKey("media_files.id", ondelete="CASCADE"),
+        primary_key=True,
     )
     is_primary = db.Column(db.Boolean, default=False, nullable=False)
     order = db.Column(db.Integer, default=0, nullable=False)
@@ -298,6 +301,10 @@ class ProductVariant(BaseModel, SoftDeleteMixin):
             "design_id", "size_id", "code", name="uq_product_variant_code"
         ),
     )
+
+    @property
+    def product_id(self):
+        return self.design.product_id
 
 
 class ProductVariantOperationDetail(db.Model):

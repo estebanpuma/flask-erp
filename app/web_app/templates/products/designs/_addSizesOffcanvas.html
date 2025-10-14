@@ -1,0 +1,156 @@
+<!-- Offcanvas para añadir tallas a un diseño -->
+<div
+  x-data="addSizesManager()"
+  @open-add-sizes.window="open($event.detail.designId, $event.detail.designCode)"
+  class="offcanvas offcanvas-end"
+  tabindex="-1"
+  id="addSizesOffcanvas"
+  aria-labelledby="addSizesOffcanvasLabel"
+  x-ref="offcanvas"
+  @sizes-created.window="item.variants = $event.detail"
+>
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="addSizesOffcanvasLabel">
+      Añadir Tallas al Diseño <span class="badge bg-secondary" x-text="designCode"></span>
+    </h5>
+    <button type="button" class="btn-close" @click="close()" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <!-- Instrucción -->
+    <div class="mb-3">
+      <p>Selecciona la serie de tallas. Las variantes se generarán automáticamente.</p>
+    </div>
+
+    <template x-if="error">
+      <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+    <template x-if="message">
+      <div x-text="message" class="alert alert-success" role="alert"></div>
+    </template>
+
+    <!-- Selector de serie -->
+    <div class="form-floating mb-3">
+      <select class="form-select" id="size_series_id" x-model="selectedSeriesId" @change="loadSizes">
+        <option value="">Selecciona una serie</option>
+        <template x-for="serie in series" :key="serie.id">
+          <option :value="serie.id" x-text="`${serie.name} (${serie.code}) [${serie.start_size}-${serie.end_size}]`"></option>
+        </template>
+      </select>
+      <label for="size_series_id">Serie de tallas</label>
+    </div>
+
+    <!-- Variantes generadas -->
+    <div x-show="generatedVariants.length > 0" >
+      <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-top">
+        <h6 class="mb-0">🧩 Variantes a crear:</h6>
+        <button class="btn btn-sm btn-outline-secondary" @click="removeSerie()" type="button" title="Limpiar selección">
+            <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <ul class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+        <template x-for="variant in generatedVariants" :key="variant.size_id">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <span x-text="variant.variant_code"></span>
+              <small class="badge bg-secondary" x-text="variant.size_value"></small>
+            </div>
+            <div class="form-check">
+               <input type="checkbox" class="form-check-input" x-model="variant.check">
+            </div>
+          </li>
+        </template>
+      </ul>
+      <div class="card-footer d-grid">
+        <button class="btn btn-dark" @click="addVariants()" :disabled="submitting || generatedVariants.filter(v => v.check).length === 0">
+            <span x-show="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span x-text="submitting ? 'Guardando...' : 'Confirmar Tallas'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function addSizesManager() {
+  return {
+    bsOffcanvas: null,
+    designId: null,
+    designCode: '',
+    series: [],
+    generatedVariants: [],
+    error: '',
+    message: '',
+    submitting: false,
+    selectedSeriesId: '',
+    selectedSerie: {},
+
+    init() {
+      this.bsOffcanvas = new bootstrap.Offcanvas(this.$refs.offcanvas);
+      this.$refs.offcanvas.addEventListener('hidden.bs.offcanvas', () => this.reset());
+      this.fetchSeries();
+    },
+
+    open(id, code) {
+      this.designId = id;
+      this.designCode = code;
+      this.bsOffcanvas.show();
+    },
+
+    close() {
+      this.bsOffcanvas.hide();
+    },
+
+    reset() {
+        this.designId = null; this.designCode = ''; this.error = ''; this.message = '';
+        this.generatedVariants = []; this.selectedSeriesId = ''; this.selectedSerie = {};
+    },
+
+    async fetchSeries() {
+      try {
+        this.series = await window.guifer.helpers.fetch.apiFetch('GET', 'series');
+      } catch (err) { this.error = 'No se pudieron cargar las series de tallas.'; }
+    },
+
+    async loadSizes() {
+        this.generatedVariants = [];
+        if (!this.selectedSeriesId) return;
+        const serie = this.series.find(s => s.id == this.selectedSeriesId);
+        const sizes = await window.guifer.helpers.fetch.apiFetch('GET', `series/${this.selectedSeriesId}/sizes`);
+        this.generatedVariants = sizes.map(size => ({
+            size_id: size.id,
+            size_value: size.value,
+            variant_code: `${this.designCode}${size.value}`,
+            check: true
+        }));
+    },
+
+    removeSerie() {
+      this.selectedSeriesId = ''; this.selectedSerie = {}; this.generatedVariants = [];
+    },
+
+    async addVariants() {
+        const sizes_ids = this.generatedVariants.filter(v => v.check).map(v => v.size_id);
+        const payload = {
+            design_id: this.designId,
+            sizes_ids: sizes_ids
+        };
+        console.log('payload: ', payload)
+        try {
+            this.submitting = true;
+            const res = await window.guifer.helpers.fetch.apiFetch('POST', 'product-variants', payload);
+            this.message = 'Variantes agregadas con éxito';
+            this.removeSerie();
+            this.close();
+            this.submitting = false
+            this.$dispatch('sizes-created', { detail: res });
+
+        }catch(err){
+            console.error('API error: ', err);
+            this.error= err;
+            return
+        }
+    }
+    }
+}
+</script>

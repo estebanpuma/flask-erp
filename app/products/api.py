@@ -25,6 +25,8 @@ from .resources import (
     ProductDeleteResource,
     ProductDesignDeleteResource,
     ProductDesignGetResource,
+    ProductDesignImageGet,
+    ProductDesignImagePost,
     ProductDesignPatchResource,
     ProductDesignPostResource,
     ProductGetResource,
@@ -32,9 +34,6 @@ from .resources import (
     ProductPostResource,
     ProductVariantDeleteResource,
     ProductVariantGetResource,
-    ProductVariantImageDeleteResource,
-    ProductVariantImageGetResource,
-    ProductVariantImagePostResource,
     ProductVariantListResource,
     ProductVariantMaterialDeleteResource,
     ProductVariantMaterialListResource,
@@ -147,6 +146,12 @@ products_api.add_resource(
     ProductDesignDeleteResource, "/product-designs/<int:resource_id>"
 )
 
+# ----------------Product Design Images----------------
+
+products_api.add_resource(ProductDesignImagePost, "/product-designs/images")
+products_api.add_resource(
+    ProductDesignImageGet, "/product-designs/<int:resource_id>/images"
+)
 
 # ***************************ProductVAriant***************************************
 # *******************************************************************************/*
@@ -185,19 +190,6 @@ products_api.add_resource(
     VariantMaterialsGetResource, "/variant/<int:resource_id>/materials"
 )
 
-
-# *******************************VarianImages***********************************
-# *******************************************************************************
-# products_api.add_resource(ProductVariantImagePatchResource, '/product-variants/<int:variant_id>/images')
-products_api.add_resource(
-    ProductVariantImagePostResource, "/product-variants/<int:variant_id>/images"
-)
-products_api.add_resource(
-    ProductVariantImageGetResource, "/product-variants/<int:variant_id>/images"
-)
-products_api.add_resource(
-    ProductVariantImageDeleteResource, "/variant-images/<int:image_id>"
-)
 
 # *******************************sizes****************************************
 # *****************************************************************************

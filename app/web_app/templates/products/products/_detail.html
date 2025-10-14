@@ -15,8 +15,8 @@
                     <div class="d-flex justify-content-end mb-3">
                         <span
                             class="badge"
-                            :class="item.is_active ? 'text-bg-success' : 'text-bg-secondary'"
-                            x-text="item.is_active ? 'Activo' : 'Inactivo'">
+                            :class="setStatusClass(item.lifecycle_status)"
+                            x-text="getLifeStatus(item.lifecycle_status)">
                         </span>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                         field: 'name',
                         value: item.name,
                         type: 'text',
-                        patchUrl: apiFetch,
+                        patchUrl: apiPatch,
                         help: 'El nombre debe tener al menos 3 caracteres.',
                         onSave: () => { console.log('¡Guardado!'); alert('Guardado!'); location.reload(); }
                     })">
@@ -44,7 +44,7 @@
                     <div class="text-muted">Código</div>
                     <button class="d-flex justify-content-between rounded-2 form-control " disabled>
                         <div  x-text="item.code?item.code:'Sin codigo'"></div>
-                        <div> <i class="bi bi-chevron-right"></i></div>
+
                     </button>
 
                 </div>
@@ -58,7 +58,7 @@
                             field: 'description',
                             value: item.description,
                             type: 'textarea',
-                            patchUrl: apiFetch,
+                            patchUrl: apiPatch,
                             help: '',
                             onSave: (updated) => { item.description = updated.description; }
                         })">
@@ -69,30 +69,12 @@
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card mb-3 ">
 
-            <div class="card-body">
-                <h5 class="card-title">Estado</h5>
-                <!-- Fila de estado -->
-                <div class="mb-3">
-                    <div class="text-muted">Estado</div>
-                    <div class="d-flex justify-content-between form-check  form-switch ps-0">
-                        <label  x-text="item.is_active ? 'Activo' : 'Inactivo'"></label>
-                        <input class="form-check-input" type="checkbox" role="switch" :checked="item.is_active" @click="toggleStatus()">
-                    </div>
-
-                </div>
-                <div class="mb-3">
-                    <div class="text-muted">Estado</div>
-                    <div class="d-flex justify-content-between form-check  form-switch ps-0">
-                        <label  x-text="item.status=='DRAFT' ? 'Borrador'"></label>
-                        <input class="form-check-input" type="checkbox" role="switch" :checked="item.status" >
-                    </div>
-
-                </div>
-            </div>
-        </div>
+    <div class="col-md-6"
+         x-data="{apiStatus: apiFetch }"
+         @status-changed.window="item.lifecycle_status = $event.detail"
+    >
+       {% include 'components/_itemLifeCycleStatus.html' %}
     </div>
 
     <div class="col-md-6">
@@ -132,7 +114,7 @@
     <div class="col-12">
         <div class="card mb-3">
             <div class="card-body">
-                <h5>{{label.designs}}</h5>
+                <h5>{{label.designs}} Disponibles</h5>
 
                 <div>
                     <div class="text-muted">Lista de {{label.designs}}</div>
@@ -141,12 +123,17 @@
                             <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectPcolors(pcolor.id)" >
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="fw-semibold badge text-bg-secondary"
-                                        x-text="pcolor.name"></span>
-                                    <span x-text="pcolor.code"></span>
+                                    <div>
+                                        <span x-text="pcolor.name"></span>
+                                    </div>
+                                    <div>
+                                        <span class="fw-semibold badge text-bg-secondary"
+                                            x-text="pcolor.code"></span>
+                                    </div>
+
                                 </div>
                                 <div>
-                                    <span class="badge text-bg-primary" x-text="pcolor.status"></span>
+                                    <span class="badge" :class="setStatusClass(pcolor.lifecycle_status)" x-text="getLifeStatus(pcolor.lifecycle_status)"></span>
                                 </div>
 
                             </div>
@@ -170,19 +157,22 @@
         return{
             item:{},
             pcolors:[],
+            availableColors: [],
             error:'',
             api:'',
             message:'',
             type:'',
             id:id,
             apiFetch: `products/${id}`,
-            api: `/products/${id}`,
+            apiPatch: `/api/v1/products/${id}`,
+            api: `/products`,
 
 
 
             init(){
                 console.log('init... id: ', id)
                 this.fetchItem(id);
+                this.fetchAvailableColors();
             },
 
             async fetchItem(id){
@@ -198,6 +188,40 @@
                 }
             },
 
+            async fetchAvailableColors() {
+                try {
+                    this.availableColors = await window.guifer.helpers.fetch.apiFetch('GET', 'colors');
+                } catch (error) {
+                    console.error('Error fetching available colors:', error);
+                    // No es crítico, el modal simplemente no mostrará los colores.
+                }
+            },
+
+            getLifeStatus(lifestatus){
+                if (lifestatus === 'DRAFT') {
+                    return 'Borrador';
+                } else if (lifestatus === 'READY') {
+                    return 'Activo';
+                } else if (lifestatus === 'ARCHIVED') {
+                    return 'Inactivo'
+                }else{
+                    return 'Borrador'
+                }
+            },
+
+            setStatusClass(status) {
+                if (status === 'DRAFT') {
+                    return 'text-bg-warning';
+                } else if (status === 'READY') {
+                    return 'text-bg-success';
+                } else if (status === 'ARCHIVED') {
+                    return 'text-bg-secondary';
+                } else {
+                    return 'text-bg-warning';
+                }
+            },
+
+
             async fetchPColors(id){
                 try{
                     const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-designs?product_id=${id}`);
@@ -212,7 +236,7 @@
             },
 
             redirectPcolors(id){
-                window.location.href = `/product-designs/${id}`;
+                window.location.href = `/products/${this.id}/designs/${id}`;
             },
 
 
@@ -232,24 +256,6 @@
                 } catch (error) {
                     console.error('API error: ', error);
                     this.error = 'Error: ' + String(error);
-                }
-            },
-
-            async toggleStatus() {
-                if (!confirm('¿Estás seguro de que quieres cambiar el estado, los productos de esta linea no estaran disponibles para la venta ni produccion?')) {
-                    return;
-                }
-
-                try {
-                    const newStatus = !this.item.is_active;
-                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', this.apiFetch, { is_active: newStatus });
-                    console.log('updated: ', updated)
-                    if (updated) {
-                        this.item.is_active = updated.is_active;
-                    }
-                } catch (error) {
-                    console.error('Error toggling status:', error);
-                    alert('No se pudo cambiar el estado.');
                 }
             },
 

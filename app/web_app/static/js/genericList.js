@@ -12,7 +12,6 @@ function genericList(apiUrl,baseHref, columns) {
     error: '',       // ← mensaje de error
 
     init() {
-      console.log('initLis')
       this.fetchItems();
       this.columns.forEach(c => {
         if (c.filterable) this.filters[c.field] = '';
@@ -93,12 +92,37 @@ function genericList(apiUrl,baseHref, columns) {
         const matchesCols = this.columns.every(c => {
           if (!c.filterable) return true;
           const q = this.filters[c.field].toLowerCase();
-          return !q || String(item[c.field] || '')
+          const itemValue = this.deepValue(item, c.field);
+          return !q || String(itemValue || '')
             .toLowerCase().includes(q);
         });
 
         return matchesGlobal && matchesCols;
       });
     },
+
+    getLifeStatus(status){
+          if (status === 'DRAFT') {
+              return 'Borrador';
+          } else if (status === 'READY') {
+              return 'Activo';
+          } else if (status === 'ARCHIVED') {
+              return 'Inactivo'
+          }else{
+              return 'Borrador'
+          }
+      },
+
+      setStatusClass(status) {
+          if (status === 'DRAFT') {
+              return 'text-bg-warning';
+          } else if (status === 'READY') {
+              return 'text-bg-success';
+          } else if (status === 'ARCHIVED') {
+              return 'text-bg-secondary';
+          } else {
+              return 'text-bg-warning';
+          }
+      },
   }
 }

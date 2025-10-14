@@ -29,23 +29,30 @@
       },
       production_order: {
         Borrador   : 'bg-secondary',
-        'En Proceso' : 'bg-primary',
+        EnProceso : 'bg-primary',
         Terminado  : 'bg-success',
         Cancelado  : 'bg-danger'
       },
       is_active:{
-        true    : 'bg-success',
-        false   : 'bg-secondary'
+        'READY'    : 'bg-success',
+        "DRAFT"    : 'bg-warning',
+        "ARCHIVED" : 'bg-secondary'
+      },
+      lifecycle_status:{
+        'READY'    : 'bg-success',
+        "DRAFT"    : 'bg-warning',
+        "ARCHIVED" : 'bg-secondary'
       }
     };
     const cls = (palette[kind] || {})[value] || 'bg-light text-dark';
-    const text = kind==='is_active'?value==true?'Activo':"Inactivo":value
+    const text = value==="READY"?"Activo":value==="ARCHIVED"?"Inactivo":value==="DRAFT"?"Borrador":"Borrador";
     return /*html*/`
-      <span x-data
-            :class="'badge rounded-pill ${cls}'"
+      <span
+            :class="'badge ${cls}'"
             x-text="'${text}'">
       </span>`;
   }
+
 
 /* ─── BOTÓN DE ACCIÓN v2 ───
 *  • variantes Bootstrap (`primary`, `success`, …)

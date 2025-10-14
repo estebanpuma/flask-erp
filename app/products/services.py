@@ -9,7 +9,6 @@ from app import db
 from ..common.services import ProductCodeGenerator
 from ..core.exceptions import ConflictError, NotFoundError, ValidationError
 from ..core.filters import apply_filters
-from ..core.utils import FileUploader
 from ..media.models import MediaFile
 from .dto_lines import (
     CollectionCreateDTO,
@@ -20,11 +19,6 @@ from .dto_lines import (
     SublineUpdateDTO,
 )
 from .dto_products import ProductCreateDTO, ProductDesignCreateDTO
-from .entities import (
-    PatchProductEntity,
-    ProductVariantEntity,
-    ProductVariantMaterialEntity,
-)
 from .models import (
     Color,
     Last,
@@ -75,6 +69,7 @@ class ProductService:
                 designs=dto.colors,
                 media_ids=dto.media_ids,
                 old_code=dto.old_code,
+                code=dto.code,
             )
             return product
 
@@ -85,6 +80,7 @@ class ProductService:
         line_id: int,
         target_id: int,
         collection_id: int,
+        code: str,
         media_ids: list[int] = None,
         old_code: str = None,
         subline_id: int = None,
@@ -94,15 +90,23 @@ class ProductService:
 
         # validaciones
         line = LineService.get_obj(line_id)
+        if line is None:
+            raise ValueError("Linea no encontrada")
         subline = None
         if subline_id is not None:
             subline = SublineService.get_obj(subline_id)
+            if subline is None:
+                raise ValueError("Sublinea no encontrada")
         target = TargetService.get_obj(target_id)
+        if target is None:
+            raise ValueError("Target no encontrada")
         collection = CollectionService.get_obj(collection_id)
+        if collection is None:
+            raise ValueError("Coleccion no encontrada")
 
-        code = ProductCodeGenerator.get_next_model_code(
-            linea=line, sublinea=subline, tipo=target, coleccion=collection
-        )
+        # code = ProductCodeGenerator.get_next_model_code(
+        # linea=line, sublinea=subline, tipo=target, coleccion=collection
+        # )
 
         product = Product(
             code=code,
@@ -113,11 +117,10 @@ class ProductService:
             target_id=target_id,
             collection_id=collection_id,
             description=description,
+            lifecycle_status="DRAFT",
         )
         db.session.add(product)
         db.session.flush()  # Para obtener el ID
-
-        print("product", product)
 
         DesignService.create_design(
             product_id=product.id,
@@ -149,20 +152,24 @@ class ProductService:
     @staticmethod
     def patch_obj(instance: Product, data: dict):
         """Actualiza el producto"""
+        from .dto_products import ProductPatchDTO
 
-        if "line_id" in data:
-            line = LineService.get_obj(data["line_id"])
-            if line is None:
-                raise ValidationError("No existe liena con esa id")
-        if "sub_line_id" in data:
-            subline = SublineService.get_obj(data["sub_line_id"])
-            if subline is None:
-                raise ValidationError("N exise sublina con esa id")
+        dto = ProductPatchDTO.model_validate(data)
 
-        updated_product = PatchProductEntity(data).apply_changes(instance)
+        if dto.lifecycle_status is not None:
+            UpdateLifecycleStatusService.update_status(instance, dto.lifecycle_status)
+
+        if dto.name is not None:
+            instance.name = dto.name
+        if dto.description is not None:
+            instance.description = dto.description
+        if dto.old_code is not None:
+            instance.old_code = dto.old_code
+        db.session.add(instance)
         try:
             db.session.commit()
-            return updated_product
+            print("instance pathec status: ", instance.lifecycle_status)
+            return instance
         except Exception:
             db.session.rollback()
             current_app.logger.warning("No se puedo actualizar el producto")
@@ -215,18 +222,16 @@ class DesignService:
 
     @staticmethod
     def patch_obj(instance: ProductDesign, data: dict) -> ProductDesign:
-        EDITABLE_FIELDS = {"description", "name", "is_active", "old_code"}
-        invalid_fields = set(data.keys()) - EDITABLE_FIELDS
-        if invalid_fields:
-            raise ValidationError(f"Campos no editables: {invalid_fields}")
-        if "description" in data:
-            instance.description = str(data["description"])
-        if "name" in data:
-            instance.name = str(data["name"])
-        if "is_active" in data:
-            instance.is_active = bool(data["is_active"])
-        if "old_code" in data:
-            instance.old_code = str(data["old_code"])
+        from .dto_products import ProductDesignPatchDTO
+
+        dto = ProductDesignPatchDTO.model_validate(data)
+        if dto.name is not None:
+            instance.name = dto.name
+        if dto.lifecycle_status is not None:
+            UpdateLifecycleStatusService.update_status(instance, dto.lifecycle_status)
+        if dto.description is not None:
+            instance.description = dto.description
+
         try:
             db.session.commit()
             return instance
@@ -272,17 +277,13 @@ class DesignService:
         product: Product = Product.query.get(product_id)
         if not product:
             raise ValidationError(f"No existe el producto con id: {product_id}")
-        print("color IDS: ", color_ids, "and type: ", type(color_ids))
         colors: list[Color] = []
         color_ids = [c.id for c in color_ids]
-        print("parsed color IDS: ", color_ids, "and type: ", type(color_ids))
         for color_id in color_ids:
-            print("color_id: ", color_id)
             color = Color.query.get(color_id)
             if not color:
                 raise ValidationError(f"No existe el color con id: {str(color_id)}")
             colors.append(color)
-        print("colors: ", colors)
         colors_codes = [c.code.upper() for c in colors]
         color_part = "".join(colors_codes)
         c_code = f"{product.code}{str(color_part)}"
@@ -294,8 +295,8 @@ class DesignService:
             name=name,
             description=description,
             code=c_code,
+            status="DRAFT",
         )
-        print("design: ", design)
         db.session.add(design)
         design.colors.extend(colors)
 
@@ -320,6 +321,27 @@ class DesignService:
                 design.image_associations.append(association)
 
         return design
+
+    @staticmethod
+    def delete_image_from_design(design_id: int, image_id: int):
+        """Elimina la asociación de una imagen con un diseño."""
+        design = ProductDesign.query.get(design_id)
+        if not design:
+            raise NotFoundError("Diseño no encontrado.")
+
+        association_to_delete = None
+        for assoc in design.image_associations:
+            if assoc.media_file_id == image_id:
+                association_to_delete = assoc
+                break
+
+        if not association_to_delete:
+            raise NotFoundError("La imagen no está asociada a este diseño.")
+
+        # Elimina el objeto de la asociación
+        db.session.delete(association_to_delete)
+        db.session.commit()
+        return True
 
     @staticmethod
     def bulk_create_designs(product_id: int, designs_data: list) -> list[ProductDesign]:
@@ -369,83 +391,39 @@ class DesignService:
 class VariantService:
 
     @staticmethod
-    def create_obj(data):
-        return str("No se puede crear variantes individuales por el momento")
+    def create_obj(data: dict):
+        from .dto_products import ProductVariantCreateDTO
+
+        with db.session.begin():
+            dto = ProductVariantCreateDTO.model_validate(data)
+            print("dto: ", dto)
+            variants = VariantService.create_variants(
+                design_id=dto.design_id, sizes_ids=dto.sizes_ids
+            )
+            return variants
 
     @staticmethod
-    def create_variants_obj(data):
+    def create_variants(design_id: int, sizes_ids: list[int]):
+        """Crea variantes para un diseño a partir de una lista de IDs de tallas."""
 
-        try:
-            with db.session.begin():
-                variants = VariantService.add_new_series_to_design(
-                    design_id=data["design_id"],
-                    sizes_ids=[size.size_id for size in data["variants"]],
-                    materials=data["materials"],
-                )
-                return variants
-        except Exception as e:
-            current_app.logger.warning(f"Error al crear nuevas variantes. e{e}")
-            raise e
+        design: ProductDesign = ProductDesign.query.get(design_id)
+        if design is None:
+            raise ValidationError("Diseño no encontrado.")
 
-    @staticmethod
-    def bulk_create_variants(
-        design_id: int,
-        design_code: str,
-        # series_ids: list, cambo 09-10-2025 para pasar a sizes no series
-        sizes_ids: list,
-        materials: list,
-    ):
-        """Crea todas las variantes para un diseño con sus materiales."""
-        # Validación temprana de series (mejor performance)
-        sizes = Size.query.filter(Size.id.in_(sizes_ids)).all()
-        if len(sizes) != len(sizes_ids):
-            missing_ids = set(sizes_ids) - {s.id for s in sizes}
-            raise ValidationError(f"Sizes no encontradas: {missing_ids}")
-
-        variants = []
-
-        # Creación de todas las variantes primero
-        for size in sizes:
-            variant = ProductVariantEntity(
-                {
-                    "design_id": design_id,
-                    "size_id": size.id,
-                    "design_code": design_code,
-                    "size_value": size.value,
-                    "materials": materials,
-                }
-            ).to_model()
-
-            db.session.add(variant)
-            variants.append(variant)
-
-            # Asignar materiales específicos de la serie/tallas
-            # no hago flush porque ya tengo la relacion SQLALchemy
-            # no incluyo variant_id porque la relacion lo hace por mi
-            for mat in materials:
-                variant.materials.append(
-                    ProductVariantMaterialDetail(
-                        material_id=mat.material_id,
-                        quantity=mat.quantity,
-                    )
-                )
-
-        return variants
-
-    @staticmethod
-    def add_new_series_to_design(
-        design_id: int, sizes_ids: list, materials: list
-    ) -> list[ProductVariant]:
-        """Añade nuevas variantes a un diseño existente."""
-        design = ProductDesign.query.get(design_id)
-        if not design:
-            raise ValidationError("No existe un diseno con el id indicado")
-        return VariantService.bulk_create_variants(
-            design_id=design.id,
-            design_code=design.code,
-            sizes_ids=sizes_ids,
-            materials=materials,
-        )
+        new_variants = []
+        for size_id in sizes_ids:
+            size: Size = Size.query.get(size_id)
+            if size is None:
+                raise ValidationError(f"Talla con id:{size_id} no encontrada.")
+            new_variant = ProductVariant(
+                design_id=design_id,
+                size_id=size_id,
+                code=f"{design.code}{size.value}",
+                old_code=f"{design.old_code}{size.value}" if design.old_code else None,
+            )
+            new_variants.append(new_variant)
+        db.session.add_all(new_variants)
+        return new_variants
 
     @staticmethod
     def get_obj(variant_id):
@@ -464,16 +442,15 @@ class VariantService:
         return ProductVariant.query.filter_by(product_id=product_id).all()
 
     @staticmethod
-    def patch_obj(instance, data):
-        if "barcode" in data:
-            instance.barcode = data["barcode"]
-        if "stock" in data:
-            instance.stock = data["stock"]
-        if "is_active" in data:
-            instance.is_active = data["is_active"]
+    def patch_obj(instance, data: dict):
+        from .dto_products import ProductVariantPatchDTO
 
+        dto = ProductVariantPatchDTO.model_validate(data)
+        if dto.lifecycle_status is not None:
+            UpdateLifecycleStatusService.update_status(instance, dto.lifecycle_status)
         try:
             db.session.commit()
+            return instance
         except Exception:
             db.session.rollback()
             raise
@@ -481,8 +458,6 @@ class VariantService:
             db.session.rollback()
             current_app.logger.error("Error de integridad al crear variantes")
             raise
-
-        return instance
 
     @staticmethod
     def delete_obj(instance):
@@ -519,61 +494,64 @@ class ProductVariantMaterialService:
         return materials
 
     @staticmethod
-    def create_obj(data):
+    def create_obj(data: dict):
+        from .dto_products import VariantMaterialsCreateDTO
+
         with db.session.begin():
-            created_materials = ProductVariantMaterialService.create_variant_material(
-                data
+            dto = VariantMaterialsCreateDTO.model_validate(data)
+            created_materials = ProductVariantMaterialService.create_variant_materials(
+                variant_id=dto.variant_id, materials=dto.materials
             )
             return created_materials
 
     @staticmethod
-    def create_variant_material(data):
+    def create_variant_materials(variant_id: int, materials: list):
         """
         Crea objetos ProductVariantMaterialDetail para un variant_id dado.
         No hace commit, solo añade a la sesión.
         """
-        ProductVariantMaterialService._check_foreign_keys(data)
+        variant = ProductVariant.query.get(variant_id)
+        if variant is None:
+            raise ValidationError("Variante no encontrada.")
 
         new_variant_materials = []
 
-        for material in data["materials"]:
+        for material in materials:
 
-            obj = ProductVariantMaterialEntity(
-                {
-                    "variant_id": data["variant_id"],
-                    "material_id": material["material_id"],
-                    "quantity": material["quantity"],
-                }
-            ).to_model()
+            obj = ProductVariantMaterialDetail(
+                variant_id=variant_id,
+                material_id=material.material_id,
+                quantity=material.quantity,
+            )
             new_variant_materials.append(obj)
 
         db.session.add_all(new_variant_materials)
         return new_variant_materials
 
     @staticmethod
-    def patch_obj(instance, data: dict):
-        EDITABLE_FIELDS = {"quantity"}
-        invalid_fields = set(data.keys()) - EDITABLE_FIELDS
-        if invalid_fields:
-            raise ValidationError(f"Campos no editables: {invalid_fields}")
+    def patch_obj(instance: ProductVariantMaterialDetail, data: dict):
+        from .dto_products import ProductVariantMaterialDetailPatchDTO
 
-        if "quantity" in data:
-            if data["quantity"] > 0:
-                instance.quantity = data["quantity"]
-            else:
-                raise ValidationError("La cantidad debe ser mayor a 0")
-
-        db.session.commit()
+        dto = ProductVariantMaterialDetailPatchDTO.model_validate(data)
+        if dto.quantity is None:
+            raise ValueError("La cantidad no puede ser None.")
+        instance.quantity = dto.quantity
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         return instance
 
     @staticmethod
-    def delete_obj(id):
-        obj = ProductVariantMaterialDetail.query.get(id)
-        if not obj:
-            raise NotFoundError("No existe este material asociado.")
-        db.session.delete(obj)
-        db.session.commit()
-        return True
+    def delete_obj(instance: ProductVariantMaterialDetail):
+        try:
+            db.session.delete(instance)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            raise
 
     @staticmethod
     def _check_foreign_keys(data):
@@ -582,43 +560,52 @@ class ProductVariantMaterialService:
             raise ValidationError("La variante no existe.")
 
 
-class ProductVariantImageService:
-
+class ProductDesignImageService:
     @staticmethod
-    def get_images_by_variant(variant_id):
-        pass
+    def create_obj(data: dict):
+        from .dto_products import ProductDesignImageDTO
 
-    # return ProductVariantImage.query.filter_by(variant_id=variant_id).all()
-
-    @staticmethod
-    def delete_image(image_id):
-        pass
-        # image = ProductVariantImage.query.get(image_id)
-        # if not image:
-        #    raise NotFoundError("Imagen no encontrada.")
-
-        # Eliminar archivo físico (opcional)
-
-    @staticmethod
-    def create_image(variant_id, file):
-        # Verificar que la variante exista
-        if not ProductVariant.query.get(variant_id):
-            raise NotFoundError("La variante no existe.")
-
-        # Subir imagen usando el servicio genérico
-        try:
-            FileUploader.save_file(
-                file=file, subfolder="products", entity_id=variant_id
+        with db.session.begin():
+            dto = ProductDesignImageDTO(**data)
+            new_images = ProductDesignImageService.add_images(
+                media_ids=dto.media_ids,
+                design_id=dto.design_id,
+                is_primary=dto.is_primary,
+                order=dto.order,
             )
-        except ValueError as e:
-            raise ValidationError(str(e))
+            return new_images
 
-        # Registrar en base de datos
-        image = None
+        pass
 
-        db.session.add(image)
-        db.session.commit()
-        return image
+    @staticmethod
+    def add_images(
+        media_ids: list[int], design_id: int, is_primary: bool = None, order: int = None
+    ):
+        from ..media.models import MediaFile
+
+        design = ProductDesign.query.get(design_id)
+        if design is None:
+            raise ValidationError("Diseño no encontrado.")
+        new_images = []
+        for media_id in media_ids:
+            media_file = MediaFile.query.get(media_id)
+            if media_file is None:
+                raise ValidationError(f"Imagen con id:{media_id} no encontrada.")
+
+            new_image = ProductDesignImage(
+                media_file=media_file,
+                design=design,
+                is_primary=is_primary,
+                order=order,
+            )
+            new_images.append(new_image)
+        db.session.add_all(new_images)
+        return new_images
+
+    @staticmethod
+    def get_obj_list(id: int):
+        query = db.session.query(ProductDesignImage).filter_by(design_id=id)
+        return query.all()
 
 
 class LineService:
@@ -1332,3 +1319,64 @@ class LastTypeService:
         except Exception:
             db.session.rollback()
             raise
+
+
+class UpdateLifecycleStatusService:
+
+    @staticmethod
+    def update_status(instance, lifecyle_status: str):
+        lifecyle_status = lifecyle_status.upper()
+        from ..common.models import LifecycleStatus
+
+        if lifecyle_status not in LifecycleStatus:
+            raise ValidationError("El estado no tiene un valor valido")
+
+        if lifecyle_status == "READY":
+            if isinstance(instance, ProductVariant):
+                UpdateLifecycleStatusService._validateVariant(instance)
+
+            elif isinstance(instance, ProductDesign):
+                UpdateLifecycleStatusService._validateDesign(instance)
+
+            elif isinstance(instance, Product):
+                UpdateLifecycleStatusService._validateProduct(instance)
+
+            elif isinstance(instance, ProductCollection):
+                UpdateLifecycleStatusService._validateCollection(instance)
+
+        instance.lifecycle_status = lifecyle_status
+        print("instance lifecycle status: ", instance.lifecycle_status)
+
+        return instance
+
+    @staticmethod
+    def _validateVariant(instance: ProductVariant):
+        if not instance.materials:
+            raise ValidationError("Debe tener materiales asociados a la variante")
+
+    @staticmethod
+    def _validateDesign(instance: ProductDesign):
+        if not instance.variants:
+            raise ValidationError("Debe tener variantes asociadas al diseño")
+
+        ready_variants = ProductVariant.query.filter_by(
+            design_id=instance.id, lifecycle_status="READY"
+        ).first()
+        if ready_variants is None:
+            raise ValidationError("Debe tener al menos una variante activa")
+
+    @staticmethod
+    def _validateProduct(instance: Product):
+        if not instance.designs:
+            raise ValidationError("Debe tener diseños asociados al producto")
+
+        ready_designs = ProductDesign.query.filter_by(
+            product_id=instance.id, lifecycle_status="READY"
+        ).first()
+        if ready_designs is None:
+            raise ValidationError("Debe tener al menos un diseño activo")
+
+    @staticmethod
+    def _validateCollection(instance: ProductCollection):
+        if not instance.last_type or not instance.last_type_id:
+            raise ValidationError("Debe tener una horma asociada a la colección")

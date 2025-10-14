@@ -1,0 +1,418 @@
+<div x-data="detail({{id}})" class="row g-2">
+    <template x-if="error">
+        <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+    <template x-if="message">
+        <div x-text="message" class="alert alert-success" role="alert"></div>
+    </template>
+    <template x-if="draft_message">
+        <div x-text="draft_message" class="alert alert-warning" role="alert"></div>
+    </template>
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Información General</h5>
+                    <div class="d-flex justify-content-end mb-3">
+                        <span
+                            class="badge"
+                            :class="setStatusClass(item.lifecycle_status)"
+                            x-text="getLifeStatus(item.lifecycle_status)">
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted">Código</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control " disabled>
+                        <div  x-text="item.code?item.code:'Sin codigo'"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- estado -->
+    <div class="col-md-12">
+        <div class="card mb-3 ">
+
+            <div class="card-body">
+                <h5 class="card-title">Estado</h5>
+
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="text-muted">Estado:</div>
+                    <div>
+                        <span x-text=getLifeStatus(item.lifecycle_status) class="badge" :class="setStatusClass(item.lifecycle_status)"></span>
+                    </div>
+                </div>
+
+                <template x-if="status_message">
+                    <div x-text="status_message" class="alert alert-warning" role="alert"></div>
+                </template>
+                <div class="">
+                    <div class="form-check form-switch mb-3 d-flex justify-content-between ps-0">
+                        <label class="form-check-label" for="lifecicle_status1">
+                            Activo
+                        </label>
+                        <input class="form-check-input" type="radio" name="lifecycle_status" id="lifecycle_status1"
+                        @click="toggleStatus('READY')"
+                        value="READY"
+                         x-model="item.lifecycle_status"
+                         :checked="getLifeStatus(item.lifecycle_status) === 'Acitvo'">
+                    </div>
+                    <div class="form-check form-switch mb-3 d-flex justify-content-between ps-0">
+                        <label class="form-check-label" for="lifecycle_status2">
+                            Borrador
+                        </label>
+                        <input class="form-check-input" type="radio" name="lifecycle_status" id="lifecycle_status2"
+                        @click="toggleStatus('DRAFT')"
+                        value="DRAFT"
+                        :checked="getLifeStatus(item.lifecycle_status) === 'Borrador'"
+                        x-model="item.lifecycle_status">
+                    </div>
+                    <div class="form-check form-switch mb-3 d-flex justify-content-between ps-0">
+                        <label class="form-check-label" for="lifecycle_status3">
+                            Inactivo
+                        </label>
+                        <input class="form-check-input" type="radio" name="lifecycle_status" id="lifecycle_status3"
+                        @click="toggleStatus('ARCHIVED')"
+                        value="ARCHIVED"
+                        :checked="getLifeStatus(item.lifecycle_status) === 'Inactivo'"
+                        x-model="item.lifecycle_status">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>LIsta de materiales</h5>
+                </div>
+
+                <div>
+
+                    <!-- Instrucción -->
+                    <div class="mb-3">
+                        <p>Asigna los materiales requeridos para este producto.</p>
+                    </div>
+
+                    <!-- Buscador de material -->
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Buscar material (código o nombre)" x-model="materialQuery" @input.debounce.300="searchMaterials">
+                        <button class="btn btn-outline-secondary" type="button" @click="clearSearch"><i class="bi bi-x"></i></button>
+                    </div>
+
+                    <!-- Resultados -->
+                    <ul class="list-group mb-4" x-show="materialResults.length > 0">
+                        <template x-for="mat in materialResults" :key="mat.id">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                            <strong x-text="`${mat.code}`"></strong> — <span x-text="mat.name"></span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-dark" @click="addMaterial(mat)">Agregar</button>
+                        </li>
+                        </template>
+                    </ul>
+
+                    <!-- Materiales asignados -->
+                    <h6 class="mb-2">🧾 Materiales asignados:</h6>
+                    <template x-if="item.materials?.length === 0 && new_materials?.length === 0">
+                        <p class="text-muted">No se ha asignado ningún material aún.</p>
+                    </template>
+
+                    <template x-if="material_message">
+                        <div x-text="material_message" class="alert alert-success" role="alert"></div>
+                    </template>
+                    <template x-if="material_error">
+                        <div x-text="material_error" class="alert alert-danger" role="alert"></div>
+                    </template>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Cantidad por par</th>
+                            <th>Unidad</th>
+                            <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="mat in item.materials" >
+                            <tr>
+                                <td x-text="mat.material.code"></td>
+                                <td x-text="mat.material.name"></td>
+                                <td>
+                                <input style="max-width: 80px;" type="number"
+                                 min="0" step="0.01" class="form-control form-control-sm"
+                                 x-model.number="mat.quantity"
+                                 @click="$dispatch('open-generic-editor', {
+                                        title: 'Material',
+                                        label: 'Cantidad',
+                                        field: 'quantity',
+                                        value: mat.quantity,
+                                        type: 'number',
+                                        patchUrl: '/api/v1/variant-materials/'+mat.id,
+                                        help: 'La cantidad debe ser mayor a 0',
+                                        onSave: () => { console.log('¡Guardado!'); alert('Guardado!'); location.reload(); }
+                                    })">
+                                </td>
+                                <td x-text="mat.material.unit"></td>
+                                <td>
+                                <button class="btn btn-sm btn-outline-danger" @click="removeMaterial(mat.id)">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                                </td>
+                            </tr>
+                            </template>
+                            <template x-for="mat in new_materials" >
+                                <tr>
+                                    <td x-text="mat.code"></td>
+                                        <td x-text="mat.name"></td>
+                                        <td>
+                                        <input style="max-width: 80px;" type="number" min="0" step="0.01" class="form-control form-control-sm" x-model.number="mat.quantity">
+                                        </td>
+                                        <td x-text="mat.unit"></td>
+                                        <td>
+                                        <button class="btn btn-sm btn-outline-danger" @click="removeNewMaterial(mat.id)">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="d-flex text-end" x-show="new_materials?.length > 0">
+                        <button class="btn btn-dark" @click="submitFinal" :disabled="new_materials?.length===0">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar {{label.variant}}</button>
+    </div>
+</div>
+
+<script>
+    function detail(id){
+        return{
+            item:{},
+            materials:[],
+            materialQuery:'',
+            materialResults:[],
+            error:'',
+            message:'',
+            id:id,
+            apiFetch: `product-variants/${id}`,
+            api: `/products/designs`,
+            productData:{},
+            draft_message: '',
+            uploading: false,
+            original_materials:[],
+            new_materials:[],
+            status_message:'',
+
+            material_error:'',
+            material_message:'',
+
+
+            init(){
+                console.log('init... id: ', id)
+                this.fetchItem(id);
+                this.fetchItemMaterials(id);
+            },
+
+            async fetchItem(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiFetch);
+                    this.item = res;
+                    if(this.item.materials.length === 0) this.draft_message='Debe establecer los materiales disponibles'
+                    console.log('res: ', res);
+
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
+            },
+
+            async searchMaterials(){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `materials/search?q=${this.materialQuery}`);
+                    console.log('res: ', res);
+                    this.materialResults = res;
+
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
+            },
+
+            addMaterial(material){
+                this.new_materials.push(material);
+                this.materialResults = [];
+                this.materialQuery = '';
+                console.log('this.new_materials: ', this.new_materials);
+            },
+
+            async removeMaterial(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', `variant-materials/${id}`);
+                    console.log('res reove: ', res);
+                    if(!res){
+                        this.error = 'Error al intentar borrar el material';
+                        throw new Error(res.message?.error || 'Error al intentar borrar el material');
+                    }
+                    this.item.materials = this.item.materials.filter(mat => mat.id !== id);
+                    this.material_message = 'Registro eliminado'
+                }catch(err){
+                    this.error = err;
+                    console.error(err)
+                }
+
+            },
+
+            removeNewMaterial(id){
+                this.new_materials = this.new_materials.filter(mat => mat.id !== id);
+            },
+
+
+            clearSearch(){
+                this.materialQuery = '';
+                this.materialResults = [];
+            },
+
+            async fetchItemMaterials(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `variant-materials?variant_id=${id}`);
+                    console.log('res products: ', res);
+                    this.item.materials = res;
+
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
+
+            },
+
+            getLifeStatus(lifestatus){
+                if (lifestatus === 'DRAFT') {
+                    return 'Borrador';
+                } else if (lifestatus === 'READY') {
+                    return 'Activo';
+                } else if (lifestatus === 'ARCHIVED') {
+                    return 'Inactivo'
+                }else{
+                    return 'Borrador'
+                }
+            },
+
+            setStatusClass(status) {
+                if (status === 'DRAFT') {
+                    return 'text-bg-warning';
+                } else if (status === 'READY') {
+                    return 'text-bg-success';
+                } else if (status === 'ARCHIVED') {
+                    return 'text-bg-secondary';
+                } else {
+                    return 'text-bg-warning';
+                }
+            },
+
+
+
+
+            async deleteObj(id){
+                if (!confirm('¿Estás seguro de que quieres eliminar este registro?')) {
+                    return;
+                }
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', this.apiFetch);
+                    if (res) {
+                        alert('Registro eliminado con éxito');
+                        this.message = 'Registro eliminado con éxito';
+                        window.location.href = `/products/${this.item.product_id}/designs/${this.item.design_id}`;
+                    } else {
+                        this.error = 'Error al eliminar registro';
+                    }
+                } catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
+            },
+
+            async toggleStatus(status) {
+                if (!confirm('¿Estás seguro de que quieres cambiar el estado?')) {
+                    return;
+                }
+
+                try {
+                    const newStatus = status;
+                    const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', this.apiFetch, { lifecycle_status: newStatus });
+                    console.log('updated: ', updated)
+                    if (updated) {
+                        this.item.lifecycle_status = updated.lifecycle_status;
+                    }
+                } catch (error) {
+                    console.error('Error toggling status:', error);
+                    alert('No se pudo cambiar el estado.');
+                    this.item.lifecycle_status = this.getLifeStatus(this.item.lifecycle_status);
+
+                    this.status_message = String(error);
+
+                }
+            },
+
+            async submitFinal(){
+                this.error = '';
+                this.message = '';
+                this.material_error = '';
+                this.material_message = '';
+
+                this.uploading = true;
+                const materials = [];
+                this.new_materials.forEach(mat => {
+                    materials.push({
+                        material_id: mat.id,
+                        quantity: mat.quantity
+                    })
+                })
+                const payload = {
+                    variant_id: this.id,
+                    materials: materials,
+                }
+                console.log('payload: ', payload);
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('POST', 'variant-materials', payload);
+                    console.log('res: ', res);
+                    this.uploading = false;
+                    if(!res){
+                        this.material_error = 'Error creando materiales';
+                        throw new Error(res.message);
+                    }
+                    this.new_materials = [];
+                    this.fetchItemMaterials(this.id);
+                    this.material_message = 'Registro creado con éxito';
+
+                }catch(err){
+                    this.error = err;
+                    console.error(err)
+                    this.uploading = false;
+
+                }
+
+            },
+        }
+    }
+</script>

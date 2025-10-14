@@ -1,6 +1,17 @@
+from enum import StrEnum
+
+from sqlalchemy import Column
+from sqlalchemy import Enum as SAEnum
+
 from app import db
 
 from .utils import utc_now
+
+
+class LifecycleStatus(StrEnum):
+    DRAFT = "DRAFT"
+    READY = "READY"
+    ARCHIVED = "ARCHIVED"
 
 
 class BaseModel(db.Model):
@@ -15,6 +26,17 @@ class SoftDeleteMixin:
     __abstract__ = True
 
     is_active = db.Column(db.Boolean, default=True)
+
+    lifecycle_status = Column(
+        SAEnum(
+            LifecycleStatus,
+            name="lifecycle_status_enum",  # nombre de tipo claro y único
+            native_enum=False,
+        ),
+        nullable=True,
+        server_default=LifecycleStatus.DRAFT.value,
+        index=True,
+    )
 
 
 class AppSetting(db.Model):

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% from 'components/_pageHeader.html' import pageHeader%}
-{% block title %}Detalle de Línea{% endblock %}
+{% block title %}Detalle de Producto{% endblock %}
 
 {% block content %}
 <div>
-  {{pageHeader('/products', 'Detalle del producto(color)')}}
+  {{pageHeader('/products/' ~ product_id, 'Detalle del producto(color)')}}
   {% include 'products/designs/_detail.html' %}
 
 </div>

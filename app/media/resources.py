@@ -2,6 +2,8 @@ from flask import current_app, request, send_from_directory
 from flask_restful import Resource, marshal
 from werkzeug.exceptions import HTTPException
 
+from app import db
+
 from ..core.exceptions import ConflictError, ValidationError
 from ..core.utils import error_response, success_response, validation_error_response
 from .schemas import media_file_fields
@@ -26,7 +28,8 @@ class MediaUploadResource(Resource):
                 return error_response("No se seleccionó ningún archivo.", 400)
 
             uploaded_media = []
-            with current_app.app_context():
+            # Usar un bloque de transacción para asegurar que la sesión no se cierre prematuramente
+            with db.session.begin():
                 img_svc = ImageService()
                 for file_storage in files:
                     media_file = img_svc.upload(module, file_storage)
@@ -35,8 +38,10 @@ class MediaUploadResource(Resource):
             return success_response(marshal(uploaded_media, media_file_fields), 201)
 
         except (ValidationError, ValueError) as e:
+            db.session.rollback()
             return validation_error_response(str(e))
         except Exception as e:
+            db.session.rollback()
             current_app.logger.warning(f"error: {e}")
             return error_response(str(e), 500)
 
@@ -62,3 +67,13 @@ class MediaServeResource(Resource):
             return error_response(
                 f"Ha ocurrido un error interno inesperado: {str(e)}", 500
             )
+
+
+class MediaDeleteResource(Resource):
+    def delete(self, module: str, image_id: int):
+        try:
+            img_svc = ImageService()
+            response = img_svc.delete(module, image_id)
+            return success_response(marshal(response, media_file_fields), 201)
+        except Exception as e:
+            return error_response(str(e), 500)

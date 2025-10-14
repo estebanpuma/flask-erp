@@ -1,0 +1,151 @@
+<div
+  x-data="uploadImageModal()"
+  x-show="show"
+  @open-image-uploader.window="open($event.detail)"
+  @keydown.escape.window="close()"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+  style="display: none;"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0"
+  x-transition:enter-end="opacity-100"
+  x-transition:leave="transition ease-in duration-200"
+  x-transition:leave-start="opacity-100"
+  x-transition:leave-end="opacity-0"
+>
+  <!-- Contenido del Modal -->
+  <div
+    @click.away="close()"
+    class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4"
+    x-show="show"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0 transform scale-90"
+    x-transition:enter-end="opacity-100 transform scale-100"
+  >
+    <div class="p-4 border-b">
+      <h3 class="text-lg font-semibold">Añadir Imágenes al Producto</h3>
+    </div>
+
+    <div class="p-4">
+      <!-- Pestañas -->
+      <div class="border-b border-gray-200 mb-4">
+        <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+          <button
+            @click="activeTab = 'existing'"
+            :class="{ 'border-blue-500 text-blue-600': activeTab === 'existing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'existing' }"
+            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+          >
+            Añadir a Diseño Existente
+          </button>
+          <button
+            @click="activeTab = 'new'"
+            :class="{ 'border-blue-500 text-blue-600': activeTab === 'new', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'new' }"
+            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+          >
+            Crear Nuevo Diseño
+          </button>
+        </nav>
+      </div>
+
+      <!-- Contenido Pestaña 1: Diseño Existente -->
+      <div x-show="activeTab === 'existing'">
+        <div class="mb-3">
+          <label for="designSelect" class="form-label">Selecciona un diseño:</label>
+          <select id="designSelect" class="form-select" x-model="selectedDesignId">
+            <option value="">-- Elige un diseño --</option>
+            <template x-for="design in designs" :key="design.id">
+              <option :value="design.id" x-text="`${design.name} (${design.code})`"></option>
+            </template>
+          </select>
+        </div>
+        <!-- Componente de subida de archivos -->
+
+      </div>
+
+      <!-- Contenido Pestaña 2: Nuevo Diseño -->
+      <div x-show="activeTab === 'new'">
+        <p class="text-muted mb-3">Selecciona los colores para el nuevo diseño y luego sube sus imágenes.</p>
+        <!-- Selector de colores (similar a _step2_designs.html) -->
+        <div class="mb-3">
+            <label class="form-label">Colores disponibles:</label>
+            <div class="d-flex flex-wrap gap-2">
+              <template x-for="color in availableColors" :key="color.id">
+                <button type="button"
+                        class="btn btn-outline-dark btn-sm"
+                        :class="{'active': isColorSelected(color.id)}"
+                        @click="toggleColor(color)">
+                  <span x-text="`${color.name} (${color.code})`"></span>
+                </button>
+              </template>
+            </div>
+        </div>
+        <div class="alert alert-secondary mt-2" x-show="newDesignColors.length > 0">
+            Código del nuevo diseño: <strong x-text="productCode + getNewDesignSuffix()"></strong>
+        </div>
+        <!-- Componente de subida de archivos -->
+
+      </div>
+
+      <template x-if="error">
+        <div class="alert alert-danger mt-3" x-text="error"></div>
+      </template>
+    </div>
+
+    <div class="p-4 border-t bg-gray-50 flex justify-end gap-2">
+      <button @click="close()" class="btn btn-secondary">Cancelar</button>
+      <button @click="submit()" class="btn btn-dark" :disabled="submitting || !isReadyToSubmit()">
+        <span x-show="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <span x-text="submitting ? 'Subiendo...' : 'Guardar Imágenes'"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Este script se moverá a un archivo JS dedicado más adelante
+  function uploadImageModal() {
+    return {
+      show: false,
+      submitting: false,
+      error: '',
+      activeTab: 'existing',
+      productId: null,
+      productCode: '',
+      designs: [],
+      availableColors: [],
+      // Estado para la pestaña "Existente"
+      selectedDesignId: '',
+      // Estado para la pestaña "Nuevo"
+      newDesignColors: [],
+      // Estado del uploader
+      files: [],
+
+      open(detail) {
+        this.productId = detail.productId;
+        this.productCode = detail.productCode;
+        this.designs = detail.designs;
+        this.availableColors = detail.availableColors;
+        this.show = true;
+      },
+      close() {
+        this.show = false;
+        this.resetForm();
+      },
+      resetForm() {
+        this.submitting = false;
+        this.error = '';
+        this.activeTab = 'existing';
+        this.selectedDesignId = '';
+        this.newDesignColors = [];
+        this.files = [];
+        this.$dispatch('clear-files'); // Evento para el uploader
+      },
+      // Lógica de subida y creación...
+      submit() { console.log('Submitting...'); /* Lógica a implementar */ },
+      isReadyToSubmit() { return false; /* Lógica a implementar */ },
+      // Lógica para el selector de colores
+      toggleColor(color) { /* ... */ },
+      isColorSelected(id) { /* ... */ },
+      getNewDesignSuffix() { /* ... */ }
+    }
+  }
+</script>

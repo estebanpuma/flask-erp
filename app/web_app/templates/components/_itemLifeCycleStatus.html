@@ -1,0 +1,128 @@
+ <!-- estado -->
+
+<div x-data="itemStatus({apiStatus})">
+    <div class="card mb-3 ">
+
+        <div class="card-body">
+            <h5 class="card-title">Estado</h5>
+
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <div class="text-muted">Estado:</div>
+                <div>
+                    <span x-text=getLifeStatus(status) class="badge" :class="setStatusClass(status)"></span>
+                </div>
+            </div>
+
+            <template x-if="status_message">
+                <div x-text="status_message" class="alert alert-warning" role="alert"></div>
+            </template>
+            <div class="">
+                <div class="form-check form-switch mb-3 d-flex justify-content-between ps-0">
+                    <label class="form-check-label" for="lifecicle_status1">
+                        Activo
+                    </label>
+                    <input class="form-check-input" type="radio" name="lifecycle_status" id="lifecycle_status1"
+                    @click="toggleStatus('READY')"
+                    value="READY"
+                        x-model="status"
+                        :checked="getLifeStatus(status) === 'Activo'">
+                </div>
+                <div class="form-check form-switch mb-3 d-flex justify-content-between ps-0">
+                    <label class="form-check-label" for="lifecycle_status2">
+                        Borrador
+                    </label>
+                    <input class="form-check-input" type="radio" name="lifecycle_status" id="lifecycle_status2"
+                    @click="toggleStatus('DRAFT')"
+                    value="DRAFT"
+                    :checked="getLifeStatus(status) === 'Borrador'"
+                    x-model="status">
+                </div>
+                <div class="form-check form-switch mb-3 d-flex justify-content-between ps-0">
+                    <label class="form-check-label" for="lifecycle_status3">
+                        Inactivo
+                    </label>
+                    <input class="form-check-input" type="radio" name="lifecycle_status" id="lifecycle_status3"
+                    @click="toggleStatus('ARCHIVED')"
+                    value="ARCHIVED"
+                    :checked="getLifeStatus(status) === 'Inactivo'"
+                    x-model="status">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function itemStatus({apiStatus}){
+    return{
+
+        status:status,
+        apiStatus:apiStatus,
+        status_message:'',
+
+        init(){
+            this.fetchItem();
+        },
+
+        async fetchItem(){
+            try{
+                const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiStatus);
+                this.status = res.lifecycle_status;
+                console.log('res: ', res);
+            }catch(error){
+                console.error('API error: ', error)
+            }
+        },
+
+
+
+        async toggleStatus(status) {
+            if (!confirm('¿Estás seguro de que quieres cambiar el estado?')) {
+                return;
+            }
+
+            try {
+                this.status_message = '';
+                const newStatus = status;
+                const updated = await window.guifer.helpers.fetch.apiFetch('PATCH', this.apiStatus, { lifecycle_status: newStatus });
+                console.log('updated: ', updated)
+                if (updated) {
+                    this.status = updated.lifecycle_status;
+                    this.$dispatch('status-changed', this.status); // Notificar al padre
+                }
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                alert('No se pudo cambiar el estado.');
+                this.status = this.getLifeStatus(this.status);
+                this.status_message = String(error);
+
+            }
+        },
+
+         getLifeStatus(status){
+                console.log('lifestatus in component: ', status)
+                if (status === 'DRAFT') {
+                    return 'Borrador';
+                } else if (status === 'READY') {
+                    return 'Activo';
+                } else if (status === 'ARCHIVED') {
+                    return 'Inactivo'
+                }else{
+                    return 'Borrador'
+                }
+            },
+
+            setStatusClass(status) {
+                if (status === 'DRAFT') {
+                    return 'text-bg-warning';
+                } else if (status === 'READY') {
+                    return 'text-bg-success';
+                } else if (status === 'ARCHIVED') {
+                    return 'text-bg-secondary';
+                } else {
+                    return 'text-bg-warning';
+                }
+            },
+        }
+    }
+</script>

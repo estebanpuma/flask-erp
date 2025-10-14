@@ -1,0 +1,421 @@
+<div x-data="detail({{id}})" class="row g-2">
+    <template x-if="error">
+        <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+    <template x-if="message">
+        <div x-text="message" class="alert alert-success" role="alert"></div>
+    </template>
+    <template x-if="draft_message">
+        <div x-text="draft_message" class="alert alert-warning" role="alert"></div>
+    </template>
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Información General</h5>
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <span
+                            class="badge"
+                            :class="setStatusClass(item.lifecycle_status)"
+                            x-text="getLifeStatus(item.lifecycle_status)">
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="mb-3">
+
+                    <div class="text-muted">Nombre de {{label.product}}</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control"
+                    @click="$dispatch('open-generic-editor', {
+                        title: 'Nombre',
+                        label: 'Nombre',
+                        field: 'name',
+                        value: item.name,
+                        type: 'text',
+                        patchUrl: apiPatch,
+                        help: 'El nombre debe tener al menos 3 caracteres.',
+                        onSave: () => { console.log('¡Guardado!'); alert('Guardado!'); location.reload(); }
+                    })">
+                        <div x-text="item.name"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted">Código</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control " disabled>
+                        <div  x-text="item.code?item.code:'Sin codigo'"></div>
+
+                    </button>
+
+                </div>
+                <!-- Fila de Descripción -->
+                <div class="mb-3">
+                    <div class="text-muted">{{label.description}}</div>
+                    <div style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                    @click="$dispatch('open-generic-editor', {
+                            title: 'Descripción',
+                            label: 'Descripción',
+                            field: 'description',
+                            value: item.description,
+                            type: 'textarea',
+                            patchUrl: apiPatch,
+                            help: '',
+                            onSave: (updated) => { item.description = updated.description; }
+                        })">
+                        <div  x-text="item.description?item.description:'Sin descripción'"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12"
+         x-data="{apiStatus: apiFetch }"
+         @status-changed.window="item.lifecycle_status = $event.detail"
+    >
+       {% include 'components/_itemLifeCycleStatus.html' %}
+    </div>
+
+
+    <!--Media-->
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Imágenes del Diseño</h5>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <!-- Galería de imágenes existentes -->
+                    <template x-for="image in item.images" :key="image.id">
+                        <div class="position-relative border rounded shadow-sm" style="width: 120px; height: 120px;">
+                            <img :src="`/api/v1/media/img/designs/${image.filename}`"
+                                     class="rounded border"
+                                     style="width: 120px; height:120px; object-fit: cover;"
+                                     :alt="`Imagen de ${image.name}`">
+                            <!-- Botón de eliminar -->
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle"
+                                @click="deleteImage(image.id)"
+                                title="Eliminar imagen"
+                             >
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </template>
+
+                    <!-- Miniaturas de imágenes nuevas (staged) -->
+                    <template x-for="(file, index) in stagedFiles" :key="index">
+                        <div class="position-relative border rounded shadow-sm" style="width: 120px; height: 120px; opacity: 0.7;">
+                            <img :src="file.previewUrl" class="w-100 h-100" style="object-fit: cover;" alt="Preview">
+                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle" @click="removeStagedImage(index)" title="Cancelar subida">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-50 text-white text-center small p-1">
+                                Pendiente
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Botón para añadir nuevas imágenes -->
+                    <label for="image-upload-input" class="btn btn-outline-secondary d-flex justify-content-center align-items-center cursor-pointer"
+                           style="width: 120px; height: 120px; border-style: dashed;"
+                           :class="{'disabled': uploading}">
+                        <span x-show="!uploading" class="fs-4" title="Añadir imágenes">+</span>
+                        <span x-show="uploading" class="spinner-border spinner-border-sm" role="status"></span>
+                    </label>
+                    <input id="image-upload-input" type="file" class="d-none" multiple accept="image/*" @change="stageImages" :disabled="uploading" x-ref="imageInput">
+                </div>
+
+                <div class="mt-3 d-flex justify-content-end" x-show="stagedFiles.length > 0">
+                    <div>
+                        <button class="btn btn-outline-dark me-2" @click="$refs.imageInput.click()" :disabled="uploading">Subir imágenes</button>
+                    </div>
+                    <div x-show="stagedFiles.length > 0">
+                        <button class="btn btn-dark" @click="uploadStagedImages" :disabled="uploading">
+                            <span x-show="uploading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span x-text="uploading ? 'Guardando...' : 'Guardar ' + stagedFiles.length + ' imágen(es)'"></span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="mt-2">
+                    <template x-if="error">
+                        <div class="alert alert-danger" x-text="error"></div>
+                    </template>
+                    <template x-if="stagedFiles.length > 0">
+                        <p class="text-muted fst-italic small mt-2">Tienes <span x-text="stagedFiles.length"></span> imágen(es) pendiente(s) de guardar.</p>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Tallas disponibles</h5>
+                    <button
+                        class="btn btn-dark"
+                        @click="$dispatch('open-add-sizes', { designId: item.id, designCode: item.code })"
+                    >
+                        <i class="bi bi-plus-circle me-1"></i> Agregar Tallas
+                    </button>
+                </div>
+
+
+                <div>
+                    <div class="text-muted">Lista de tallas disponibles</div>
+
+                    <ul class="list-group ">
+                        <template x-for="variant in variants" :key="variant.id">
+                            <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectVariant(variant.id)" >
+                            <div class="d-flex justify-content-between align-items-center">
+
+                                <div>
+                                    <span x-text="variant.code"></span>
+
+                                    <span class="fw-semibold badge text-bg-secondary"
+                                        x-text="variant.size.value">
+                                    </span>
+
+                                </div>
+                                <div>
+                                    <span class="badge" :class="setStatusClass(variant.lifecycle_status)" x-text="getLifeStatus(variant.lifecycle_status)"></span>
+                                </div>
+
+                            </div>
+                            </li>
+                        </template>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div>
+        <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar {{label.design}}</button>
+    </div>
+
+    <!-- Incluimos el Offcanvas para añadir tallas -->
+    {% include 'products/designs/_addSizesOffcanvas.html' %}
+
+</div>
+
+<script>
+    function detail(id){
+        return{
+            item:{},
+            variants:[],
+            error:'',
+            api:'',
+            message:'',
+            type:'',
+            id:id,
+            apiFetch: `product-designs/${id}`,
+            api: `/products/designs`,
+            apiPatch: `/api/v1/product-designs/${id}`,
+
+            draft_message: '',
+            uploading: false,
+            stagedFiles: [], // Array para guardar { file: FileObject, previewUrl: 'data:...' }
+
+
+            init(){
+                console.log('init... id: ', id)
+                this.fetchItem(id);
+            },
+
+            async fetchItem(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiFetch);
+
+                    this.item = res;
+                    if (this.item.images) this.item.images.sort((a, b) => a.order - b.order); // Asegurar orden
+                    console.log('res: ', res);
+                    this.fetchVariants(id)
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
+            },
+
+
+            async fetchVariants(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-variants?design_id=${id}`);
+                    console.log('res products: ', res);
+                    this.variants = res;
+                    if(this.variants.length === 0) this.draft_message='Debe establecer las tallas disponibles'
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
+
+            },
+
+            redirectVariant(id){
+                window.location.href = `/products/${this.item.product_id}/designs/${this.item.id}/variants/${id}`;
+            },
+
+
+            getLifeStatus(lifestatus){
+                if (lifestatus === 'DRAFT') {
+                    return 'Borrador';
+                } else if (lifestatus === 'READY') {
+                    return 'Activo';
+                } else if (lifestatus === 'ARCHIVED') {
+                    return 'Inactivo'
+                }else{
+                    return 'Borrador'
+                }
+            },
+
+            setStatusClass(status) {
+                if (status === 'DRAFT') {
+                    return 'text-bg-warning';
+                } else if (status === 'READY') {
+                    return 'text-bg-success';
+                } else if (status === 'ARCHIVED') {
+                    return 'text-bg-secondary';
+                } else {
+                    return 'text-bg-warning';
+                }
+            },
+
+            redirectPcolors(id){
+                return
+            },
+
+            // Paso 1: Prepara las imágenes y muestra miniaturas
+            stageImages(event) {
+                const files = Array.from(event.target.files);
+                if (files.length === 0) return;
+
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.stagedFiles.push({ file: file, previewUrl: e.target.result });
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                event.target.value = ''; // Limpiar el input
+            },
+            removeStagedImage(index) {
+                this.stagedFiles.splice(index, 1);
+            },
+            // Paso 2: Sube las imágenes preparadas al servidor
+            async uploadStagedImages() {
+                console.log('init images Upload')
+                if (this.stagedFiles.length === 0) return;
+
+                this.uploading = true;
+                this.error = '';
+                const formData = new FormData();
+                this.stagedFiles.forEach(staged => {
+                    formData.append('files', staged.file);
+                });
+
+                let uploadedImageIds = []; // Almacenamos los IDs de las imágenes subidas
+                try {
+                    // Usamos el nuevo endpoint genérico de subida
+                    const imgRes = await fetch(`/api/v1/media/upload/designs`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!imgRes.ok) {
+                        throw new Error('Falló la subida de imágenes.');
+                    }
+                    const uploadedImages = await imgRes.json();
+                    // Guardamos solo los IDs de las imágenes subidas
+                    uploadedImageIds = uploadedImages.map(img => img.id);
+                    console.log('uploadedImages: ', uploadedImageIds);
+                    this.stagedFiles = [];
+
+                } catch (e) {
+                    this.error = e.message;
+                    this.submitting = false;
+                    return; // Detenemos si la subida de imágenes falla
+                }
+
+                try{
+                    const payload = {
+                        media_ids: uploadedImageIds,
+                        design_id: this.id,
+                    };
+                    console.log('payload: for images: ', payload)
+                    const updateImages = await fetch(`/api/v1/product-designs/images`, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    if (!updateImages.ok) {
+                        throw new Error('Falló la actualización de imágenes.');
+                    }
+
+                    refresh_images = this.fetchItem(this.id);
+                    this.item.images = refresh_images.images;
+
+                    this.message = 'Imágenes guardadas con éxito';
+                    this.submitting = false;
+                    this.uploading = false;
+                }catch(e){
+                    this.error = e.message;
+                    this.submitting = false;
+                    this.uploading = false;
+                    return; // Detenemos si la actualización de imágenes falla
+                }
+            },
+
+            async deleteImage(imageId) {
+                if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) return;
+                this.error = '';
+                try {
+                    // Usaremos un nuevo endpoint para desasociar la imagen
+                    await window.guifer.helpers.fetch.apiFetch('DELETE',`media/delete/designs/${imageId}`);
+                    // Actualizamos la UI localmente para una respuesta más rápida
+                    this.item.images = this.item.images.filter(img => img.id !== imageId);
+                } catch (error) {
+                    this.error = 'No se pudo eliminar la imagen.';
+                    console.error(error);
+                }
+            },
+
+            async deleteObj(id){
+                if (!confirm('¿Estás seguro de que quieres eliminar este diseño?')) {
+                    return;
+                }
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', this.apiFetch);
+                    if (res) {
+                        alert('Registro eliminado con éxito');
+                        this.message = 'Registro eliminado con éxito';
+                        window.location.href = `/products/${this.item.product_id}`;
+                    } else {
+                        this.error = 'Error al eliminar registro';
+                    }
+                } catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
+            },
+
+
+        }
+    }
+</script>

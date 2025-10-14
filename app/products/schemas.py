@@ -26,6 +26,7 @@ line_fields = {
     "description": fields.String,
     "count_products": fields.Integer,
     "is_active": fields.Boolean,
+    "lifecycle_status": fields.String,
 }
 
 subline_fields = {
@@ -35,6 +36,7 @@ subline_fields = {
     "description": fields.String,
     "count_products": fields.Integer,
     "is_active": fields.Boolean,
+    "lifecycle_status": fields.String,
 }
 
 
@@ -48,6 +50,7 @@ size_series_fields = {
     "category": fields.String,
     "is_active": fields.Boolean,
     "count_sizes": fields.Integer,
+    "lifecycle_status": fields.String,
 }
 
 
@@ -81,6 +84,8 @@ product_variant_fields = {
     "design_id": fields.Integer,
     "materials": fields.List(fields.Nested(product_variant_material_detail_fields)),
     "size": fields.Nested(size_fields),
+    "lifecycle_status": fields.String,
+    "product_id": fields.Integer,
 }
 
 variants_small = {
@@ -88,6 +93,8 @@ variants_small = {
     "code": fields.String,
     "stock": fields.Float,
     "size": fields.Nested(size_fields),
+    "lifecycle_status": fields.String,
+    "product_id": fields.Integer,
 }
 
 small_product_fields = {
@@ -108,6 +115,7 @@ small_product_fields = {
     "collection_name": fields.String(attribute="collection.name"),
     "target_name": fields.String(attribute="target.name"),
     "created_at": fields.String,
+    "lifecycle_status": fields.String,
 }
 color_names_field = fields.List(fields.String(attribute="name"), attribute="colors")
 
@@ -120,9 +128,19 @@ design_image_association_fields = {
     "order": fields.Integer,
 }
 
+product_design_images_fields = {
+    "id": fields.Integer,
+    "design_id": fields.Integer,
+    "media_file_id": fields.Integer,
+    "is_primary": fields.Boolean,
+    "order": fields.Integer,
+    "media_file": fields.Nested(design_image_association_fields),
+}
+
 product_design_fields = {
     "id": fields.Integer,
     "code": fields.String,
+    "name": fields.String,
     "description": fields.String,
     "product_id": fields.Integer,
     "colors": fields.List(fields.Nested(color_fields)),
@@ -135,7 +153,7 @@ product_design_fields = {
     "is_active": fields.Boolean,
     "product": fields.Nested(small_product_fields),
     "current_price": fields.Float,
-    "status": fields.String,
+    "lifecycle_status": fields.String,
     "old_code": fields.String,
 }
 
@@ -160,7 +178,7 @@ product_fields = {
     "created_at": fields.String,
     "is_active": fields.Boolean,
     "old_code": fields.String,
-    "status": fields.String,
+    "lifecycle_status": fields.String,
 }
 
 collection_fields = {
@@ -183,6 +201,7 @@ collection_fields = {
     "last_type_name": fields.String(attribute="last_type.name"),
     "last_code": fields.String(attribute="last_type.code"),
     "count_products": fields.Integer(attribute="count_products"),
+    "lifecycle_status": fields.String,
 }
 
 
@@ -202,4 +221,5 @@ last_type_fields = {
     "collection_id": fields.Integer,
     "collection_name": fields.String(attribute="collection.name"),
     "lasts": fields.List(fields.Nested(last_fields)),
+    "lifecycle_status": fields.String,
 }

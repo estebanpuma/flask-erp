@@ -7,7 +7,7 @@ from ..core.resources import (
     BasePatchResource,
     BasePostResource,
 )
-from ..core.utils import error_response, success_response
+from ..core.utils import success_response
 from .schemas import (
     collection_fields,
     color_fields,
@@ -15,6 +15,7 @@ from .schemas import (
     last_type_fields,
     line_fields,
     product_design_fields,
+    product_design_images_fields,
     product_fields,
     product_variant_fields,
     product_variant_material_detail_fields,
@@ -29,6 +30,7 @@ from .services import (
     LastService,
     LastTypeService,
     LineService,
+    ProductDesignImageService,
     ProductService,
     ProductVariantMaterialService,
     SublineService,
@@ -108,6 +110,17 @@ class ProductDesignDeleteResource(BaseDeleteResource):
     service_delete = staticmethod(DesignService.delete_obj)
 
 
+# /-----------------ProductDesignImages-----------------------
+class ProductDesignImageGet(BaseGetResource):
+    schema_list = staticmethod(ProductDesignImageService.get_obj_list)
+    output_fields = product_design_images_fields
+
+
+class ProductDesignImagePost(BasePostResource):
+    service_create = staticmethod(ProductDesignImageService.create_obj)
+    output_fields = product_design_images_fields
+
+
 # **************************ProdcutVariant***********************************
 # **************************************************************************
 class ProductVariantGetResource(BaseGetResource):
@@ -128,7 +141,7 @@ class ProductVariantListResource(BaseGetResource):
 
 
 class ProductVariantPostResource(BasePostResource):
-    service_create = staticmethod(VariantService.create_variants_obj)
+    service_create = staticmethod(VariantService.create_obj)
     output_fields = product_variant_fields
 
 
@@ -139,7 +152,8 @@ class ProductVariantPatchResource(BasePatchResource):
 
 
 class ProductVariantDeleteResource(BaseDeleteResource):
-    service_delete = VariantService.delete_obj
+    service_get = staticmethod(VariantService.get_obj)
+    service_delete = staticmethod(VariantService.delete_obj)
 
 
 # ***************************** VariantMaterialDetail***************************
@@ -170,34 +184,8 @@ class ProductVariantMaterialPatchResource(BasePatchResource):
 
 
 class ProductVariantMaterialDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(ProductVariantMaterialService.get_obj)
     service_delete = staticmethod(ProductVariantMaterialService.delete_obj)
-
-
-# ***********************VariantImage*****************************************
-# ***************************************************************************
-class ProductVariantImagePostResource(Resource):
-    def post(self, variant_id):
-        try:
-            pass
-
-        except Exception as e:
-            return error_response(f"Error al subir imagen: {str(e)}", 500)
-
-
-class ProductVariantImageGetResource(Resource):
-    def get(self, variant_id):
-        try:
-            pass
-        except Exception as e:
-            return error_response(f"Error al obtener imágenes: {str(e)}")
-
-
-class ProductVariantImageDeleteResource(Resource):
-    def delete(self, image_id):
-        try:
-            pass
-        except Exception as e:
-            return error_response(f"Error al eliminar imagen: {str(e)}")
 
 
 # /*************************************************************************************
