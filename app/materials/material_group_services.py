@@ -28,7 +28,9 @@ class MaterialGroupService:
             )
 
         group = MaterialGroup(
-            code=dto.code.upper(), name=dto.name.strip(), description=dto.description
+            code=dto.code.upper(),
+            name=dto.name.strip(),
+            description=dto.description,
         )
         db.session.add(group)
         return group

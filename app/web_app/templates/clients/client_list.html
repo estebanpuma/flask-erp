@@ -1,12 +1,16 @@
+{% from 'components/floatingButton.html' import floating_button %}
 {% extends 'base.html' %}
-{% block title %}Clientes | Guifer{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader%}
+{% block title %}Clientes{% endblock %}
 
 {% block content %}
 
-  <div x-data="{ href: '/sales/index', title: '👤 Clientes' }" class="d-flex justify-content-between align-items-center mb-3">
-    {% include 'components/_pageHeader.html' %}
-    <button class="btn btn-dark" @click="window.location.href='/clients/create'">+ Nuevo</button>
-  </div>
+{{ pageHeader(href='/sales/index',
+              title='👤'~label.clients,
+              has_btn=True,
+              btn_label='Nuevo'~label.client,
+              btn_href='/clients/create'
+              ) }}
 
     <div
       x-data="genericList(
@@ -15,19 +19,26 @@
         [
           { field: 'ruc_or_ci',        label: 'RUC/CI',      filterable: true  },
           { field: 'name',        label: 'Nombre',      filterable: true  },
+          { field: 'total_sales',        label: 'Ventas',      filterable: true  },
           { field: 'province.name',        label: 'Provincia',      filterable: true  },
-          { field: 'purchases_count',        label: 'Compras',      filterable: true  },
+          { field: 'canton.name',        label: 'Cantón',      filterable: true  },
+          { field: 'lifecycle_status',        label: 'Estado',      filterable: true  , component: 'statusBadge', props: { kind: 'lifecycle_status' } },
         ]
       )"
 
       class="table-responsive"
     >
+    <div class="d-none d-md-block">
       {% include 'components/listTable.html' %}
+    </div>
+
+    <div class="d-block d-md-none">
+      {% include 'components/listCard.html' %}
+    </div>
   </div>
 
 
 {% endblock %}
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
    <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}

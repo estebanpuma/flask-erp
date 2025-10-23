@@ -3,7 +3,25 @@
 # Este diccionario centraliza las etiquetas de la interfaz de usuario.
 # Si necesitas cambiar "Línea" por "Tipo", solo lo cambias aquí.
 UI_LABELS = {
-    # Singular y Plural
+    "province": "Provincia",
+    "provinces": "Provincias",
+    "canton": "Cantón",
+    "cantons": "Cantones",
+    "ruc_or_ci": "RUC o Cédula",
+    "client": "Cliente",
+    "clients": "Clientes",
+    "sale_order": "Orden de venta",
+    "sale_orders": "Ordenes de venta",
+    "invoice": "Factura",
+    "invoices": "Facturas",
+    "payment": "Pago",
+    "payments": "Pagos",
+    "delivery": "Entrega",
+    "deliveries": "Entregas",
+    "groups": "Grupos",
+    "group": "Grupo",
+    "subgroups": "Subgrupos",
+    "subgroup": "Subgrupo",
     "line": "Línea",
     "lines": "Líneas",
     "subline": "Sublínea",

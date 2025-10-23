@@ -11,6 +11,7 @@
     x-init="init()"
     @open-generic-editor.window="open($event.detail)"
     x-ref="offcanvas"
+    @updated-value.window="formValue = $event.detail"
 
 >
     <div class="offcanvas-header">
@@ -33,6 +34,33 @@
                 <template x-if="type === 'textarea'">
                     <textarea class="form-control" :id="field" x-model="formValue" rows="4"></textarea>
                 </template>
+                <template x-if="type === 'select'">
+                    <div>
+                        <select class="form-select" :id="field" x-model="formValue" @change="fetchCantons()">
+                            <option value="">Seleccione una opción</option>
+                            <template x-for="option in formOptions" :key="option.id">
+                                <option :value="option.id"  x-text="option.name"></option>
+                            </template>
+                        </select>
+
+
+                        <template x-if="field==='province_id'">
+                            <div class="mt-3">
+                                <label for="canton" class="form-label">Canton</label>
+                                <select class="form-select" :id="'canton'" x-model="canton_id" >
+                                    <option value="">Seleccione una opción</option>
+                                    <template x-for="canton in cantons" :key="canton.id">
+                                        <option :value="canton.id"  x-text="canton.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                        </template>
+
+                    </div>
+
+                </template>
+
             </div>
 
             <!-- Mensajes de estado -->
@@ -69,9 +97,16 @@ function genericEditor() {
         message: '',
         success: false,
 
+        cantons:[],
+        canton_id:'',
+
+        formOptions: [],
+
+
         // --- Métodos ---
         init() {
             this._offcanvas = new bootstrap.Offcanvas(this.$refs.offcanvas);
+
         },
 
         open(detail) {
@@ -79,6 +114,7 @@ function genericEditor() {
             this.label = detail.label || 'Valor';
             this.field = detail.field;
             this.formValue = detail.value;
+            this.formOptions = detail.options || [];
             this.originalValue = detail.value;
             this.type = detail.type || 'text';
             this.patchUrl = detail.patchUrl;
@@ -88,7 +124,22 @@ function genericEditor() {
             this.success = false;
             this.loading = false;
             this._offcanvas.show();
+            if(this.field === 'province_id'){
+                this.fetchCantons();
+            }
+
         },
+
+        async fetchCantons(){
+            try{
+                const res = await window.guifer.helpers.fetch.apiFetch('GET', 'cantons?province_id='+this.formValue);
+                console.log('res: ', res);
+                this.cantons = res;
+            }catch(err){
+                console.error('API error: ', error)
+            }
+        },
+
 
         async save() {
             if (!this.patchUrl || !this.field) return;
@@ -97,7 +148,18 @@ function genericEditor() {
             this.message = '';
 
             try {
-                const payload = { [this.field]: this.formValue };
+                let payload = { [this.field]: this.formValue };
+                if(this.field === 'province_id'){
+                    const canton = this.cantons.find(canton => canton.id == this.canton_id);
+
+                    if (!canton || canton.province_id != this.formValue) {
+                        this.message = 'Debe elegir un canton que pertenezca a la provincia'
+                        return;
+                    }
+                    payload = {};
+                    payload.province_id = this.formValue;
+                    payload.canton_id = this.canton_id;
+                }
                 const response = await fetch(this.patchUrl, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -112,13 +174,14 @@ function genericEditor() {
 
                 this.success = true;
                 this.message = '¡Guardado con éxito!';
+                this.$dispatch('updated-value', {field: this.field, value: this.formValue});
 
-                // Ejecutar callback si existe
+                               // Ejecutar callback si existe
                 if (typeof this.onSaveCallback === 'function') {
                     this.onSaveCallback(data);
                 }
 
-                setTimeout(() => this._offcanvas.hide(), 1000);
+                setTimeout(() => this._offcanvas.hide(), 500);
 
             } catch (error) {
                 this.success = false;

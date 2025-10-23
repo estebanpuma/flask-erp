@@ -10,7 +10,8 @@ from ..common.parsers import parse_int
 from ..common.utils import ExcelImportService
 from ..core.error_handlers import ConflictError, NotFoundError, ValidationError
 from ..core.filters import apply_filters
-from .entities import ClientCategoryEntity, ClientEntity, ContactEntity
+from .entities import ClientCategoryEntity, ClientEntity
+from .models import Client, Contact
 
 
 class ClientCategoryService:
@@ -149,15 +150,14 @@ class CRMServices:
         return clients
 
     @staticmethod
-    def get_obj_list(filters=None):
-        from .models import Client
-
-        return apply_filters(Client, filters)
+    def get_obj_list(filters: dict = None):
+        print("servicios ")
+        filtered = apply_filters(Client, filters)
+        print("filtered: ", filtered)
+        return filtered
 
     @staticmethod
-    def get_obj(client_id):
-        from .models import Client
-
+    def get_obj(client_id: int):
         client = Client.query.options(
             joinedload(Client.canton), joinedload(Client.province)
         ).get(client_id)
@@ -210,34 +210,31 @@ class CRMServices:
             raise Exception("No se pudo crear el cliente por un error interno.")
 
     @staticmethod
-    def patch_obj(instance, data: dict):
-        print(f"entra a ipatch service: {instance}")
+    def patch_obj(instance: Client, data: dict):
 
-        # 2. Fusionar datos actuales con nuevos (defensivamente)
-        merged_data = {
-            "name": data.get("name", instance.name),
-            "email": data.get("email", instance.email),
-            "phone": data.get("phone", instance.phone),
-            "address": data.get("address", instance.address),
-            "province_id": data.get("province_id", instance.province_id),
-            "canton_id": data.get("canton_id", instance.canton_id),
-            "is_special_taxpayer": data.get(
-                "is_special_taxpayer", instance.is_special_taxpayer
-            ),
-            "client_type": data.get("client_type", instance.client_type),
-            "client_category_id": data.get(
-                "client_category_id", instance.client_category_id
-            ),
-        }
-        print(f"pasa merger data: {merged_data}")
-        # 3. Validar con entidad
-        # CRMServices._validate_province_canton_relationship(entity.province_id, entity.canton_id)
+        from .dto import ClientPatchDTO
 
-        # 5. Actualizar atributos
-        for key, value in merged_data.items():
-            setattr(instance, key, value)
+        dto = ClientPatchDTO.model_validate(data)
+        if dto.name is not None:
+            instance.name = dto.name
+        if dto.ruc_or_ci is not None:
+            instance.ruc_or_ci = dto.ruc_or_ci
+        if dto.client_type is not None:
+            instance.client_type = dto.client_type
+        if dto.province_id is not None:
+            instance.province_id = dto.province_id
 
-        # 6. Guardar cambios
+        if dto.canton_id is not None:
+            instance.canton_id = dto.canton_id
+
+        if dto.address is not None:
+            instance.address = dto.address
+
+        if dto.client_category_id is not None:
+            instance.client_category_id = dto.client_category_id
+        if dto.is_special_taxpayer is not None:
+            instance.is_special_taxpayer = dto.is_special_taxpayer
+
         try:
             db.session.commit()
             return instance
@@ -475,47 +472,76 @@ class ContactService:
 
         return apply_filters(Contact, filters)
 
-    def create_obj(data):
-        from .models import Client, Contact
+    @staticmethod
+    def create_obj(data: dict):
+        from .dto import ContactCreateDTO
 
-        entity = ContactEntity(data)
+        with db.session.begin():
+            dto = ContactCreateDTO.model_validate(data)
+            new_contact = ContactService.create_contact(
+                name=dto.name,
+                client_id=dto.client_id,
+                email=dto.email,
+                phone=dto.phone,
+                position=dto.position,
+                notes=dto.notes,
+                birth_date=dto.birth_date,
+            )
+            return new_contact
 
-        if not Client.query.get(entity.client_id):
+    @staticmethod
+    def create_contact(
+        name: str,
+        client_id: int,
+        email: str = None,
+        phone: str = None,
+        position: str = None,
+        notes: str = None,
+        birth_date: str = None,
+    ):
+
+        if not Client.query.get(client_id):
             raise ValidationError("Cliente no encontrado.")
 
         contact = Contact(
-            name=entity.name,
-            email=entity.email,
-            phone=entity.phone,
-            position=entity.position,
-            notes=entity.notes,
-            birth_date=entity.birth_date,
-            client_id=entity.client_id,
+            name=name,
+            email=email,
+            phone=phone,
+            position=position,
+            notes=notes,
+            birth_date=birth_date,
+            client_id=client_id,
         )
 
         db.session.add(contact)
-        db.session.commit()
         return contact
 
-    def patch_obj(contact, data):
-        merged_data = {
-            "name": data.get("name", contact.name),
-            "email": data.get("email", contact.email),
-            "phone": data.get("phone", contact.phone),
-            "position": data.get("position", contact.position),
-            "notes": data.get("notes", contact.notes),
-            "birth_date": data.get("birth_date", contact.birth_date),
-            "client_id": data.get("client_id", contact.client_id),
-        }
+    def patch_obj(contact: Contact, data: dict):
+        from .dto import ContactPatchDTO
 
-        ContactEntity(merged_data)
+        dto = ContactPatchDTO.model_validate(data)
+        if dto.name is not None:
+            contact.name = dto.name
+        if dto.email is not None:
+            contact.email = dto.email
+        if dto.phone is not None:
+            contact.phone = dto.phone
+        if dto.position is not None:
+            contact.position = dto.position
+        if dto.notes is not None:
+            contact.notes = dto.notes
+        if dto.birth_date is not None:
+            contact.birth_date = dto.birth_date
 
-        for k, v in data.items():
-            setattr(contact, k, v)
+        try:
+            db.session.add(contact)
+            db.session.commit()
+            return contact
+        except Exception as e:
+            db.session.rollback()
+            raise e
 
-        db.session.commit()
-        return contact
-
+    @staticmethod
     def delete_obj(contact):
         db.session.delete(contact)
         try:

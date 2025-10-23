@@ -11,8 +11,8 @@ def materials_list():
 
 
 @materials_bp.route("/<int:id>")
-def meterials_detail(id):
-    return render_template("materials/material_detail.html", material_id=id)
+def materials_detail(id):
+    return render_template("materials/material_detail.html", id=id)
 
 
 @materials_bp.route("/create", methods=["GET"])
@@ -22,7 +22,7 @@ def create_material_view():
 
 @materials_bp.route("/<int:id>/edit")
 def edit_material(id):
-    return render_template("materials/material_edit.html", material_id=id)
+    return render_template("materials/material_edit.html", id=id)
 
 
 # ***************Lots**********************
@@ -57,7 +57,7 @@ def groups_list():
 
 @materials_bp.route("/groups/<int:id>")
 def groups_detail(id):
-    return render_template("materials/groups/groups_detail.html", group_id=id)
+    return render_template("materials/groups/groups_detail.html", id=id)
 
 
 @materials_bp.route("/groups/create", methods=["GET"])
@@ -65,6 +65,18 @@ def create_group_view():
     return render_template("materials/groups/groups_create.html")
 
 
-@materials_bp.route("/groups/<int:id>/edit")
-def edit_group(id):
-    return render_template("materials/groups/groups_edit.html", group_id=id)
+# ----------------------------SubGroups--------------------------------------------
+# ------------------------------------------------------------------------------
+@materials_bp.route("/subgroups/")
+def subgroups_list():
+    return render_template("materials/subgroups/subgroups_list.html")
+
+
+@materials_bp.route("/subgroups/<int:id>")
+def subgroups_detail(id):
+    return render_template("materials/subgroups/subgroups_detail.html", id=id)
+
+
+@materials_bp.route("/subgroups/create", methods=["GET"])
+def subcreate_group_view():
+    return render_template("materials/subgroups/subgroups_create.html")

@@ -1,14 +1,15 @@
 {% extends "base.html" %}
+{% from 'components/_pageHeader.html' import pageHeader%}
 {% block title %}Grupos{% endblock %}
+
 {% block content %}
 
-<div x-data="{ href: '/inventory', title: ' Grupos' }">
-    {% include 'components/_pageHeader.html' %}
-</div>
-
-<a href="/materials/groups/create" class="btn btn-dark">
-        <i class="bi bi-plus-circle me-1"></i> Nuevo grupo
-</a>
+{{ pageHeader(href='/inventory',
+              title='Grupos',
+              has_btn=True,
+              btn_label='Nuevo grupo',
+              btn_href='/materials/groups/create'
+              ) }}
 
 <div
     x-data="genericList(
@@ -23,8 +24,22 @@
     )"
     class="table-responsive"
   >
+
+  <template x-if="error">
+      <div class="alert alert-danger" role="alert" x-text="error"></div>
+  </template>
+
+  <div class="d-none d-md-block">
     {% include 'components/listTable.html' %}
   </div>
+
+  <div class="d-md-none">
+    {% include 'components/listCard.html' %}
+  </div>
+
+
+
+</div>
 
 
 

@@ -1,16 +1,18 @@
-{% extends 'base.html' %}
-{% block title %}Materiales | Guifer{% endblock %}
-
+{% extends "base.html" %}
+{% block title %}Materiales{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% block content %}
-<div class="mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>📦 Materiales</h3>
-        <button class="btn btn-dark" @click="window.location.href='/materials/create'">+ Nuevo</button>
-    </div>
+{{ pageHeader(href='/inventory/index',
+              title='Materiales',
+              has_btn=True,
+              btn_label='Nuevo material',
+              btn_href='/materials/create'
+              ) }}
 
 
-    <div
+
+  <div
     x-data="genericList(
       '/api/v1/materials',
       '/materials',
@@ -24,9 +26,21 @@
     x-init="init()"
     class="table-responsive"
   >
+  <template x-if="error">
+    <div class="alert alert-danger" role="alert" x-text="error"></div>
+  </template>
+
+    <!-- Vista de Escritorio (Tabla Genérica) -->
+  <div class="d-none d-md-block">
     {% include 'components/listTable.html' %}
   </div>
 
+      <!-- Vista Móvil con Buscador -->
+  <div class="d-md-none">
+    {% include 'components/listCard.html' %}
+  </div>
+
+</div>
 
 
 

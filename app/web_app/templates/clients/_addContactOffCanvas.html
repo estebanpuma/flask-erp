@@ -1,0 +1,136 @@
+<!-- Offcanvas para añadir tallas a un diseño -->
+<div
+  x-data="addContacts()"
+  @open-add-contact.window="open($event.detail.item)"
+  class="offcanvas offcanvas-end"
+  tabindex="-1"
+  id="addContactOffcanvas"
+  aria-labelledby="addContactOffcanvasLabel"
+  x-ref="offcanvasContact"
+  @contacts-created.window="item.contacts = $event.detail"
+>
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="addContactOffcanvasLabel">
+            Añadir Contactos <span class="badge bg-secondary" x-text="item?.name"></span>
+        </h5>
+        <button type="button" class="btn-close" @click="close()" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <!-- Instrucción -->
+        <div class="mb-3">
+            <p>Información del contacto </p>
+        </div>
+
+        <template x-if="error">
+            <div x-text="error" class="alert alert-danger" role="alert"></div>
+        </template>
+        <template x-if="message">
+            <div x-text="message" class="alert alert-success" role="alert"></div>
+        </template>
+
+        <form action="">
+            <div class="mb-3">
+                <label for="name" class="form-label">Nombre</label>
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" x-model="form.name" id="name" placeholder="Nombre">
+                    <label for="name">Nombre</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="phone" class="form-label">Telefono</label>
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" x-model="form.phone" id="phone" placeholder="Telefono"
+                    required>
+                    <label for="phone">Telefono</label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" x-model="form.email" id="email" placeholder="Email">
+                    <label for="email">Email</label>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-footer d-grid">
+        <button class="btn btn-dark" @click="submitForm()" :disabled="submitting">
+            <span x-show="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span x-text="submitting ? 'Guardando...' : 'Guardar'"></span>
+        </button>
+    </div>
+
+</div>
+
+<script>
+function addContacts() {
+  return {
+    item: null,
+    bsOffcanvas: null,
+    form:{
+        name:'',
+        phone:'',
+        email:''
+    },
+    error: '',
+    message: '',
+    submitting: false,
+
+    init() {
+      this.bsOffcanvas = new bootstrap.Offcanvas(this.$refs.offcanvasContact);
+      this.$refs.offcanvasContact.addEventListener('hidden.bs.offcanvas', () => this.reset());
+
+    },
+
+    open(item) {
+        this.item = item;
+        this.error = '';
+        this.message = '';
+        this.form.name = item.name;
+        this.bsOffcanvas.show();
+    },
+
+    close() {
+      this.bsOffcanvas.hide();
+    },
+
+    reset() {
+        this.form.name = ''; // Limpiar el nombre
+        this.form.phone = '';
+        this.form.email = '';
+        this.item = null; // Opcional, pero bueno para liberar la referencia
+        this.error = '';
+        this.message = '';
+        this.submitting = false;
+    },
+
+
+    async submitForm() {
+
+        const payload = {
+            client_id: this.item.id,
+            name: this.form.name,
+            phone: this.form.phone,
+            email: this.form.email,
+        };
+        console.log('payload: ', payload)
+        try {
+            this.submitting = true;
+            const res = await window.guifer.helpers.fetch.apiFetch('POST', 'contacts', payload);
+            this.message = 'Contactos agregados con éxito';
+            this.close();
+            this.submitting = false
+            this.$dispatch('contacts-created', { detail: res });
+
+        }catch(err){
+            console.error('API error: ', err);
+            this.error = err.message || 'Error desconocido al guardar';
+            return
+        }
+    },
+    }
+}
+</script>

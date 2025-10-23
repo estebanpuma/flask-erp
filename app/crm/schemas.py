@@ -25,7 +25,19 @@ client_category_fields = {
     "name": fields.String,
     "description": fields.String,
 }
-# Define los campos que serán serializados
+
+
+contact_fields = {
+    "id": fields.Integer,
+    "name": fields.String,
+    "email": fields.String,
+    "phone": fields.String,
+    "position": fields.String,
+    "notes": fields.String,
+    "birth_date": fields.String,
+    "client_id": fields.Integer,
+}
+
 client_fields = {
     "id": fields.Integer,
     "ruc_or_ci": fields.String,
@@ -35,10 +47,14 @@ client_fields = {
     "address": fields.String,
     "phone": fields.String,
     "is_special_taxpayer": fields.Boolean,
-    "province": fields.Nested(province_name_fields),
+    "province": fields.Nested(province_fields),
     "canton": fields.Nested(canton_fields),
     "province_id": fields.Integer,
     "canton_id": fields.Integer,
+    "contacts": fields.List(fields.Nested(contact_fields)),
+    "client_category": fields.Nested(client_category_fields),
+    "client_category_id": fields.Integer,
+    "lifecycle_status": fields.String,
 }
 
 client_search_fields = {
@@ -53,15 +69,4 @@ client_search_fields = {
     "province_name": fields.String,
     "province_id": fields.Integer,
     "canton_id": fields.Integer,
-}
-
-contact_fields = {
-    "id": fields.Integer,
-    "name": fields.String,
-    "email": fields.String,
-    "phone": fields.String,
-    "position": fields.String,
-    "notes": fields.String,
-    "birth_date": fields.String,
-    "client_id": fields.Integer,
 }

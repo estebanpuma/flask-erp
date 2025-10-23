@@ -1,0 +1,225 @@
+<!-- Offcanvas para añadir tallas a un diseño -->
+<div
+  x-data="cloneMaterialsManager()"
+  @open-clone-materials.window="open($event.detail.variantId)"
+  class="offcanvas offcanvas-end"
+  tabindex="-1"
+  id="cloneMaterialsOffcanvas"
+  aria-labelledby="cloneMaterialsOffcanvasLabel"
+  x-ref="offcanvas"
+  @cloned-materials.window="handleCloned($event.detail)"
+>
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="cloneMaterialsOffcanvasLabel">
+      Clonar Materiales
+      <span class="badge bg-secondary" x-text="sourceVariant.code"></span>
+    </h5>
+    <button type="button" class="btn-close" @click="close()" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <!-- Instrucción -->
+    <div class="mb-3">
+      <p>Selecciona una variante de este producto que ya tenga materiales asignados y clonalos. No olvides realizar lo cambios necesarios</p>
+    </div>
+
+    <template x-if="error">
+      <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+    <template x-if="message">
+      <div x-text="message" class="alert alert-success" role="alert"></div>
+    </template>
+
+    <!-- Selector de color-->
+    <div class="form-floating mb-3">
+      <select class="form-select" id="design" x-model="designId" @change="loadVariants">
+        <option value="">Selecciona un color</option>
+        <template x-for="design in designs" :key="design.id">
+          <option :value="design.id"  x-text="design.code"></option>
+        </template>
+      </select>
+      <label for="design">Color</label>
+    </div>
+
+    <!-- Selector de tallas(variantes)-->
+    <div class="form-floating mb-3">
+      <select class="form-select" id="variant" x-model="targetVariantId" @change="loadMaterials">
+        <option value="">Selecciona una talla</option>
+        <template x-for="variant in variants" :key="variant.id">
+            <template x-if="variant.materials.length > 0">
+                <option :value="variant.id" x-text="variant.code"></option>
+            </template>
+        </template>
+      </select>
+      <label for="design">Talla</label>
+    </div>
+    <!-- Materiales a clonar -->
+    <div x-show="materials.length > 0"  class="mb-3">
+      <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-top">
+        <h6 class="mb-0">🧩 Materiales a clonar:</h6>
+        <button class="btn btn-sm btn-outline-secondary" @click="removeMaterials()" type="button" title="Limpiar selección">
+            <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <ul class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+        <template x-for="material in materials" :key="material.id">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <div>
+                    <small class="badge bg-secondary" x-text="material.material.name"></small>
+                </div>
+                <div>
+                    <span x-text="material.material.code"></span>
+                </div>
+            </div>
+            <div>
+                <span x-text="material.quantity"></span>
+                <span x-text="material.material.unit"></span>
+            </div>
+            <div>
+               <button class="btn btn-sm btn-outline-danger" @click="removeMaterial(material.id)"><i class="bi bi-x"></i></button>
+            </div>
+          </li>
+        </template>
+      </ul>
+      <div class="card-footer d-grid">
+        <button class="btn btn-dark" @click="cloneMaterials()" :disabled="submitting || clonedMaterials.length === 0">
+            <span x-show="submitting" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            <span x-text="submitting ? 'Guardando...' : 'Clonar Materiales'"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function cloneMaterialsManager() {
+  return {
+    bsOffcanvas: null,
+    product: {},
+    designId: null,
+    productId: null,
+    targetVariantId: null, // La variante a la que se le clonarán los materiales
+    sourceVariantId: null, // La variante de la que se copian los materiales
+    sourceVariant:{},
+    designs: [],
+    variants: [],
+    materials: [],
+    clonedMaterials: [],
+    error: '',
+    message: '',
+    submitting: false,
+
+
+    init() {
+      this.bsOffcanvas = new bootstrap.Offcanvas(this.$refs.offcanvas);
+      this.$refs.offcanvas.addEventListener('hidden.bs.offcanvas', () => this.reset());
+    },
+
+    open(variantId) {
+      this.targetVariantId = variantId;
+      console.log('Abriendo offcanvas para clonar a la variante:', this.targetVariantId);
+      this.fetchProductDataForVariant(this.targetVariantId);
+      this.bsOffcanvas.show();
+    },
+
+    close() {
+      this.bsOffcanvas.hide();
+    },
+
+    reset() {
+        this.product = {};
+        this.designId = null;
+        this.productId = null;
+        this.targetVariantId = null;
+        this.sourceVariantId = null;
+        this.sourceVariant = {};
+        this.designs = [];
+        this.variants = [];
+        this.materials = [];
+        this.clonedMaterials = [];
+        this.error = '';
+        this.message = '';
+        this.submitting = false;
+    },
+
+    async fetchProductDataForVariant(variantId) {
+        try {
+            const variant = await window.guifer.helpers.fetch.apiFetch('GET', `product-variants/${variantId}`);
+            this.sourceVariant = variant;
+            this.sourceVariantId = variant.id;
+            this.productId = variant.product_id;
+            const product = await window.guifer.helpers.fetch.apiFetch('GET', `products/${variant.product_id}`);
+            this.product = product;
+            this.designs = product.designs || [];
+        } catch (err) { this.error = 'No se pudo cargar la información del producto.'; }
+    },
+
+    async fetchDesigns() {
+      try {
+        this.variants = await window.guifer.helpers.fetch.apiFetch('GET', 'product-designs');
+      } catch (err) { this.error = 'No se pudo cargar las variantes.'; }
+    },
+
+    async loadVariants() {
+        try{
+            this.variants = await window.guifer.helpers.fetch.apiFetch('GET', `product-variants?design_id=${this.designId}`);
+            console.log('variants: ', this.variants);
+        }catch(err){
+            console.error('API error: ', err);
+            this.error= err;
+            return
+        }
+
+    },
+
+    async loadMaterials() {
+        try{
+            this.materials = await window.guifer.helpers.fetch.apiFetch('GET', `variant-materials?variant_id=${this.targetVariantId}`);
+            console.log('materials: ', this.materials);
+            this.clonedMaterials = this.materials
+        }catch(err){
+            console.error('API error: ', err);
+            this.error= err;
+            return
+        }
+    },
+
+    removeMaterial(id){
+      this.clonedMaterials = this.clonedMaterials.filter(mat => mat.id !== id);
+    },
+
+    removeMaterials(){
+      this.clonedMaterials = [];
+    },
+
+    async cloneMaterials() {
+        const payload = {
+            variant_id: this.sourceVariantId,
+            materials: this.clonedMaterials,
+        };
+        console.log('payload: ', payload)
+        try {
+            this.submitting = true;
+            const res = await window.guifer.helpers.fetch.apiFetch('POST', 'variant-materials', payload);
+            this.message = 'Materiales clonados con éxito';
+            this.removeMaterials();
+            this.close();
+            this.submitting = false
+            this.$dispatch('materials-updated');
+        } catch (err) {
+            console.error('API error: ', err);
+            this.error = err;
+            return;
+        }
+    },
+
+    handleCloned(newMaterials) {
+        // Esta función se llama cuando el evento es capturado
+        this.item.materials = newMaterials;
+    }
+
+    }
+}
+
+</script>

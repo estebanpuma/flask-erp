@@ -32,10 +32,12 @@ class ClientGetResource(BaseGetResource):
     Devuelve un cliente o una lista de clientes
     """
 
+    print("ento al resource 0")
     schema_get = staticmethod(CRMServices.get_obj)  # servicio para obtener un elemento
     schema_list = staticmethod(
         lambda: CRMServices.get_obj_list(request.args.to_dict())
     )  # servicio para obtener una lista de elementos
+    print("ento al resource")
     output_fields = client_fields
 
 

@@ -1,33 +1,24 @@
-<form @submit.prevent="submitForm" autocomplete="off" x-data="material_groupForm()">
+<form @submit.prevent="submitForm" autocomplete="off" x-data="material_subgroupForm(id)">
 
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control text-uppercase"
-           id="code" placeholder="Ej: Escolar"
-           x-model="form.code"
-           @input= "checkCode()"
-           required>
-    <label for="code">Código del grupo</label>
-    <template x-if="existing_code" >
-        <span id="codeFeedback" class="text-danger">
-             🚫 El código ya existe.
-        </span>
-    </template>
-  </div>
+    <div class="form-floating mb-3">
+        <input type="text" disabled class="form-control text-uppercase"
+            id="code" placeholder="Ej: Escolar"
+            x-model="form.material_group">
+    </div>
 
-
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control"
-           id="name" placeholder="Ej: Escolar"
-           x-model="form.name"
-           @input = "checkName()"
-           required>
-    <label for="name">Nombre</label>
-    <template x-if="existing_name" >
-        <span id="codeFeedback" class="text-danger">
-             🚫 El nombre ya existe.
-        </span>
-    </template>
-  </div>
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control"
+            id="name" placeholder="Ej: Escolar"
+            x-model="form.name"
+            @input = "checkName()"
+            required>
+        <label for="name">Nombre</label>
+        <template x-if="existing_name" >
+            <span id="codeFeedback" class="text-danger">
+                🚫 El nombre ya existe.
+            </span>
+        </template>
+    </div>
 
    <div class="form-floating mb-3">
     <textarea class="form-control" id="description"

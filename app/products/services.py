@@ -97,6 +97,7 @@ class ProductService:
             subline = SublineService.get_obj(subline_id)
             if subline is None:
                 raise ValueError("Sublinea no encontrada")
+
         target = TargetService.get_obj(target_id)
         if target is None:
             raise ValueError("Target no encontrada")
@@ -484,7 +485,10 @@ class ProductVariantMaterialService:
 
     @staticmethod
     def get_obj_list(filters=None):
-        return apply_filters(ProductVariantMaterialDetail, filters)
+        print(f"dentro de list filters: {filters}")
+        res = apply_filters(ProductVariantMaterialDetail, filters)
+        print("res", res)
+        return res
 
     @staticmethod
     def get_obj_list_by_variant(variant_id):

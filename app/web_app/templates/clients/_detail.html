@@ -1,13 +1,11 @@
-<div x-data="detail({{id}})" class="row g-2">
+<div x-data="detail({{id}})"  class="row g-2">
     <template x-if="error">
         <div x-text="error" class="alert alert-danger" role="alert"></div>
     </template>
     <template x-if="message">
         <div x-text="message" class="alert alert-success" role="alert"></div>
     </template>
-    <template x-if="draft_message">
-        <div x-text="draft_message" class="alert alert-warning" role="alert"></div>
-    </template>
+
 
     <div class="col-12">
         <div class="card mb-3">
@@ -27,7 +25,7 @@
 
                 <div class="mb-3">
 
-                    <div class="text-muted">Nombre de {{label.product}}</div>
+                    <div class="text-muted">Nombre de {{label.client}}</div>
                     <button class="d-flex justify-content-between rounded-2 form-control"
                     @click="$dispatch('open-generic-editor', {
                         title: 'Nombre',
@@ -37,41 +35,149 @@
                         type: 'text',
                         patchUrl: apiPatch,
                         help: 'El nombre debe tener al menos 3 caracteres.',
-                        onSave: () => { console.log('¡Guardado!'); alert('Guardado!'); location.reload(); }
+                        onSave: (updated) => { item.name = updated.name; }
                     })">
                         <div x-text="item.name"></div>
                         <div> <i class="bi bi-chevron-right"></i></div>
                     </button>
                 </div>
                 <div class="mb-3">
-                    <div class="text-muted">Código</div>
+                    <div class="text-muted">{{label.ruc_or_ci}}</div>
                     <button class="d-flex justify-content-between rounded-2 form-control " disabled>
-                        <div  x-text="item.code?item.code:'Sin codigo'"></div>
+                        <div  x-text="item.ruc_or_ci?item.ruc_or_ci:'Sin RUC/CI'"></div>
 
                     </button>
 
                 </div>
-                <!-- Fila de Descripción -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila de direccion -->
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Dirección</h5>
                 <div class="mb-3">
-                    <div class="text-muted">{{label.description}}</div>
-                    <div style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
-                    @click="$dispatch('open-generic-editor', {
-                            title: 'Descripción',
-                            label: 'Descripción',
-                            field: 'description',
-                            value: item.description,
-                            type: 'textarea',
+                    <div class="text-muted">{{label.province}}</div>
+                        <button class="d-flex justify-content-between rounded-2 form-control"
+                        @click="$dispatch('open-generic-editor', {
+                            title: 'Provincia',
+                            label: 'Nombre de la provincia',
+                            field: 'province_id',
+                            value: item.province_id,
+                            options: provinces,
+                            type: 'select',
                             patchUrl: apiPatch,
-                            help: '',
-                            onSave: (updated) => { item.description = updated.description; }
+                            help: 'Seleccione la provincia',
+                            onSave: (updated) => { fetchItem(item.id); }
                         })">
-                        <div  x-text="item.description?item.description:'Sin descripción'"></div>
+                            <div x-text="item.province?.name?item.province.name:'Sin provincia'"></div>
+                            <div> <i class="bi bi-chevron-right"></i></div>
+                        </button>
+                    </div>
+
+
+                <div class="mb-3">
+                    <div class="text-muted">{{label.canton}}</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control"
+                    @click="$dispatch('open-generic-editor', {
+                        title: 'Canton',
+                        label: 'Nombre del canton',
+                        field: 'canton_id',
+                        value: item.canton_id,
+                        options: item.province.cantons,
+                        type: 'select',
+                        patchUrl: apiPatch,
+                        help: 'Seleccione la provincia',
+                        onSave: (updated) => { fetchItem(item.id); }
+                    })"
+                    x-ref="cantonInput">
+                        <div x-text="item.canton?.name?item.canton.name:'Sin provincia'"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </button>
+                </div>
+
+                <div class="mb-3">
+                    <div class="text-muted">Direccion</div>
+                        <div style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                        @click="$dispatch('open-generic-editor', {
+                                title: 'Direccion',
+                                label: 'Direccion',
+                                field: 'address',
+                                value: item.address,
+                                type: 'textarea',
+                                patchUrl: apiPatch,
+                                help: '',
+                                onSave: (updated) => { item.address = updated.address; }
+                            })">
+                            <div  x-text="item.address?item.address:'Sin direccion'"></div>
                         <div> <i class="bi bi-chevron-right"></i></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- seccion de contacto -->
+     <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Contacto</h5>
+                    <button @click="$dispatch('open-add-contact', { item: item })" class="btn btn-dark"><i class="bi bi-plus-circle"></i> Nuevo contacto</button>
+                </div>
+
+
+                <div class="mb-3">
+                    <template x-if="item.contacts?.length === 0">
+                        <div class="alert alert-warning" role="alert">No existen Contactos</div>
+                    </template>
+                    <template x-for="contact in item.contacts" :key="contact.id">
+                        <div class="">
+                            <div class="mb-3">
+                                <div class="text-muted">Telefono</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Telefono',
+                                            label: 'Telefono',
+                                            field: 'phone',
+                                            value: contact.phone,
+                                            type: 'text',
+                                            patchUrl: `/api/v1/contacts/${contact.id}`,
+                                            help: 'Ingrese un numero de contacto',
+                                            onSave: (updated) => { contact.phone = updated.phone; }
+                                        })">
+                                    <div x-text="contact.phone"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted">Email</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Email',
+                                            label: 'Email',
+                                            field: 'email',
+                                            value: contact.email,
+                                            type: 'text',
+                                            patchUrl: apiPatch,
+                                            help: 'Ingrese un email válido.',
+                                            onSave: (updated) => { contact.email = updated.email; }
+                                        })">
+                                    <div x-text="contact.email"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 
     <div class="col-12"
          x-data="{apiStatus: apiFetch }"
@@ -85,13 +191,13 @@
     <div class="col-12">
         <div class="card mb-3">
             <div class="card-body">
-                <h5 class="card-title mb-3">Imágenes del Diseño</h5>
+                <h5 class="card-title mb-3">Imágenes del cliente</h5>
 
                 <div class="d-flex flex-wrap gap-2">
                     <!-- Galería de imágenes existentes -->
                     <template x-for="image in item.images" :key="image.id">
                         <div class="position-relative border rounded shadow-sm" style="width: 120px; height: 120px;">
-                            <img :src="`/api/v1/media/img/designs/${image.filename}`"
+                            <img :src="`/api/v1/media/img/clients/${image.filename}`"
                                      class="rounded border"
                                      style="width: 120px; height:120px; object-fit: cover;"
                                      :alt="`Imagen de ${image.name}`">
@@ -161,39 +267,33 @@
         <div class="card mb-3">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Tallas disponibles</h5>
-                    <button
-                        class="btn btn-dark"
-                        @click="$dispatch('open-add-sizes', { designId: item.id, designCode: item.code })"
-                    >
-                        <i class="bi bi-plus-circle me-1"></i> Agregar Tallas
-                    </button>
+                    <h5>Ordenes de compra</h5>
                 </div>
-
-
                 <div>
-                    <div class="text-muted">Lista de tallas disponibles</div>
+                    <div class="text-muted">Lista de pedidos</div>
 
                     <ul class="list-group ">
-                        <template x-for="variant in variants" :key="variant.id">
-                            <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectVariant(variant.id)" >
+                        <template x-for="order in orders" :key="order.id">
+                            <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectOrder(order.id)" >
                             <div class="d-flex justify-content-between align-items-center">
 
                                 <div>
-                                    <span x-text="variant.code"></span>
+                                    <span x-text="order.code"></span>
 
                                     <span class="fw-semibold badge text-bg-secondary"
-                                        x-text="variant.size.value">
+                                        x-text="order.date">
                                     </span>
 
                                 </div>
                                 <div>
-                                    <span class="badge" :class="setStatusClass(variant.lifecycle_status)" x-text="getLifeStatus(variant.lifecycle_status)"></span>
+                                    <span class="badge" :class="setStatusClass(order.lifecycle_status)" x-text="getLifeStatus(order.lifecycle_status)"></span>
                                 </div>
 
                             </div>
                             </li>
                         </template>
+                        <template x-if="orders.length === 0">
+                            <li class="list-group-item" >No existen ordenes de compra</template>
 
                     </ul>
                 </div>
@@ -204,11 +304,12 @@
 
 
     <div>
-        <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar {{label.design}}</button>
+        <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar {{label.client}}</button>
     </div>
 
-    <!-- Incluimos el Offcanvas para añadir tallas -->
-    {% include 'products/designs/_addSizesOffcanvas.html' %}
+    <div>
+        {% include 'clients/_addContactOffcanvas.html' %}
+    </div>
 
 </div>
 
@@ -222,18 +323,23 @@
             message:'',
             type:'',
             id:id,
-            apiFetch: `product-designs/${id}`,
-            api: `/products/designs`,
-            apiPatch: `/api/v1/product-designs/${id}`,
+            apiFetch: `clients/${id}`,
+            api: `/clients/sales`,
+            apiPatch: `/api/v1/clients/${id}`,
 
             draft_message: '',
             uploading: false,
             stagedFiles: [], // Array para guardar { file: FileObject, previewUrl: 'data:...' }
 
+            orders: [],
+            provinces:[],
+
+
 
             init(){
                 console.log('init... id: ', id)
                 this.fetchItem(id);
+                this.fetchProvinces();
             },
 
             async fetchItem(id){
@@ -243,26 +349,36 @@
                     this.item = res;
                     if (this.item.images) this.item.images.sort((a, b) => a.order - b.order); // Asegurar orden
                     console.log('res: ', res);
-                    this.fetchVariants(id)
+                    this.fetchOrders(id)
                 }catch(error){
                     console.error('API error: ', error)
                     this.error= error
                 }
             },
 
-
-            async fetchVariants(id){
+            async fetchProvinces(){
                 try{
-                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `product-variants?design_id=${id}`);
-                    if (res && Array.isArray(res)) {
-                        // Ordenar las variantes por el valor de la talla (size.value) de menor a mayor
-                        res.sort((a, b) => {
-                            return parseFloat(a.size.value) - parseFloat(b.size.value);
-                        });
-                    }
-                    this.variants = res;
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', 'provinces');
+                    this.provinces = res;
+                }catch(err){
+                    console.error('API error: ', error)
+                }
+            },
 
-                    if(this.variants.length === 0) this.draft_message='Debe establecer las tallas disponibles'
+            checkCanton(){
+                if(!this.item.province.cantons.find(canton => canton.id === this.item.canton_id)){
+                    return true;
+                }else{
+                    return;
+                }
+            },
+
+
+            async fetchOrders(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `sale-orders?client_id=${id}`);
+                    console.log('res: ', res);
+                    this.orders = res;
                 }catch(error){
                     console.error('API error: ', error)
                     this.error= error
@@ -270,8 +386,8 @@
 
             },
 
-            redirectVariant(id){
-                window.location.href = `/products/${this.item.product_id}/designs/${this.item.id}/variants/${id}`;
+            redirectOrder(id){
+                window.location.href = `/sales/clients/${this.id}/orders/${id}`;
             },
 
 
@@ -336,7 +452,7 @@
                 let uploadedImageIds = []; // Almacenamos los IDs de las imágenes subidas
                 try {
                     // Usamos el nuevo endpoint genérico de subida
-                    const imgRes = await fetch(`/api/v1/media/upload/designs`, {
+                    const imgRes = await fetch(`/api/v1/media/upload/clients`, {
                         method: 'POST',
                         body: formData,
                     });
@@ -357,6 +473,7 @@
                 }
 
                 try{
+                    return
                     const payload = {
                         media_ids: uploadedImageIds,
                         design_id: this.id,

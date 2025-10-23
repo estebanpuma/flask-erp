@@ -52,6 +52,18 @@ class Client(BaseModel):
     def __repr__(self):
         return f"<Cliente(nombre={self.name}, ruc_o_cedula={self.ruc_or_ci})>"
 
+    @property
+    def total_orders(self):
+        return len(self.orders)
+
+    @property
+    def canton_name(self):
+        return self.canton.name if self.canton else None
+
+    @property
+    def province_name(self):
+        return self.province.name if self.province else None
+
 
 class Contact(BaseModel):
 

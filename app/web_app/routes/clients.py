@@ -15,9 +15,9 @@ def client_create():
 
 @clients_bp.route("/<int:id>")
 def client_detail(id):
-    return render_template("/clients/client_detail.html", client_id=id)
+    return render_template("/clients/client_detail.html", id=id)
 
 
 @clients_bp.route("/<int:id>/edit")
 def client_edit(id):
-    return render_template("clients/client_edit.html", client_id=id)
+    return render_template("clients/client_edit.html", id=id)

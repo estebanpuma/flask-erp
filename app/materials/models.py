@@ -15,9 +15,29 @@ class MaterialGroup(BaseModel):
     description = db.Column(db.String(), nullable=True)
 
     materials = db.relationship("Material", back_populates="group", lazy="dynamic")
+    subgroups = db.relationship(
+        "MaterialSubGroup", back_populates="group", lazy="dynamic"
+    )
 
     def __repr__(self):
         return f"<MaterialGroup {self.name}>"
+
+
+class MaterialSubGroup(BaseModel):
+    __tablename__ = "material_subgroups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(
+        db.Integer, db.ForeignKey("material_groups.id"), nullable=False
+    )
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(), nullable=True)
+
+    materials = db.relationship("Material", back_populates="subgroup", lazy="dynamic")
+    group = db.relationship("MaterialGroup", back_populates="subgroups")
+
+    def __repr__(self):
+        return f"<MaterialSubGroup {self.name}>"
 
 
 class Material(BaseModel):
@@ -32,7 +52,12 @@ class Material(BaseModel):
     current_cost = db.Column(db.Numeric(12, 2), nullable=True, default=Decimal("0"))
 
     group_id = db.Column(db.Integer, db.ForeignKey("material_groups.id"), nullable=True)
+    subgroup_id = db.Column(
+        db.Integer, db.ForeignKey("material_subgroups.id"), nullable=True
+    )
+
     group = db.relationship("MaterialGroup", back_populates="materials")
+    subgroup = db.relationship("MaterialSubGroup", back_populates="materials")
 
     product_material_details = db.relationship(
         "ProductVariantMaterialDetail", back_populates="material"

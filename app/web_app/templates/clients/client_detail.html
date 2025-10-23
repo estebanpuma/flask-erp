@@ -1,43 +1,12 @@
-{% extends 'base.html' %}
-{% block title %}Detalle cliente | Guifer{% endblock %}
+{% extends "base.html" %}
+{% from 'components/_pageHeader.html' import pageHeader %}
+{% block title %}Detalle de {{label.client}}{% endblock %}
 
 {% block content %}
+<div >
 
- <div x-data="{ href: '/clients', title: 'Detalle de cliente' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
+  {{pageHeader('/products', 'Detalle del '~label.client)}}
+  {% include 'clients/_detail.html' %}
 
-    <div
-      x-data="genericDetail(
-        '/api/v1/clients/{{ client_id }}',
-
-          [
-           { field: 'ruc_or_ci',        label: 'RUC/CI', },
-          { field: 'name',        label: 'Nombre',  },
-          { field: 'province.name',        label: 'Provincia'},
-          { field: 'address',        label: 'Direccion'},
-          { field: 'email',        label: 'Correo'},
-          { field: 'phone',        label: 'Telefono'},
-          { field: 'client_type',        label: 'Tipo'},
-          { field: 'last_purchase',        label: 'Ultima compra'},
-          { field: 'purchases_count',        label: 'Compras'},
-          ],
-
-          '🙍'
-
-      )"
-    >
-    {% include "components/detailCard.html" %}
-
-    <!-- Mensaje de error -->
-    <template x-if="error">
-      <div class="alert alert-danger" x-text="error"></div>
-    </template>
-
-  </div>
-
-{% endblock %}
-{% block scripts %}
-  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
-   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
+</div>
 {% endblock %}

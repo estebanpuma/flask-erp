@@ -10,8 +10,12 @@
           <a :href="item.href" class="d-flex justify-content-between align-items-center text-decoration-none text-dark p-3">
             <div class="me-auto text-start">
               <div class="fw-bold" x-text="item.name"></div>
-
-              <div class="text-muted small" x-text="item.code ? `Código: ${item.code}` : 'Sin código'"></div>
+              <template x-if="item.code!== undefined">
+                <div class="text-muted small" x-text="item.code ? `Código: ${item.code}` : 'Sin código'"></div>
+              </template>
+              <template x-if="item.ruc_or_ci!== undefined">
+                <div class="text-muted small" x-text="item.ruc_or_ci ? `RUC/CI: ${item.ruc_or_ci}` : 'Sin RUC/CI'"></div>
+              </template>
               <template x-if="item.start_size && item.end_size">
                 <div class="d-flex justify-content-between align-items-center">
                   <div>
@@ -22,19 +26,27 @@
                   </div>
                 </div>
               </template>
-              <template x-if="item.count_products">
+              <template x-if="item.canton">
+                <div>
+                  <span class="badge text-bg-light" x-text="item.canton.name"></span>
+                </div>
+              </template>
+              <template x-if="item.total_sales">
                 <span class="badge text-bg-primary rounded-pill mt-1" x-text="`${item.count_products} prod.`"></span>
               </template>
 
             </div>
-            <div class="text-end">
-              <span
-                  class="badge"
-                  :class="setStatusClass(item.lifecycle_status)"
-                  x-text="getLifeStatus(item.lifecycle_status)">
-              </span>
+            <template x-if="item.lifecycle_status">
+              <div class="text-end">
+                <span
+                    class="badge"
+                    :class="setStatusClass(item.lifecycle_status)"
+                    x-text="getLifeStatus(item.lifecycle_status)">
+                </span>
                 <br>
-            </div>
+              </div>
+            </template>
+
             <i class="bi bi-chevron-right ms-2"></i>
           </a>
         </li>

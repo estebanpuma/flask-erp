@@ -1,8 +1,14 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% block title %}Materiales{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader %}
 {% from 'components/entryCard.html' import entry_card %}
 {% block content %}
-  {% set title = 'Inventario' %}
-  {% include 'components/pageHeader.html' %}
+
+{{ pageHeader(href='/',
+              title='Inventario',
+              has_btn=False,
+              ) }}
+
 
   <div class="row g-3">
 
