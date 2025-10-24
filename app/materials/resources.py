@@ -9,16 +9,16 @@ from ..core.resources import (
     BulkUploadBaseResource,
 )
 from ..core.utils import success_response
-from .material_group_services import MaterialGroupService
+from .material_group_services import MaterialGroupService, MaterialSubGroupService
 from .material_services import MaterialService, MaterialStockService
 from .schemas import (
     material_group_output_fields,
     material_output_fields,
     material_search_fields,
     material_stock_fields,
+    material_subgroup_output_fields,
 )
-from .services import MaterialExcelImportService, MaterialGroupServices
-from .validations import validate_material_group_patch_data
+from .services import MaterialExcelImportService
 
 
 class MaterialGroupGetResource(BaseGetResource):
@@ -35,9 +35,8 @@ class MaterialGroupPostResource(BasePostResource):
 
 
 class MaterialGroupPatchResource(BasePatchResource):
-    service_get = staticmethod(MaterialGroupServices.get_material_group)
-    schema_validate_partial = staticmethod(validate_material_group_patch_data)
-    service_patch = staticmethod(MaterialGroupServices.update)
+    service_get = staticmethod(MaterialGroupService.get_obj)
+    service_patch = staticmethod(MaterialGroupService.pacth_obj)
     output_fields = material_group_output_fields
 
 
@@ -45,7 +44,27 @@ class MaterialGroupDeleteResource(BaseDeleteResource):
     service_get = staticmethod(MaterialGroupService.get_obj)
     service_delete = staticmethod(MaterialGroupService.delete_obj)
 
-    # material_resources.py
+
+# ----------------Material SubGroups---------------------------
+class MaterialSubGroupGetResource(BaseGetResource):
+    schema_get = staticmethod(MaterialSubGroupService.get_obj)
+    output_fields = material_subgroup_output_fields
+
+
+class MaterialSubGroupPostResource(BasePostResource):
+    service_create = staticmethod(MaterialSubGroupService.create_obj)
+    output_fields = material_subgroup_output_fields
+
+
+class MaterialSubGroupPatchResource(BasePatchResource):
+    service_get = staticmethod(MaterialSubGroupService.get_obj)
+    service_patch = staticmethod(MaterialSubGroupService.patch_obj)
+    output_fields = material_subgroup_output_fields
+
+
+class MaterialSubGroupDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(MaterialSubGroupService.get_obj)
+    service_delete = staticmethod(MaterialSubGroupService.delete_obj)
 
 
 class MaterialGetResource(BaseGetResource):

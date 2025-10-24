@@ -1,77 +1,111 @@
-<form @submit.prevent="submitForm" autocomplete="off" x-data="material_subgroupForm(id)">
-
-    <div class="form-floating mb-3">
-        <input type="text" disabled class="form-control text-uppercase"
-            id="code" placeholder="Ej: Escolar"
-            x-model="form.material_group">
+<div
+  x-data="addSubgroup()"
+  @open-add-subgroups.window="open($event.detail.id, $event.detail.name)"
+  class="offcanvas offcanvas-end"
+  tabindex="-1"
+  id="addSubgroupsOffcanvas"
+  aria-labelledby="addSubgroupsOffcanvasLabel"
+  x-ref="addSubgroupsOffcanvas"
+  @subgroup-created.window="item.subgroups.push($event.detail)"
+>
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="addSubgroupsOffcanvasLabel">
+        Añadir {{label.subgroup}} <span class="badge bg-secondary" x-text="material_group"></span>
+        </h5>
+        <button type="button" class="btn-close" @click="close()" aria-label="Close"></button>
     </div>
+    <div class="offcanvas-body">
+        <!-- Instrucción -->
+        <div class="mb-3">
+        <p>Crear un subgrupo de {{label.subgroups}}</p>
+        </div>
 
-    <div class="form-floating mb-3">
-        <input type="text" class="form-control"
-            id="name" placeholder="Ej: Escolar"
-            x-model="form.name"
-            @input = "checkName()"
-            required>
-        <label for="name">Nombre</label>
-        <template x-if="existing_name" >
-            <span id="codeFeedback" class="text-danger">
-                🚫 El nombre ya existe.
-            </span>
+        <template x-if="error">
+            <div x-text="error" class="alert alert-danger" role="alert"></div>
         </template>
+        <template x-if="message">
+            <div x-text="message" class="alert alert-success" role="alert"></div>
+        </template>
+
+        <form @submit.prevent="submitForm" autocomplete="off">
+
+            <div class="form-floating mb-3">
+                <input type="text" disabled class="form-control text-uppercase"
+                    id="code" placeholder="Ej: Escolar"
+                    x-model="material_group">
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control"
+                    id="name" placeholder="Ej: Escolar"
+                    x-model="form.name"
+                    @input = "checkName()"
+                    required>
+                <label for="name">Nombre</label>
+                <template x-if="existing_name" >
+                    <span id="codeFeedback" class="text-danger">
+                        🚫 El nombre ya existe.
+                    </span>
+                </template>
+            </div>
+
+        <div class="form-floating mb-3">
+            <textarea class="form-control" id="description"
+                    placeholder="Descripción" style="height: 80px"
+                    x-model="form.description"></textarea>
+            <label for="description">Descripción (opcional)</label>
+        </div>
+
+
+
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-dark" :disabled="existing_name">Guardar {{label.subgroup}}</button>
+        </div>
+
+        </form>
     </div>
-
-   <div class="form-floating mb-3">
-    <textarea class="form-control" id="description"
-              placeholder="Descripción" style="height: 80px"
-              x-model="form.description"></textarea>
-    <label for="description">Descripción (opcional)</label>
-  </div>
-
-
-
-  <div class="d-flex justify-content-end mt-4">
-    <button type="submit" class="btn btn-dark" :disabled="existing_code">Guardar Serie</button>
-  </div>
-
-</form>
+</div>
 <script>
-function material_groupForm() {
+function addSubgroup(id, name) {
   return {
     loading: false,
+    material_group: name,
     form: {
-      name: '',
-      code:'',
-      description: '',
+        material_group_id: id,
+        name: '',
+        description: '',
     },
     message: '',
     success: false,
     errors:'',
-    existing_code:false,
     existing_name:false,
 
 
     init() {
-      // Opcional: lógica inicial
+      this.bsOffcanvas = new bootstrap.Offcanvas(this.$refs.addSubgroupsOffcanvas);
+      this.$refs.addSubgroupsOffcanvas.addEventListener('hidden.bs.addSubgroupsOffcanvas', () => this.reset());
     },
 
-    async checkCode(){
-        try{
-            const res = await fetch(`/api/v1/material-groups?code=${this.form.code.toUpperCase()}`);
-            const data = await res.json()
-            this.existing_code = false;
-            if (data!==null && data[0].code){
-                this.existing_code = true;
-                return true
-                }
-                else{
-                this.existing_code = false;
-                return false
-                }
-        }catch(err){
-            console.error()
-            this.message = err.toString()
-        }
+    open(id, name) {
+      this.form.material_group_id = id;
+      this.material_group = name;
+      this.bsOffcanvas.show();
     },
+
+    close() {
+      this.bsOffcanvas.hide();
+    },
+
+    reset() {
+        this.form.material_group_id = '';
+        this.form.name = '';
+        this.form.description = '';
+        this.error = '';
+        this.message = '';
+        this.existing_name = false;
+    },
+
+
 
     async checkName(){
         try{
@@ -96,32 +130,32 @@ function material_groupForm() {
       this.loading = true;
       this.message = '';
       try {
-        const res = await fetch('/api/v1/material-groups', {
+        const res = await fetch('/api/v1/material-subgroups', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.form),
         });
         const data = await res.json();
         this.success = res.ok;
-        this.message = this.success ? '✅ Grupo creado' : (data.message || '❌ Error al crear grupo');
+        this.message = this.success ? '✅ Registro creado' : (data.message || '❌ Error al crear registro');
         if (this.success) {
-          this.form.name = '';
-          this.form.code = '';
-          this.form.description = '';
-          alert(this.message)
-          window.location.href = '/materials/groups';
+          alert(this.message);
+          this.$dispatch('subgroup-created', data);
+          this.close();
+
         }else{
           this.success = false;
-        this.message = '❌ Error de conexión';
-        console.log(this.message)
+        this.error = '❌ Error de conexión';
+        console.log(this.error)
         }
       } catch (err) {
         console.error(err);
         this.success = false;
-        this.message = '❌ Error de conexión';
-        console.log(this.message)
+        this.error = '❌ Error de conexión';
+        console.log(this.error)
       } finally {
         this.loading = false;
+
       }
     }
   }

@@ -22,6 +22,10 @@ class MaterialGroup(BaseModel):
     def __repr__(self):
         return f"<MaterialGroup {self.name}>"
 
+    @property
+    def count_materials(self):
+        return self.materials.count()
+
 
 class MaterialSubGroup(BaseModel):
     __tablename__ = "material_subgroups"
@@ -33,11 +37,20 @@ class MaterialSubGroup(BaseModel):
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String(), nullable=True)
 
-    materials = db.relationship("Material", back_populates="subgroup", lazy="dynamic")
+    materials = db.relationship(
+        "Material",
+        back_populates="subgroup",
+        lazy="dynamic",
+        passive_deletes=True,
+    )
     group = db.relationship("MaterialGroup", back_populates="subgroups")
 
     def __repr__(self):
         return f"<MaterialSubGroup {self.name}>"
+
+    @property
+    def count_materials(self):
+        return self.materials.count()
 
 
 class Material(BaseModel):

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from 'components/_pageHeader.html' import pageHeader%}
+{% block title %}Detalle de {{label.subgroup}}{% endblock %}
+
+{% block content %}
+
+  {{pageHeader(href='/groups/~ group_id',
+              title='Detalle de'~ label.subgroup,
+              )}}
+  {% include 'materials/subgroups/_detail.html' %}
+
+
+
+{% endblock %}

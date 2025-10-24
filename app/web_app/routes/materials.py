@@ -72,11 +72,13 @@ def subgroups_list():
     return render_template("materials/subgroups/subgroups_list.html")
 
 
-@materials_bp.route("/subgroups/<int:id>")
-def subgroups_detail(id):
-    return render_template("materials/subgroups/subgroups_detail.html", id=id)
+@materials_bp.route("/groups/<int:group_id>/subgroups/<int:id>")
+def subgroups_detail(id, group_id=None):
+    return render_template(
+        "materials/subgroups/subgroups_detail.html", group_id=group_id, id=id
+    )
 
 
-@materials_bp.route("/subgroups/create", methods=["GET"])
-def subcreate_group_view():
-    return render_template("materials/subgroups/subgroups_create.html")
+@materials_bp.route("/groups/<int:id>/subgroups/create", methods=["GET"])
+def subcreate_group_view(id):
+    return render_template("materials/subgroups/subgroups_create.html", id=id)

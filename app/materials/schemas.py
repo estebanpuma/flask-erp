@@ -1,10 +1,22 @@
 from flask_restful import fields
 
+material_subgroup_output_fields = {
+    "id": fields.Integer,
+    "name": fields.String,
+    "description": fields.String,
+    "group_id": fields.Integer,
+    "count_materials": fields.Integer(attribute="count_materials"),
+    "group_name": fields.String(attribute="group.name"),
+}
+
+
 material_group_output_fields = {
     "id": fields.Integer,
     "code": fields.String,
     "name": fields.String,
     "description": fields.String,
+    "subgroups": fields.List(fields.Nested(material_subgroup_output_fields)),
+    "count_materials": fields.Integer(attribute="count_materials"),
 }
 
 

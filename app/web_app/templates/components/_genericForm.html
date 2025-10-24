@@ -11,7 +11,6 @@
     x-init="init()"
     @open-generic-editor.window="open($event.detail)"
     x-ref="offcanvas"
-    @updated-value.window="formValue = $event.detail"
 
 >
     <div class="offcanvas-header">
@@ -36,7 +35,7 @@
                 </template>
                 <template x-if="type === 'select'">
                     <div>
-                        <select class="form-select" :id="field" x-model="formValue" @change="fetchCantons()">
+                        <select class="form-select" :id="field" x-model="formValue" @change="if (field === 'province_id') fetchCantons()">
                             <option value="">Seleccione una opción</option>
                             <template x-for="option in formOptions" :key="option.id">
                                 <option :value="option.id"  x-text="option.name"></option>
@@ -125,15 +124,16 @@ function genericEditor() {
             this.loading = false;
             this._offcanvas.show();
             if(this.field === 'province_id'){
+                console.log(this.field, 'vs', 'province_id')
                 this.fetchCantons();
             }
 
         },
 
         async fetchCantons(){
+            console.log('fetchCantons', this.field)
             try{
                 const res = await window.guifer.helpers.fetch.apiFetch('GET', 'cantons?province_id='+this.formValue);
-                console.log('res: ', res);
                 this.cantons = res;
             }catch(err){
                 console.error('API error: ', error)
@@ -174,11 +174,11 @@ function genericEditor() {
 
                 this.success = true;
                 this.message = '¡Guardado con éxito!';
-                this.$dispatch('updated-value', {field: this.field, value: this.formValue});
 
                                // Ejecutar callback si existe
                 if (typeof this.onSaveCallback === 'function') {
                     this.onSaveCallback(data);
+                    console.log('callback:',this.onSaveCallback, 'data:',data)
                 }
 
                 setTimeout(() => this._offcanvas.hide(), 500);

@@ -16,7 +16,7 @@
 
                 <div class="mb-3">
 
-                    <div class="text-muted">Nombre de {{label.product}}</div>
+                    <div class="text-muted">Nombre de {{label.group}}</div>
                     <button class="d-flex justify-content-between rounded-2 form-control"
                     @click="$dispatch('open-generic-editor', {
                         title: 'Nombre',
@@ -66,22 +66,39 @@
         <div class="card mb-3">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title">Subtipos</h5>
-                    <button type="button" class="btn btn-dark"><i class="bi bi-plus"></i></button>
+                    <h5 class="card-title">{{label.subgroups}}</h5>
+                    <button type="button" class="btn btn-dark"
+                    @click="$dispatch('open-add-subgroups', { id: item.id, name: item.name})"
+                    ><i class="bi bi-plus"></i></button>
                 </div>
                 <div class="mb-3">
-                    <div class="text-muted">Lista de subtipos</div>
+                    <div class="text-muted">Lista de {{label.subgroups}}</div>
                     <ul class="list-group ">
-                        <template x-for="subgroup in item.subtypes" :key="subgroup.id">
+                        <template x-for="subgroup in item.subgroups" :key="subgroup.id">
                             <li class="list-group-item list-group-item-action cursor-pointer" @click="redirectSubgroups(subgroup.id)" >
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+
+                                        <span x-text="subgroup.name"></span>
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </li>
                         </template>
-                        <template x-if="!item?.subtypes?.length">
+                        </template>
+                        <template x-if="!item?.subgroups?.length">
                             <li class="list-group-item list-group-item-action cursor-pointer">No hay subtipos</li>
                         </template>
                     </ul>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div>
+        {% include 'materials/subgroups/_form.html' %}
     </div>
 
 
@@ -116,6 +133,7 @@
                     const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiFetch);
 
                     this.item = res;
+                    console.log('subgroups: ', res.subgroups);
                 }catch(error){
                     console.error('API error: ', error)
                     this.error= error
@@ -141,6 +159,11 @@
                     return 'text-bg-secondary';
                 }
             },
+
+            redirectSubgroups(id){
+                window.location.href = `/materials/groups/${this.item.id}/subgroups/${id}`;
+            },
+
 
 
             async deleteObj(id){

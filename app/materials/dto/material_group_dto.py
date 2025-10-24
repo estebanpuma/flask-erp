@@ -13,3 +13,15 @@ class MaterialGroupCreateDTO(BaseModel):
 class MaterialGroupUpdateDTO(BaseModel):
     name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
     description: Optional[str] = None
+
+
+class MaterialSubGroupCreateDTO(BaseModel):
+    material_group_id: int
+    name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
+    description: Optional[str] = None
+
+
+class MaterialSubGroupUpdateDTO(BaseModel):
+    name: Optional[str] = Field(None, max_length=100, strip_whitespace=True)
+    description: Optional[str] = None
+    group_id: Optional[int] = None

@@ -34,6 +34,10 @@ from .resources import (
     MaterialPostResource,
     MaterialSearchResource,
     MaterialStockGetResource,
+    MaterialSubGroupDeleteResource,
+    MaterialSubGroupGetResource,
+    MaterialSubGroupPatchResource,
+    MaterialSubGroupPostResource,
     MaterialTotalStockResource,
 )
 
@@ -51,6 +55,18 @@ materials_api.add_resource(
 )
 materials_api.add_resource(
     MaterialGroupDeleteResource, "/material-groups/<int:resource_id>"
+)
+
+# ------------------------------SUBGROUPS-------------------------------------------#
+materials_api.add_resource(MaterialSubGroupPostResource, "/material-subgroups")
+materials_api.add_resource(
+    MaterialSubGroupGetResource, "/material-subgroups/<int:resource_id>"
+)
+materials_api.add_resource(
+    MaterialSubGroupPatchResource, "/material-subgroups/<int:resource_id>"
+)
+materials_api.add_resource(
+    MaterialSubGroupDeleteResource, "/material-subgroups/<int:resource_id>"
 )
 
 

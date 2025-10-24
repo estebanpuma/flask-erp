@@ -3,8 +3,13 @@ from app import db
 
 from ..core.exceptions import NotFoundError, ValidationError
 from ..core.filters import apply_filters
-from .dto.material_group_dto import MaterialGroupCreateDTO, MaterialGroupUpdateDTO
-from .models import MaterialGroup
+from .dto.material_group_dto import (
+    MaterialGroupCreateDTO,
+    MaterialGroupUpdateDTO,
+    MaterialSubGroupCreateDTO,
+    MaterialSubGroupUpdateDTO,
+)
+from .models import MaterialGroup, MaterialSubGroup
 
 
 class MaterialGroupService:
@@ -78,6 +83,65 @@ class MaterialGroupService:
     def delete_obj(group: MaterialGroup):
         try:
             db.session.delete(group)
+            db.session.commit()
+            return True
+        except Exception:
+            db.session.rollback()
+            raise
+
+
+class MaterialSubGroupService:
+    @staticmethod
+    def get_obj(id: int) -> MaterialSubGroup:
+        subgroup = MaterialSubGroup.query.get(id)
+        if not subgroup:
+            raise NotFoundError(f"Subgrupo de materiales con id {id} no encontrado.")
+        return subgroup
+
+    @staticmethod
+    def create_obj(data: dict) -> MaterialSubGroup:
+        with db.session.begin():
+            dto = MaterialSubGroupCreateDTO(**data)
+            subgroup = MaterialSubGroupService.create_subgroup(
+                name=dto.name,
+                description=dto.description,
+                group_id=dto.material_group_id,
+            )
+            return subgroup
+
+    @staticmethod
+    def create_subgroup(
+        name: str, description: str = None, group_id: int = None
+    ) -> MaterialSubGroup:
+        new_subgroup = MaterialSubGroup(
+            name=name, description=description, group_id=group_id
+        )
+        db.session.add(new_subgroup)
+        return new_subgroup
+
+    @staticmethod
+    def patch_obj(subgroup: MaterialSubGroup, data: dict) -> MaterialSubGroup:
+        dto = MaterialSubGroupUpdateDTO(**data)
+        if dto.name:
+            subgroup.name = dto.name
+        if dto.description is not None:
+            subgroup.description = dto.description
+        if dto.group_id is not None:
+            subgroup.group_id = dto.group_id
+        db.session.add(subgroup)
+        print(subgroup.group_id)
+        print(subgroup.group.name)
+        try:
+            db.session.commit()
+            return subgroup
+        except Exception:
+            db.session.rollback()
+            raise
+
+    @staticmethod
+    def delete_obj(subgroup: MaterialSubGroup):
+        try:
+            db.session.delete(subgroup)
             db.session.commit()
             return True
         except Exception:
