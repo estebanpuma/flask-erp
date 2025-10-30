@@ -11,7 +11,7 @@ from ..common.utils import ExcelImportService
 from ..core.error_handlers import ConflictError, NotFoundError, ValidationError
 from ..core.filters import apply_filters
 from .entities import ClientCategoryEntity, ClientEntity
-from .models import Client, Contact
+from .models import Client, ClientImage, Contact
 
 
 class ClientCategoryService:
@@ -545,6 +545,77 @@ class ContactService:
     def delete_obj(contact):
         db.session.delete(contact)
         try:
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+
+class ClientImageService:
+    @staticmethod
+    def create_obj(data: dict):
+        from .dto import ClientImageCreateDTO
+
+        with db.session.begin():
+            dto = ClientImageCreateDTO(**data)
+            new_images = ClientImageService.add_images(
+                media_ids=dto.media_ids,
+                client_id=dto.client_id,
+                is_primary=dto.is_primary,
+                order=dto.order,
+                type=dto.type,
+            )
+            return new_images
+
+    @staticmethod
+    def add_images(
+        media_ids: list[int],
+        client_id: int,
+        is_primary: bool = None,
+        order: int = None,
+        type: str = None,
+    ):
+        from ..media.models import MediaFile
+        from .models import Client, ClientImage
+
+        client = Client.query.get(client_id)
+        if client is None:
+            raise ValidationError("Cliente no encontrado.")
+        new_images = []
+        for media_id in media_ids:
+            media_file = MediaFile.query.get(media_id)
+            if media_file is None:
+                raise ValidationError(f"Imagen con id:{media_id} no encontrada.")
+
+            new_image = ClientImage(
+                media_file=media_file,
+                client=client,
+                is_primary=is_primary,
+                order=order,
+                type=type,
+            )
+            new_images.append(new_image)
+        db.session.add_all(new_images)
+        return new_images
+
+    @staticmethod
+    def get_obj_list(id: int) -> list[ClientImage]:
+
+        print("client_id: ", id)
+        query = db.session.query(ClientImage).filter_by(client_id=id)
+        print("query omages: ", query.all())
+        return query.all()
+
+    @staticmethod
+    def delete_obj(client_image_id: int):
+        from .models import ClientImage
+
+        client_image = ClientImage.query.get(client_image_id)
+        if not client_image:
+            raise NotFoundError("Imagen de cliente no encontrada.")
+        try:
+            db.session.delete(client_image)
             db.session.commit()
             return True
         except Exception as e:

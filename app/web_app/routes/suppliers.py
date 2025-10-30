@@ -12,14 +12,9 @@ def suppliers_list():
 
 @suppliers_bp.route("/<int:id>")
 def suppliers_details(id):
-    return render_template("suppliers/suppliers_detail.html", supplier_id=id)
+    return render_template("suppliers/suppliers_detail.html", id=id)
 
 
 @suppliers_bp.route("/create")
 def suppliers_create():
-    return "hola"
-
-
-@suppliers_bp.route("/<int:id>/edit")
-def suppliers_edit(id):
-    return "hola"
+    return render_template("suppliers/suppliers_create.html")

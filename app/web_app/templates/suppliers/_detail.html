@@ -1,0 +1,263 @@
+<div x-data="detail({{id}})" class="row g-2">
+    <template x-if="error">
+        <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+    <template x-if="message">
+        <div x-text="message" class="alert alert-success" role="alert"></div>
+    </template>
+    <template x-if="draft_message">
+        <div x-text="draft_message" class="alert alert-warning" role="alert"></div>
+    </template>
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Información General</h5>
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <span
+                            class="badge"
+                            :class="setStatusClass(item.lifecycle_status)"
+                            x-text="getLifeStatus(item.lifecycle_status)">
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="mb-3">
+
+                    <div class="text-muted">Nombre de {{label.product}}</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control"
+                    @click="$dispatch('open-generic-editor', {
+                        title: 'Nombre',
+                        label: 'Nombre',
+                        field: 'name',
+                        value: item.name,
+                        type: 'text',
+                        patchUrl: apiPatch,
+                        help: 'El nombre debe tener al menos 3 caracteres.',
+                        onSave: (updated) => { this.item.name = updated.name;}
+                    })">
+                        <div x-text="item.name"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted">{{label.ruc_or_ci}}</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control " disabled>
+                        <div  x-text="item.ruc_or_ci?item.ruc_or_ci:'Sin codigo'"></div>
+
+                    </button>
+
+                </div>
+                <!-- Fila de Descripción -->
+                <div class="mb-3">
+                    <div class="text-muted">{{label.description}}</div>
+                    <div style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                    @click="$dispatch('open-generic-editor', {
+                            title: 'Descripción',
+                            label: 'Descripción',
+                            field: 'description',
+                            value: item.description,
+                            type: 'textarea',
+                            patchUrl: apiPatch,
+                            help: '',
+                            onSave: (updated) => { item.description = updated.description; }
+                        })">
+                        <div  x-text="item.description?item.description:'Sin descripción'"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12"
+         x-data="{apiStatus: apiFetch }"
+         @status-changed.window="item.lifecycle_status = $event.detail"
+    >
+       {% include 'components/_itemLifeCycleStatus.html' %}
+    </div>
+
+        <!-- Fila de direccion -->
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Dirección</h5>
+                <div class="mb-3">
+                    <div class="text-muted">Direccion</div>
+                        <div style="height: 80px;" class="d-flex justify-content-between rounded-2 form-control cursor-pointer"
+                        @click="$dispatch('open-generic-editor', {
+                                title: 'Direccion',
+                                label: 'Direccion',
+                                field: 'address',
+                                value: item.address,
+                                type: 'textarea',
+                                patchUrl: apiPatch,
+                                help: '',
+                                onSave: (updated) => { item.address = updated.address; }
+                            })">
+                            <div  x-text="item.address?item.address:'Sin direccion'"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- seccion de contacto -->
+     <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Contacto</h5>
+                    <button @click="$dispatch('open-add-contact', { item: item })" class="btn btn-dark"><i class="bi bi-plus-circle"></i> Nuevo contacto</button>
+                </div>
+
+
+                <div class="mb-3">
+                    <template x-if="item.contacts?.length === 0">
+                        <div class="alert alert-warning" role="alert">No existen Contactos</div>
+                    </template>
+                    <template x-for="contact in item.contacts" :key="contact.id">
+                        <div class="">
+                            <div class="mb-3">
+                                <div class="text-muted">Telefono</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Telefono',
+                                            label: 'Telefono',
+                                            field: 'phone',
+                                            value: contact.phone,
+                                            type: 'text',
+                                            patchUrl: `/api/v1/contacts/${contact.id}`,
+                                            help: 'Ingrese un numero de contacto',
+                                            onSave: (updated) => { contact.phone = updated.phone; }
+                                        })">
+                                    <div x-text="contact.phone"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted">Email</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Email',
+                                            label: 'Email',
+                                            field: 'email',
+                                            value: contact.email,
+                                            type: 'text',
+                                            patchUrl: apiPatch,
+                                            help: 'Ingrese un email válido.',
+                                            onSave: (updated) => { contact.email = updated.email; }
+                                        })">
+                                    <div x-text="contact.email"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div>
+        <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">{{label.delete}}</button>
+    </div>
+
+    <div>
+        {% include 'suppliers/_addContactOffcanvas.html' %}
+    </div>
+</div>
+
+<script>
+    function detail(id){
+        return{
+            item:{},
+            error:'',
+            message:'',
+            type:'',
+            id:id,
+            apiFetch: `suppliers/${id}`,
+            api: `/suppliers`,
+            apiPatch: `/api/v1/suppliers/${id}`,
+
+            draft_message: '',
+            uploading: false,
+            stagedFiles: [], // Array para guardar { file: FileObject, previewUrl: 'data:...' }
+
+
+            init(){
+                this.fetchItem(id);
+            },
+
+            async fetchItem(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiFetch);
+                    this.item = res;
+
+                }catch(error){
+                    console.error('API error: ', error)
+                    this.error= error
+                }
+            },
+
+
+
+            redirectVariant(id){
+                window.location.href = `/products/${this.item.product_id}/designs/${this.item.id}/variants/${id}`;
+            },
+
+
+            getLifeStatus(lifestatus){
+                if (lifestatus === 'DRAFT') {
+                    return 'Borrador';
+                } else if (lifestatus === 'READY') {
+                    return 'Activo';
+                } else if (lifestatus === 'ARCHIVED') {
+                    return 'Inactivo'
+                }else{
+                    return 'Borrador'
+                }
+            },
+
+            setStatusClass(status) {
+                if (status === 'DRAFT') {
+                    return 'text-bg-warning';
+                } else if (status === 'READY') {
+                    return 'text-bg-success';
+                } else if (status === 'ARCHIVED') {
+                    return 'text-bg-secondary';
+                } else {
+                    return 'text-bg-warning';
+                }
+            },
+
+            async deleteObj(id){
+                if (!confirm('¿Estás seguro de que quieres eliminar este diseño?')) {
+                    return;
+                }
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', this.apiFetch);
+                    if (res) {
+                        alert('Registro eliminado con éxito');
+                        this.message = 'Registro eliminado con éxito';
+                        window.location.href = `/suppliers`;
+                    } else {
+                        this.error = 'Error al eliminar registro';
+                    }
+                } catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
+            },
+
+
+        }
+    }
+</script>

@@ -1,63 +1,11 @@
 {% extends "base.html" %}
-{% from 'components/detailCard.html' import detail_card %}
-{% block title %}Detalle de proveedor{% endblock %}
+{% from 'components/_pageHeader.html' import pageHeader%}
+{% block title %}{{label.suppliers}}{% endblock %}
 
 {% block content %}
-<div class="container mt-3" >
-
-  <div x-data="{ href: '/suppliers', title: 'Detalle de proveedor' }">
-    {% include 'components/_pageHeader.html' %}
-  </div>
-
-    <div
-      x-data="genericDetail(
-        '/api/v1/suppliers/{{ supplier_id }}',
-
-          [
-            { field:'name', label:'Nombre'},
-            { field:'ruc_or_ci', label:'RUC/CI'},
-            { field:'address',        label:'Dirección' },
-          ],
-
-          '👟'
-
-      )"
-    >
-    {% include "components/detailCard.html" %}
-
-    <!-- Mensaje de error -->
-    <template x-if="error">
-      <div class="alert alert-danger" x-text="error"></div>
-    </template>
-
-  </div>
-
-  <!-- Una vez que llega `item`, mostramos la lista de variantes -->
-  <div>
-    <div
-        x-data="genericList(
-          `/api/v1/material-lots?supplier_id={{supplier_id}}`,
-          '/suppliers/{{supplier_id}}/material-lots',
-          [
-            { field: 'lot_number',        label: 'Lote',      filterable: true  },
-            { field: 'material_code',        label: 'Código',      filterable: true  },
-            { field: 'material_name',  label: 'Nombre',      filterable: true  },
-            { field: 'unit_cost',   label: 'Costo',      filterable: true  },
-          ]
-        )"
-        x-init="init()"
-        class="table-responsive"
-      >
-        {% include 'components/listTable.html' %}
-    </div>
-  </div>
-
-
+<div>
+  {{pageHeader('/suppliers', label.suppliers)}}
+  {% include 'suppliers/_detail.html' %}
 
 </div>
-{% endblock %}
-
-{% block scripts %}
-  <script src="{{ url_for('static', filename='js/genericDetail.js') }}"></script>
-   <script src="{{ url_for('static', filename='js/genericList.js') }}"></script>
 {% endblock %}

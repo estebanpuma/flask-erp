@@ -28,7 +28,6 @@ class ImageService:
 
         # Guarda el archivo y devuelve el nombre almacenado
         saved_name = self.storage.save(module, file_storage, filename)
-        print(f"is saved: {saved_name}")
         return saved_name
 
     def upload(self, module, file_storage):
@@ -45,10 +44,11 @@ class ImageService:
             .filter_by(filename=filename, module=module)
             .first()
         )
+        # pendiente permitir la subida de imgenes existentes (n)
         if existing_file:
-            # Si ya existe, simplemente lo retornamos. No creamos uno nuevo.
+
             return existing_file
-        print("imageSerivce: ", existing_file)
+
         # 2. Si no existe, procedemos con la creación normal.
         saved_name = self._validate_and_save(module, file_storage)
         media_file = MediaFile(
@@ -59,7 +59,7 @@ class ImageService:
             size=file_storage.content_length,
         )
         db.session.add(media_file)
-        db.session.flush()  # Hacemos flush para asegurarnos de que el objeto tiene un ID antes de retornarlo.
+        db.session.flush()
         return media_file
 
     def associate_images_to_design(self, design_id, media_ids, primary_media_id=None):

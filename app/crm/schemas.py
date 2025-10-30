@@ -57,6 +57,23 @@ client_fields = {
     "lifecycle_status": fields.String,
 }
 
+client_image_fields = {
+    "id": fields.Integer,
+    "client_id": fields.Integer,
+    "is_primary": fields.Boolean,
+    "order": fields.Integer,
+    "type": fields.String,
+    "media_file_id": fields.Integer,
+    "client": fields.Nested(client_fields),
+    "media_file": fields.Nested(
+        {
+            "id": fields.Integer,
+            "filename": fields.String,
+            "module": fields.String,
+        }
+    ),
+}
+
 client_search_fields = {
     "id": fields.Integer,
     "ruc_or_ci": fields.String,

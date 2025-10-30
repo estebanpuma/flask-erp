@@ -195,9 +195,9 @@
 
                 <div class="d-flex flex-wrap gap-2">
                     <!-- Galería de imágenes existentes -->
-                    <template x-for="image in item.images" :key="image.id">
-                        <div class="position-relative border rounded shadow-sm" style="width: 120px; height: 120px;">
-                            <img :src="`/api/v1/media/img/clients/${image.filename}`"
+                    <template x-for="image in images" :key="image.id">
+                        <div class="position-relative border rounded shadow-sm" style="width: 120px; height: 120px;"> <!-- Puedes añadir x-show="image.filename" aquí si quieres ocultar completamente las imágenes sin filename -->
+                            <img :src="image.media_file.filename ? `/api/v1/media/img/clients/${image.media_file.filename}` : '/static/media/placeholder.jpg'"
                                      class="rounded border"
                                      style="width: 120px; height:120px; object-fit: cover;"
                                      :alt="`Imagen de ${image.name}`">
@@ -205,7 +205,7 @@
                             <button
                                 type="button"
                                 class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 rounded-circle"
-                                @click="deleteImage(image.id)"
+                                @click="deleteImage(image.media_file.id)"
                                 title="Eliminar imagen"
                              >
                                 <i class="bi bi-trash"></i>
@@ -327,6 +327,8 @@
             api: `/clients/sales`,
             apiPatch: `/api/v1/clients/${id}`,
 
+            images:[],
+
             draft_message: '',
             uploading: false,
             stagedFiles: [], // Array para guardar { file: FileObject, previewUrl: 'data:...' }
@@ -336,10 +338,22 @@
 
 
 
-            init(){
-                console.log('init... id: ', id)
-                this.fetchItem(id);
-                this.fetchProvinces();
+            async init(){
+                console.log('init... id: ', id);
+                this.loading = true;
+                this.error = '';
+                try {
+                    await Promise.all([
+                        this.fetchItem(id),
+                        this.fetchProvinces(),
+                        this.fetchImages(id)
+                    ]);
+                } catch (e) {
+                    this.error = 'Ocurrió un error al cargar los datos del cliente.';
+                    console.error(e);
+                } finally {
+                    this.loading = false;
+                }
             },
 
             async fetchItem(id){
@@ -349,10 +363,19 @@
                     this.item = res;
                     if (this.item.images) this.item.images.sort((a, b) => a.order - b.order); // Asegurar orden
                     console.log('res: ', res);
-                    this.fetchOrders(id)
+                    await this.fetchOrders(id); // fetchOrders depende de que fetchItem termine
                 }catch(error){
-                    console.error('API error: ', error)
-                    this.error= error
+                    throw error; // Re-lanza el error para que Promise.all lo capture
+                }
+            },
+
+            async fetchImages(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', `clients/${id}/images`);
+                    console.log('Fetched images for gallery:', res); // ¡Línea de depuración clave!
+                    this.images = res;
+                }catch(error){
+                    throw error; // Re-lanza el error para que Promise.all lo capture
                 }
             },
 
@@ -361,7 +384,7 @@
                     const res = await window.guifer.helpers.fetch.apiFetch('GET', 'provinces');
                     this.provinces = res;
                 }catch(err){
-                    console.error('API error: ', error)
+                    throw err; // Re-lanza el error para que Promise.all lo capture
                 }
             },
 
@@ -380,8 +403,7 @@
                     console.log('res: ', res);
                     this.orders = res;
                 }catch(error){
-                    console.error('API error: ', error)
-                    this.error= error
+                    throw error; // Re-lanza el error para que Promise.all lo capture
                 }
 
             },
@@ -439,16 +461,13 @@
             },
             // Paso 2: Sube las imágenes preparadas al servidor
             async uploadStagedImages() {
-                console.log('init images Upload')
                 if (this.stagedFiles.length === 0) return;
-
                 this.uploading = true;
                 this.error = '';
                 const formData = new FormData();
                 this.stagedFiles.forEach(staged => {
                     formData.append('files', staged.file);
                 });
-
                 let uploadedImageIds = []; // Almacenamos los IDs de las imágenes subidas
                 try {
                     // Usamos el nuevo endpoint genérico de subida
@@ -473,13 +492,13 @@
                 }
 
                 try{
-                    return
                     const payload = {
                         media_ids: uploadedImageIds,
-                        design_id: this.id,
+                        client_id: this.id,
+                        type: 'CI'
                     };
                     console.log('payload: for images: ', payload)
-                    const updateImages = await fetch(`/api/v1/product-designs/images`, {
+                    const updateImages = await fetch(`/api/v1/clients/images`, {
                         method: 'POST',
                         body: JSON.stringify(payload),
                         headers: {
@@ -491,8 +510,7 @@
                         throw new Error('Falló la actualización de imágenes.');
                     }
 
-                    refresh_images = this.fetchItem(this.id);
-                    this.item.images = refresh_images.images;
+                    await this.fetchImages(this.id);
 
                     this.message = 'Imágenes guardadas con éxito';
                     this.submitting = false;
@@ -509,10 +527,10 @@
                 if (!confirm('¿Estás seguro de que quieres eliminar esta imagen?')) return;
                 this.error = '';
                 try {
-                    // Usaremos un nuevo endpoint para desasociar la imagen
-                    await window.guifer.helpers.fetch.apiFetch('DELETE',`media/delete/designs/${imageId}`);
-                    // Actualizamos la UI localmente para una respuesta más rápida
-                    this.item.images = this.item.images.filter(img => img.id !== imageId);
+                    await window.guifer.helpers.fetch.apiFetch('DELETE',`media/delete/clients/${imageId}`);
+                    this.images = this.images.filter(img => img.media_file.id !== imageId);
+                    console.log('images afer delete: ', this.images);
+                    this.message = 'Imagen eliminada con éxito';
                 } catch (error) {
                     this.error = 'No se pudo eliminar la imagen.';
                     console.error(error);
@@ -520,7 +538,7 @@
             },
 
             async deleteObj(id){
-                if (!confirm('¿Estás seguro de que quieres eliminar este diseño?')) {
+                if (!confirm('¿Estás seguro de que quieres eliminar este registro?')) {
                     return;
                 }
                 try {
@@ -528,7 +546,7 @@
                     if (res) {
                         alert('Registro eliminado con éxito');
                         this.message = 'Registro eliminado con éxito';
-                        window.location.href = `/products/${this.item.product_id}`;
+                        window.location.href = `/clients`;
                     } else {
                         this.error = 'Error al eliminar registro';
                     }

@@ -40,6 +40,9 @@ class Client(BaseModel):
     is_special_taxpayer = db.Column(db.Boolean, default=False)
 
     client_category = db.relationship("ClientCategory", backref="clients")
+    images = db.relationship(
+        "ClientImage", back_populates="client", cascade="all, delete-orphan"
+    )
     contacts = db.relationship(
         "Contact", back_populates="client", lazy=True, cascade="all, delete-orphan"
     )
@@ -81,6 +84,22 @@ class Contact(BaseModel):
 
     def __repr__(self):
         return f"<Contacto(nombre={self.name}, client={self.client.name})>"
+
+
+class ClientImage(BaseModel):
+
+    __tablename__ = "client_images"
+
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=False)
+    media_file_id = db.Column(
+        db.Integer, db.ForeignKey("media_files.id", ondelete="CASCADE"), nullable=False
+    )
+    is_primary = db.Column(db.Boolean, default=False)
+    order = db.Column(db.Integer, default=0, nullable=False)
+    client = db.relationship("Client", back_populates="images")
+    media_file = db.relationship("MediaFile")
+    type = db.Column(db.String(20), nullable=False)
 
 
 class Provinces(db.Model):

@@ -3,6 +3,19 @@
 # Este diccionario centraliza las etiquetas de la interfaz de usuario.
 # Si necesitas cambiar "Línea" por "Tipo", solo lo cambias aquí.
 UI_LABELS = {
+    # -----buttons------
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "create": "Crear",
+    "warehouse": "Bodega",
+    "warehouses": "Bodegas",
+    "address": "Dirección",
+    "addresses": "Direcciones",
+    "city": "Ciudad",
+    "cities": "Ciudades",
+    "suppliers": "Proveedores",
+    "supplier": "Proveedor",
     "province": "Provincia",
     "provinces": "Provincias",
     "canton": "Cantón",

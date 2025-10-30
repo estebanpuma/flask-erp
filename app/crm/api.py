@@ -12,6 +12,9 @@ from .resources import (
     ClientCreateResource,
     ClientDeleteResource,
     ClientGetResource,
+    ClientImageDeleteResource,
+    ClientImageGetResource,
+    ClientImagePostResource,
     ClientPatchResource,
     ClientSearchResource,
     ContactDeleteResource,
@@ -37,6 +40,12 @@ crm_api.add_resource(ClientSearchResource, "/clients/search")
 
 # bulkupload
 crm_api.add_resource(ClientBulkUploadResource, "/clients/upload-excel")
+
+
+# -------------------------------Client Images--------------------------------------
+crm_api.add_resource(ClientImageGetResource, "/clients/<int:resource_id>/images")
+crm_api.add_resource(ClientImagePostResource, "/clients/images")
+crm_api.add_resource(ClientImageDeleteResource, "/clients/images/<int:resource_id>")
 
 
 # ********************************CLientsCategory*************************************

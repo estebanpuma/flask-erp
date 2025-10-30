@@ -10,6 +10,7 @@ api = Api(media_api_bp)
 
 # Endpoint genérico para subir archivos
 api.add_resource(MediaUploadResource, "/upload/<module>")
+
 # Endpoint para servir los archivos de forma segura
 api.add_resource(MediaServeResource, "/img/<module>/<filename>")
 

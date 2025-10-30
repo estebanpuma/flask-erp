@@ -15,7 +15,7 @@ def create_app(config):
 
     app = Flask(
         __name__,
-        static_folder="web_app/static",  # aquí van tus imágenes / media
+        static_folder="web_app/static",
         static_url_path="/static",
         template_folder="web_app/templates",
     )

@@ -12,6 +12,7 @@ from .schemas import (
     canton_fields,
     client_category_fields,
     client_fields,
+    client_image_fields,
     client_search_fields,
     contact_fields,
     province_fields,
@@ -20,6 +21,7 @@ from .services import (
     CantonService,
     ClientBulkUploadService,
     ClientCategoryService,
+    ClientImageService,
     ContactService,
     CRMServices,
     ProvinceService,
@@ -32,12 +34,10 @@ class ClientGetResource(BaseGetResource):
     Devuelve un cliente o una lista de clientes
     """
 
-    print("ento al resource 0")
     schema_get = staticmethod(CRMServices.get_obj)  # servicio para obtener un elemento
     schema_list = staticmethod(
         lambda: CRMServices.get_obj_list(request.args.to_dict())
     )  # servicio para obtener una lista de elementos
-    print("ento al resource")
     output_fields = client_fields
 
 
@@ -78,6 +78,22 @@ class ClientSearchResource(Resource):
         results = CRMServices.search_clients(query=args["q"])
         if results:
             return success_response(marshal(results, client_search_fields), 200)
+
+
+# ------------------------Client Images-------------------------------
+class ClientImageGetResource(Resource):
+    def get(self, resource_id):
+        images = ClientImageService.get_obj_list(resource_id)
+        return success_response(marshal(images, client_image_fields), 200)
+
+
+class ClientImagePostResource(BasePostResource):
+    service_create = staticmethod(ClientImageService.create_obj)
+    output_fields = client_image_fields
+
+
+class ClientImageDeleteResource(BaseDeleteResource):
+    service_delete = staticmethod(ClientImageService.delete_obj)
 
 
 # ***************************Client Bulk ********************************

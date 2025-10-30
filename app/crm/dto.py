@@ -54,3 +54,11 @@ class ClientCategoryPatchDTO(MyBase):
 class ClientCategoryCreateDTO(MyBase):
     name: str
     description: str | None = None
+
+
+class ClientImageCreateDTO(MyBase):
+    media_ids: list[int]
+    client_id: int
+    type: str
+    is_primary: bool = False
+    order: int | None = None
