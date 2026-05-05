@@ -15,19 +15,13 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="card-title">Información General</h5>
 
-                    <div class="d-flex justify-content-end mb-3">
-                        <span
-                            class="badge"
-                            :class="setStatusClass(item.lifecycle_status)"
-                            x-text="getLifeStatus(item.lifecycle_status)">
-                        </span>
-                    </div>
+
                 </div>
 
 
                 <div class="mb-3">
 
-                    <div class="text-muted">Nombre de {{label.product}}</div>
+                    <div class="text-muted">Nombre</div>
                     <button class="d-flex justify-content-between rounded-2 form-control"
                     @click="$dispatch('open-generic-editor', {
                         title: 'Nombre',
@@ -44,7 +38,7 @@
                     </button>
                 </div>
                 <div class="mb-3">
-                    <div class="text-muted">{{label.ruc_or_ci}}</div>
+                    <div class="text-muted">RUC</div>
                     <button class="d-flex justify-content-between rounded-2 form-control " disabled>
                         <div  x-text="item.ruc_or_ci?item.ruc_or_ci:'Sin codigo'"></div>
 
@@ -77,7 +71,7 @@
          x-data="{apiStatus: apiFetch }"
          @status-changed.window="item.lifecycle_status = $event.detail"
     >
-       {% include 'components/_itemLifeCycleStatus.html' %}
+       {% include 'components/_simpleStatus.html' %}
     </div>
 
         <!-- Fila de direccion -->
@@ -120,45 +114,17 @@
                     <template x-if="item.contacts?.length === 0">
                         <div class="alert alert-warning" role="alert">No existen Contactos</div>
                     </template>
-                    <template x-for="contact in item.contacts" :key="contact.id">
-                        <div class="">
-                            <div class="mb-3">
-                                <div class="text-muted">Telefono</div>
-                                <button class="d-flex justify-content-between rounded-2 form-control"
-                                        @click="$dispatch('open-generic-editor', {
-                                            title: 'Telefono',
-                                            label: 'Telefono',
-                                            field: 'phone',
-                                            value: contact.phone,
-                                            type: 'text',
-                                            patchUrl: `/api/v1/contacts/${contact.id}`,
-                                            help: 'Ingrese un numero de contacto',
-                                            onSave: (updated) => { contact.phone = updated.phone; }
-                                        })">
-                                    <div x-text="contact.phone"></div>
-                                    <div> <i class="bi bi-chevron-right"></i></div>
-                                </button>
-                            </div>
-                            <div class="mb-3">
-                                <div class="text-muted">Email</div>
-                                <button class="d-flex justify-content-between rounded-2 form-control"
-                                        @click="$dispatch('open-generic-editor', {
-                                            title: 'Email',
-                                            label: 'Email',
-                                            field: 'email',
-                                            value: contact.email,
-                                            type: 'text',
-                                            patchUrl: apiPatch,
-                                            help: 'Ingrese un email válido.',
-                                            onSave: (updated) => { contact.email = updated.email; }
-                                        })">
-                                    <div x-text="contact.email"></div>
-                                    <div> <i class="bi bi-chevron-right"></i></div>
-                                </button>
-                            </div>
+                    <div class="mb-3">
+                        <div class="mb-3">
+                            <div class="text-muted">Telefono</div>
+                            <div x-text="item.contacts[0]?.phone?item.contacts[0].phone:''"></div>
                         </div>
-                    </template>
-
+                    </div>
+                    <div class="btn btn-dark"
+                        @click="$dispatch('open-contact-list', {list: item.contacts, name: item.name, type: 'suppliers'})"
+                        >
+                        <i class="bi bi-eye-fill">Ver</i>
+                    </div>
                 </div>
 
             </div>
@@ -168,6 +134,10 @@
 
     <div>
         <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">{{label.delete}}</button>
+    </div>
+
+    <div>
+        {% include 'components/_contactList.html' %}
     </div>
 
     <div>
@@ -207,13 +177,6 @@
                 }
             },
 
-
-
-            redirectVariant(id){
-                window.location.href = `/products/${this.item.product_id}/designs/${this.item.id}/variants/${id}`;
-            },
-
-
             getLifeStatus(lifestatus){
                 if (lifestatus === 'DRAFT') {
                     return 'Borrador';
@@ -238,8 +201,26 @@
                 }
             },
 
+            async deleteContact(id){
+                if (!confirm('¿Estás seguro de que quieres eliminar este contacto?')) {
+                    return;
+                }
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', `suppliers/contacts/${id}`);
+                    if(res){
+                        this.message = 'Contacto eliminado con éxito';
+                        this.item.contacts = this.item.contacts.filter(contact => contact.id !== id);
+                    }else{
+                        this.error = 'Error al eliminar registro';
+                    }
+                }catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
+            },
+
             async deleteObj(id){
-                if (!confirm('¿Estás seguro de que quieres eliminar este diseño?')) {
+                if (!confirm('¿Estás seguro de que quieres eliminar este registro?')) {
                     return;
                 }
                 try {

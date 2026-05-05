@@ -1,0 +1,212 @@
+<div x-data="detail({{id}})"  class="row g-2">
+    <template x-if="error">
+        <div x-text="error" class="alert alert-danger" role="alert"></div>
+    </template>
+    <template x-if="message">
+        <div x-text="message" class="alert alert-success" role="alert"></div>
+    </template>
+
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Información General</h5>
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <span
+                            class="badge"
+                            :class="setStatusClass(item.lifecycle_status)"
+                            x-text="getLifeStatus(item.lifecycle_status)">
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="mb-3">
+
+                    <div class="text-muted">Nombre</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control"
+                    @click="$dispatch('open-generic-editor', {
+                        title: 'Nombre',
+                        label: 'Nombre',
+                        field: 'name',
+                        value: item.name,
+                        type: 'text',
+                        patchUrl: apiPatch,
+                        help: 'El nombre debe tener al menos 3 caracteres.',
+                        onSave: (updated) => { item.name = updated.name; }
+                    })">
+                        <div x-text="item.name"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted">Codigo</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control " disabled>
+                        <div  x-text="item.code?item.code:'Sin codigo'"></div>
+
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-12"
+         x-data="{apiStatus: apiFetch }"
+         @status-changed.window="item.lifecycle_status = $event.detail"
+    >
+       {% include 'components/_itemLifeCycleStatus.html' %}
+    </div>
+
+
+
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Clasificacion</h5>
+                </div>
+                <div class="mb-3">
+
+                    <div class="text-muted">Grupo</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control"
+                    @click="$dispatch('open-generic-editor', {
+                        title: 'Grupo',
+                        label: 'Grupo',
+                        field: 'group.name',
+                        value: item.group.name,
+                        type: 'select',
+                        patchUrl: apiPatch,
+                        onSave: (updated) => { item.group.name = updated.group; }
+                    })">
+                        <div x-text="item.name"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </button>
+                </div>
+                <div class="mb-3">
+
+                    <div class="text-muted">SubGrupo</div>
+                    <button class="d-flex justify-content-between rounded-2 form-control"
+                    @click="$dispatch('open-generic-editor', {
+                        title: 'SubGrupo',
+                        label: 'SubGrupo',
+                        field: 'subgroup.name',
+                        value: item.subgroup.name,
+                        type: 'select',
+                        patchUrl: apiPatch,
+                        onSave: (updated) => { item.subgroup.name = updated.subgroup; }
+                    })">
+                        <div x-text="item.subgruop.name"></div>
+                        <div> <i class="bi bi-chevron-right"></i></div>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <div>
+        <button @click="deleteObj(id)" class="btn btn-outline-danger w-100 mt-3">Eliminar {{label.client}}</button>
+    </div>
+
+    <div>
+        {% include 'clients/_addContactOffcanvas.html' %}
+    </div>
+
+</div>
+
+<script>
+    function detail(id){
+        return{
+            item:{},
+            error:'',
+            message:'',
+            id:id,
+            apiFetch: `materials/${id}`,
+            api: `/materials`,
+            apiPatch: `/api/v1/materials/${id}`,
+
+            draft_message: '',
+            uploading: false,
+
+            async init(){
+                console.log('init... id: ', id);
+                this.loading = true;
+                this.error = '';
+                try {
+                    await Promise.all([
+                        this.fetchItem(id),
+                    ]);
+                } catch (e) {
+                    this.error = 'Ocurrió un error al cargar los datos.';
+                    console.error(e);
+                } finally {
+                    this.loading = false;
+                }
+            },
+
+            async fetchItem(id){
+                try{
+                    const res = await window.guifer.helpers.fetch.apiFetch('GET', this.apiFetch);
+
+                    this.item = res;
+                    console.log('res: ', res);
+                }catch(error){
+                    throw error; // Re-lanza el error para que Promise.all lo capture
+                }
+            },
+
+
+            getLifeStatus(lifestatus){
+                if (lifestatus === 'DRAFT') {
+                    return 'Borrador';
+                } else if (lifestatus === 'READY') {
+                    return 'Activo';
+                } else if (lifestatus === 'ARCHIVED') {
+                    return 'Inactivo'
+                }else{
+                    return 'Borrador'
+                }
+            },
+
+            setStatusClass(status) {
+                if (status === 'DRAFT') {
+                    return 'text-bg-warning';
+                } else if (status === 'READY') {
+                    return 'text-bg-success';
+                } else if (status === 'ARCHIVED') {
+                    return 'text-bg-secondary';
+                } else {
+                    return 'text-bg-warning';
+                }
+            },
+
+
+            async deleteObj(id){
+                if (!confirm('¿Estás seguro de que quieres eliminar este registro?')) {
+                    return;
+                }
+                try {
+                    const res = await window.guifer.helpers.fetch.apiFetch('DELETE', this.apiFetch);
+                    if (res) {
+                        alert('Registro eliminado con éxito');
+                        this.message = 'Registro eliminado con éxito';
+                        window.location.href = `/clients`;
+                    } else {
+                        this.error = 'Error al eliminar registro';
+                    }
+                } catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
+            },
+
+
+        }
+    }
+</script>

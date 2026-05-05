@@ -48,6 +48,9 @@ class MaterialGroupDeleteResource(BaseDeleteResource):
 # ----------------Material SubGroups---------------------------
 class MaterialSubGroupGetResource(BaseGetResource):
     schema_get = staticmethod(MaterialSubGroupService.get_obj)
+    schema_list = staticmethod(
+        lambda: MaterialSubGroupService.get_obj_list(request.args.to_dict())
+    )
     output_fields = material_subgroup_output_fields
 
 

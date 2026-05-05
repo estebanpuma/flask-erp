@@ -1,6 +1,11 @@
 from flask_restful import request
 
-from ..core.resources import BaseGetResource, BasePatchResource, BasePostResource
+from ..core.resources import (
+    BaseDeleteResource,
+    BaseGetResource,
+    BasePatchResource,
+    BasePostResource,
+)
 from .schemas import supplier_contact_fields, supplier_fields
 from .services import SupplierContactService, SupplierService
 
@@ -47,3 +52,8 @@ class SupplierContactPatchResource(BasePatchResource):
     service_get = staticmethod(SupplierContactService.get_obj)
     service_patch = staticmethod(SupplierContactService.patch_obj)
     output_fields = supplier_contact_fields
+
+
+class SupplierContactDeleteResource(BaseDeleteResource):
+    service_get = staticmethod(SupplierContactService.get_obj)
+    service_delete = staticmethod(SupplierContactService.delete_obj)

@@ -1,37 +1,77 @@
-<div x-data="materialForm({{ material_id | default('null') }})" x-init="init()" class="card p-4 shadow-sm">
+<div x-data="materialForm()" x-init="init()">
 
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control" id="name" placeholder="Nombre" x-model="form.name">
-    <label for="name">Nombre</label>
+  <template x-if="error">
+    <div x-text="error" class="alert alert-danger" role="alert"></div>
+  </template>
+
+  <template x-if="success">
+    <div x-text="success" class="alert alert-success" role="alert"></div>
+  </template>
+
+   <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Clasificación</h5>
+      <div>
+        <div class="form-floating mb-3">
+          <select class="form-select" id="group_id" x-model="form.group_id" @change="fetchSubgroups(); getSecuence()">
+            <option value="">Sin grupo</option>
+            <template x-for="group in groups" :key="group.id">
+              <option :value="group.id" x-text="group.name"></option>
+            </template>
+          </select>
+          <label for="group_id">Grupo de material</label>
+        </div>
+
+        <template x-if="form.group_id">
+          <div class="form-floating mb-3">
+            <select class="form-select" id="subgroup_id" x-model="form.subgroup_id">
+              <option value="">Sin subgrupo</option>
+              <template x-for="subgroup in subgroups" :key="subgroup.id">
+                <option :value="subgroup.id" x-text="subgroup.name"></option>
+              </template>
+            </select>
+            <label for="subgroup_id">Subgrupo de material</label>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 
-  <div class="form-floating mb-3">
-    <input type="text" class="form-control" id="code" placeholder="Código" x-model="form.code">
-    <label for="code">Código</label>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Información General</h5>
+      <div>
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="name" placeholder="Nombre" x-model="form.name" @change="checkName()">
+          <label for="name">Nombre</label>
+        </div>
+        <template x-if="nameError">
+          <div x-text="nameError" class="alert alert-danger" role="alert"></div>
+        </template>
+
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" id="code" placeholder="Código" x-model="form.code" @change="checkCode()">
+          <label for="code">Código</label>
+        </div>
+        <template x-if="codeError">
+          <div x-text="codeError" class="alert alert-danger" role="alert"></div>
+        </template>
+
+        <div class="form-floating mb-3">
+          <select class="form-select" id="unit" x-model="form.unit" >
+            <option value="">Seleccionar unidad</option>
+            <option value="dm">Decimetro(dm)</option>
+            <option value="m">Metro(m)</option>
+            <option value="kg">Kilogramo(kg)</option>
+            <option value="und">Unidad(und)</option>
+          </select>
+          <label for="unit">Unidad</label>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="form-floating mb-3">
-    <select class="form-select" id="unit" x-model="form.unit">
-      <option value="">Seleccionar unidad</option>
-      <option value="dm">Decimetro(dm)</option>
-      <option value="m">Metro(m)</option>
-      <option value="kg">Kilogramo(kg)</option>
-      <option value="und">Unidad(und)</option>
-    </select>
-    <label for="unit">Unidad</label>
-  </div>
-
-  <div class="form-floating mb-3">
-    <select class="form-select" id="group_id" x-model="form.group_id">
-      <option value="">Sin grupo</option>
-      <template x-for="group in groups" :key="group.id">
-        <option :value="group.id" x-text="group.name"></option>
-      </template>
-    </select>
-    <label for="group_id">Grupo de material</label>
-  </div>
-
-  <button class="btn btn-dark w-100" @click="submit()" :disabled="loading">
+  <button class="btn btn-dark w-100 mt-3" @click="submit()" :disabled="loading">
     <span x-show="!loading">
       Guardar
 
@@ -39,9 +79,122 @@
     <span x-show="loading">Guardando...</span>
   </button>
 
-  <div class="alert alert-success mt-4" x-show="success">✅ Guardado correctamente. Redirigiendo...</div>
-  <div class="alert alert-danger mt-4" x-text="error" x-show="error"></div>
 </div>
 
-<script  src = "{{ url_for('static', filename='js/materials.js') }}">
+<script>
+  function materialForm() {
+  return {
+    form: {
+      name: '',
+      code: '',
+      unit: '',
+      group_id: '',
+      subgroup_id: '',
+    },
+    codeError: '',
+    nameError: '',
+    groups: [],
+    subgroups: [],
+    loading: false,
+    success: false,
+    error: '',
+    formDisabled: false,
+
+    async init() {
+      this.loading = false;
+      try {
+        const resGroups = await fetch('/api/v1/material-groups');
+        this.groups = await resGroups.json();
+      } catch (e) {
+        console.error('Error cargando grupos', e);
+      }
+    },
+
+    async getSecuence() {
+      try {
+        let req = {
+          object_type: 'material',
+          prefix: this.groups.find(group => group.id === parseInt(this.form.group_id)).code,
+        }
+        const res = await fetch(`/api/v1/secuence-generator?${new URLSearchParams(req).toString()}`);
+        const data = await res.json();
+        console.log(data);
+        this.form.code = data;
+      } catch (e) {
+        console.error('Error cargando secuencia', e);
+      }
+    },
+
+    async checkCode() {
+      try {
+        const res = await fetch(`/api/v1/materials?code=${this.form.code}`);
+        const data = await res.json();
+        console.log(data);
+        if(data && data.length > 0) {
+          this.codeError = 'Codigo ya existe';
+        } else {
+          this.codeError = '';
+        }
+        }catch (e) {
+        console.error('Error verificndo codigo', e);
+      }
+    },
+
+    async checkName() {
+      try {
+        const res = await fetch(`/api/v1/materials?name=${this.form.name}`);
+        const data = await res.json();
+        if(data && data.length > 0) {
+          this.nameError = 'Nombre ya existe';
+        } else {
+          this.nameError = '';
+        }
+        }catch (e) {
+        console.error('Error verificndo nombre', e);
+      }
+    },
+
+
+    async fetchSubgroups() {
+      try {
+        const res = await fetch(`/api/v1/material-subgroups?group_id=${this.form.group_id}`);
+        this.subgroups = await res.json();
+      } catch (e) {
+        console.error('Error cargando subgrupos', e);
+      }
+    },
+
+    async submit() {
+      this.loading = true;
+      this.error = '';
+      this.success = false;
+
+      const payload = {
+        ...this.form,
+        group_id: this.form.group_id === '' ? null : parseInt(this.form.group_id),
+        subgroup_id: this.form.subgroup_id === '' ? null : parseInt(this.form.subgroup_id)
+      };
+
+      try {
+        const res = await fetch('/api/v1/materials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error inesperado');
+
+        this.success = true;
+        this.loading = false;
+        setTimeout(() => {
+          window.location.href = `/materials/${data.id}`;
+        }, 1000);
+      } catch (err) {
+        this.loading = false;
+        this.error = err.message;
+      }
+    }
+  }
+}
 </script>

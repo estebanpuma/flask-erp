@@ -16,6 +16,7 @@ class MaterialGroupService:
 
     @staticmethod
     def create_obj(data: dict):
+        """Crea un nuevo grupo de materiales[MaterialGroup] a partir de un dict y lo valida con DTO"""
         with db.session.begin():
             dto = MaterialGroupCreateDTO(**data)
             group = MaterialGroupService.create_group(dto)
@@ -23,7 +24,7 @@ class MaterialGroupService:
 
     @staticmethod
     def create_group(dto: MaterialGroupCreateDTO) -> MaterialGroup:
-        # Validar que no exista un grupo con el mismo nombre
+        """Crea un nuevo grupo de materiales[MaterialGroup] a partir de datos validados"""
         existing = (
             db.session.query(MaterialGroup).filter_by(name=dto.name.strip()).first()
         )
@@ -42,6 +43,7 @@ class MaterialGroupService:
 
     @staticmethod
     def get_obj(group_id: int) -> MaterialGroup:
+        """Devuelve un grupo de materiales[MaterialGroup] según su id."""
         group = db.session.get(MaterialGroup, group_id)
         if not group:
             raise NotFoundError(f"Grupo de materiales con id {group_id} no encontrado.")
@@ -49,10 +51,12 @@ class MaterialGroupService:
 
     @staticmethod
     def get_obj_list(filters: dict = None):
+        """Devuelve una lista de grupos de materiales[MaterialGroup] según los filtros."""
         return apply_filters(MaterialGroup, filters)
 
     @staticmethod
     def pacth_obj(group: MaterialGroup, data: dict) -> MaterialGroup:
+        """Edita un grupo de materiales[MaterialGroup]"""
         dto = MaterialGroupUpdateDTO(**data)
         if dto.name:
             # Validar que el nuevo nombre no esté en uso por otro grupo
@@ -81,6 +85,7 @@ class MaterialGroupService:
 
     @staticmethod
     def delete_obj(group: MaterialGroup):
+        """Elimina un grupo de materiales[MaterialGroup]"""
         try:
             db.session.delete(group)
             db.session.commit()
@@ -93,13 +98,20 @@ class MaterialGroupService:
 class MaterialSubGroupService:
     @staticmethod
     def get_obj(id: int) -> MaterialSubGroup:
+        """Devuelve un subgrupo de materiales[MaterialSubGroup] según su id."""
         subgroup = MaterialSubGroup.query.get(id)
         if not subgroup:
             raise NotFoundError(f"Subgrupo de materiales con id {id} no encontrado.")
         return subgroup
 
     @staticmethod
+    def get_obj_list(filters: dict = None) -> list[MaterialSubGroup]:
+        """Devuelve una lista de subgrupos de materiales[MaterialSubGroup] según los filtros."""
+        return apply_filters(MaterialSubGroup, filters)
+
+    @staticmethod
     def create_obj(data: dict) -> MaterialSubGroup:
+        """Crea un nuevo subgrupo de materiales[MaterialSubGroup] a partir de un dict y lo valida con DTO"""
         with db.session.begin():
             dto = MaterialSubGroupCreateDTO(**data)
             subgroup = MaterialSubGroupService.create_subgroup(
@@ -113,6 +125,7 @@ class MaterialSubGroupService:
     def create_subgroup(
         name: str, description: str = None, group_id: int = None
     ) -> MaterialSubGroup:
+        """Crea un nuevo subgrupo de materiales[MaterialSubGroup] a partir de datos validados"""
         new_subgroup = MaterialSubGroup(
             name=name, description=description, group_id=group_id
         )
@@ -121,6 +134,7 @@ class MaterialSubGroupService:
 
     @staticmethod
     def patch_obj(subgroup: MaterialSubGroup, data: dict) -> MaterialSubGroup:
+        """Edita un Subgrupo de materiales[MaterialSubGroup]"""
         dto = MaterialSubGroupUpdateDTO(**data)
         if dto.name:
             subgroup.name = dto.name
@@ -140,6 +154,7 @@ class MaterialSubGroupService:
 
     @staticmethod
     def delete_obj(subgroup: MaterialSubGroup):
+        """Elimina un Subgrupo de materiales[MaterialSubGroup]"""
         try:
             db.session.delete(subgroup)
             db.session.commit()

@@ -96,20 +96,61 @@ class CollectionCodeGenerator:
 
 class SecuenceGenerator:
     @staticmethod
-    def get_next_number(prefix) -> int:
+    def set_obj(data: dict) -> str:
+        """Devuelve el codigo autoincremental de un objeto según el tipo de objeto y el prefijo"""
+        from ..materials.models import Material
+        from ..products.models import Product, ProductCollection
+        from .dto import ObjectCodePreviewDTO
 
+        dto = ObjectCodePreviewDTO(**data)
+
+        print(dto.object_type)
+
+        objects = ["material", "product", "collection"]
+        if dto.object_type not in objects:
+            raise ValueError("Tipo de objeto no encontrado")
+        obj_dict = {
+            "material": Material,
+            "product": Product,
+            "collection": ProductCollection,
+        }
+        prefix = dto.prefix.upper()
+        new_prefix = f"{dto.object_type.upper()}_{prefix}"
+
+        # Obtener el objeto contador y el número inicial
+        counter_obj, sec = SecuenceGenerator.get_sequence_object(new_prefix)
+
+        obj = obj_dict[dto.object_type]
+        print(obj)
+
+        while True:
+            next_code = f"{prefix}{sec:03d}"
+            if not db.session.query(obj).filter_by(code=next_code).first():
+                break  # Código disponible, salimos del bucle
+            sec += 1  # Si el código existe, intentamos con el siguiente número
+
+        # Actualizamos el valor final en el objeto contador que ya está en la sesión
+        counter_obj.value = str(sec)
+
+        return next_code
+
+    @staticmethod
+    def get_sequence_object(prefix: str) -> tuple[AppSetting, int]:
+        """
+        Obtiene el objeto AppSetting para un prefijo y su siguiente número.
+        Añade el objeto a la sesión si no existe.
+        Devuelve el objeto y el siguiente número.
+        """
         if prefix is None:
             raise ValueError("Prefix at service SecuenceGenerator")
 
-        counter = AppSetting.query.filter(AppSetting.key == prefix).first()
+        counter = db.session.query(AppSetting).filter_by(key=prefix).first()
 
-        # pendiente crer contunres
+        if not counter:
+            counter = AppSetting(
+                key=prefix, value="0"
+            )  # Empezamos en 0 para que el primer número sea 1
+            db.session.add(counter)
 
-        if counter:
-            n = int(counter.value) + 1
-            counter.value = n
-            return int(n)
-        else:
-            new_setting = AppSetting(key=prefix, value=1)
-            db.session.add(new_setting)
-            return 1
+        next_number = int(counter.value) + 1
+        return counter, next_number

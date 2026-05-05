@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
+{% from 'components/_pageHeader.html' import pageHeader%}
 {% block title %}Nuevo Material{% endblock %}
 {% block content %}
-<h4 class="mt-4 mb-3 text-center">➕ Nuevo material</h4>
+{{ pageHeader(href='/materials/',
+              title='Nuevo Material',
+              ) }}
 {% include 'materials/_form.html' %}
 {% endblock %}

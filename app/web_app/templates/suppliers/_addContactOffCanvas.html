@@ -7,7 +7,7 @@
   id="addContactOffcanvas"
   aria-labelledby="addContactOffcanvasLabel"
   x-ref="offcanvasContact"
-  @contacts-created.window="item.contacts = $event.detail"
+  @contacts-created.window="item.contacts.push($event.detail.res)"
 >
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="addContactOffcanvasLabel">
@@ -122,6 +122,7 @@ function addContacts() {
             this.submitting = true;
             const res = await window.guifer.helpers.fetch.apiFetch('POST', 'suppliers/contacts', payload);
             this.message = 'Contactos agregados con éxito';
+
             this.close();
             this.submitting = false
             this.$dispatch('contacts-created', { detail: res });

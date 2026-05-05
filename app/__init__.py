@@ -65,6 +65,10 @@ def create_app(config):
 
     app.register_blueprint(crm_api_bp)
 
+    from .common.api import common_api_bp
+
+    app.register_blueprint(common_api_bp)
+
     from .core.api import core_api_bp
 
     app.register_blueprint(core_api_bp)

@@ -60,7 +60,9 @@ materials_api.add_resource(
 # ------------------------------SUBGROUPS-------------------------------------------#
 materials_api.add_resource(MaterialSubGroupPostResource, "/material-subgroups")
 materials_api.add_resource(
-    MaterialSubGroupGetResource, "/material-subgroups/<int:resource_id>"
+    MaterialSubGroupGetResource,
+    "/material-subgroups/<int:resource_id>",
+    "/material-subgroups",
 )
 materials_api.add_resource(
     MaterialSubGroupPatchResource, "/material-subgroups/<int:resource_id>"

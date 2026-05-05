@@ -4,7 +4,7 @@
 
 {% block content %}
 
-  {{pageHeader(href='/groups/~ group_id',
+  {{pageHeader(href='/materials/groups/'~ group_id,
               title='Detalle de'~ label.subgroup,
               )}}
   {% include 'materials/subgroups/_detail.html' %}

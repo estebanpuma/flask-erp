@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask_restful import Api
 
 from .resources import (
+    SupplierContactDeleteResource,
     SupplierContactGetListResource,
     SupplierContactGetResource,
     SupplierContactPatchResource,
@@ -35,4 +36,8 @@ suppliers_api.add_resource(
 suppliers_api.add_resource(SupplierContactPostResource, "/suppliers/contacts")
 suppliers_api.add_resource(
     SupplierContactPatchResource, "/suppliers/contacts/<int:resource_id>"
+)
+
+suppliers_api.add_resource(
+    SupplierContactDeleteResource, "/suppliers/contacts/<int:resource_id>"
 )

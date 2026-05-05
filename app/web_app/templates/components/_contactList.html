@@ -1,0 +1,145 @@
+<div x-data="contactList()"
+    @open-contact-list.window="open($event.detail.list, $event.detail.name, $event.detail.type)"
+    class="offcanvas offcanvas-end"
+    tabindex="-1"
+    id="contactListOffcanvas"
+    aria-labelledby="contactListOffcanvasLabel"
+    x-ref="offcanvasContactList"
+    >
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="addContactOffcanvasLabel">
+            Lista de contactos <span class="badge bg-secondary" x-text="name"></span>
+        </h5>
+        <button type="button" class="btn-close" @click="close()" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div>
+            <template x-if="contact_error">
+                <div x-text="contact_error" class="alert alert-danger" role="alert"></div>
+            </template>
+            <template x-if="contact_message">
+                <div x-text="contact_message" class="alert alert-success" role="alert"></div>
+            </template>
+            <div class="mb-3">
+                    <template x-if="item.contacts?.length === 0">
+                        <div class="alert alert-warning" role="alert">No existen Contactos</div>
+                    </template>
+                    <div class="list-group">
+                    <template x-for="contact in item.contacts" :key="contact.id">
+
+                        <div class="list-group-item">
+                            <div class="mb-3">
+                                <div class="text-muted">Nombre</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Nombre',
+                                            label: 'Nombre',
+                                            field: 'name',
+                                            value: contact.name,
+                                            type: 'text',
+                                            patchUrl: `/api/v1/${type}/contacts/${contact.id}`,
+                                            help: 'Ingrese un numero de contacto',
+                                            onSave: (updated) => { contact.name = updated.name; }
+                                        })">
+                                    <div x-text="contact.name"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted">Telefono</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Telefono',
+                                            label: 'Telefono',
+                                            field: 'phone',
+                                            value: contact.phone,
+                                            type: 'text',
+                                            patchUrl: `/api/v1/${type}/contacts/${contact.id}`,
+                                            help: 'Ingrese un numero de contacto',
+                                            onSave: (updated) => { contact.phone = updated.phone; }
+                                        })">
+                                    <div x-text="contact.phone"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-muted">Email</div>
+                                <button class="d-flex justify-content-between rounded-2 form-control"
+                                        @click="$dispatch('open-generic-editor', {
+                                            title: 'Email',
+                                            label: 'Email',
+                                            field: 'email',
+                                            value: contact.email,
+                                            type: 'text',
+                                            patchUrl: `/api/v1/${type}/contacts/${contact.id}`,
+                                            help: 'Ingrese un email válido.',
+                                            onSave: (updated) => { contact.email = updated.email; }
+                                        })">
+                                    <div x-text="contact.email"></div>
+                                    <div> <i class="bi bi-chevron-right"></i></div>
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <button class="btn btn-outline-danger" @click="deleteContact(contact.id, type)">Eliminar contacto</button>
+                            </div>
+                        </div>
+                    </template>
+                    </div>
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function contactList(){
+        return{
+            list:[],
+            bsOffcanvas: null,
+            name: '',
+            type: '',
+            contact_message: '',
+            contact_error: '',
+
+            init(){
+                this.bsOffcanvas = new bootstrap.Offcanvas(this.$refs.offcanvasContactList);
+                this.$refs.offcanvasContactList.addEventListener('hidden.bs.offcanvas', () => this.reset());
+            },
+
+            open(list, name, type){
+                this.list = list;
+                this.name = name;
+                this.type = type;
+                this.bsOffcanvas.show();
+            },
+
+            close(){
+                this.bsOffcanvas.hide();
+            },
+
+            reset(){
+                this.list = [];
+                this.name = '';
+                this.type = '';
+            },
+
+            deleteContact(id, type){
+                if (!confirm('¿Estás seguro de que quieres eliminar este contacto?')) {
+                    return;
+                }
+                try {
+                    const res = window.guifer.helpers.fetch.apiFetch('DELETE', `/${type}/contacts/${id}`);
+                    if(res){
+                        this.message = 'Contacto eliminado con éxito';
+                        this.item.contacts = this.item.contacts.filter(contact => contact.id !== id);
+                    }else{
+                        this.error = 'Error al eliminar registro';
+                    }
+                }catch (error) {
+                    console.error('API error: ', error);
+                    this.error = 'Error: ' + String(error);
+                }
+            },
+
+        }
+    }
+</script>

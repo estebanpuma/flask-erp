@@ -12,9 +12,10 @@ from .models import Material, MaterialLot, MaterialStock
 class MaterialService:
 
     @staticmethod
-    def search_material(query: str, limit=15):
+    def search_material(query: str, limit=15) -> list[Material]:
+        """Devuelve una lista de materiales[Material] según el query"""
         q = query.strip().lower()
-        clients = (
+        materials = (
             db.session.query(
                 Material.id,
                 Material.code,
@@ -27,10 +28,11 @@ class MaterialService:
             .limit(limit)
             .all()
         )
-        return clients
+        return materials
 
     @staticmethod
-    def create_obj(data: dict):
+    def create_obj(data: dict) -> Material:
+        """Crea un nuevo material[Material] a partir de un dict y lo valida con DTO"""
         with db.session.begin():
             dto = MaterialCreateDTO(**data)
             material = MaterialService.create_material(dto)
@@ -38,10 +40,14 @@ class MaterialService:
 
     @staticmethod
     def create_material(dto: MaterialCreateDTO) -> Material:
-        # Verificar si el código ya existe
+        """Crea un nuevo material[Material] a partir de datos validados"""
         existing = db.session.query(Material).filter_by(code=dto.code).first()
         if existing:
             raise ValidationError(f"El material con código {dto.code} ya existe.")
+
+        from ..common.services import SecuenceGenerator
+
+        SecuenceGenerator.get_next_number(f"MATERIAL_{dto.code.upper()}")
 
         material = Material(
             code=dto.code.strip().upper(),
@@ -55,13 +61,15 @@ class MaterialService:
 
     @staticmethod
     def get_obj(material_id: int) -> Material:
+        """Devuelve un material[Material] según su id."""
         material = db.session.get(Material, material_id)
         if not material:
             raise NotFoundError(f"Material con id {material_id} no encontrado.")
         return material
 
     @staticmethod
-    def get_obj_list(filters: dict = None):
+    def get_obj_list(filters: dict = None) -> list[Material]:
+        """Devuelve una lista de materiales[Material] según los filtros."""
         query = db.session.query(Material)
         if filters:
             if "group_id" in filters:
@@ -74,7 +82,7 @@ class MaterialService:
 
     @staticmethod
     def patch_obj(material: Material, data: dict) -> Material:
-
+        """Edita un material[Material]"""
         dto = MaterialUpdateDTO(**data)
 
         if dto.name:
@@ -96,7 +104,8 @@ class MaterialService:
             raise
 
     @staticmethod
-    def delete_obj(material: Material):
+    def delete_obj(material: Material) -> bool:
+        """Elimina un material[Material]"""
         from ..products.models import ProductVariantMaterialDetail
 
         # Validar que no esté en uso en la producción
